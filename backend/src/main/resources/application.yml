@@ -2,6 +2,11 @@ spring:
   application:
     name: backend
 
+  # 开启虚拟线程:SSE 流式对话会长时间挂住一个请求,虚拟线程更省资源
+  threads:
+    virtual:
+      enabled: true
+
   # MySQL(Docker,root/123456,库 testdb)
   datasource:
     url: jdbc:mysql://localhost:3306/grindset?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
@@ -32,3 +37,22 @@ app:
     secret: ${JWT_SECRET:dev-only-secret-change-me-please-make-it-long-enough-32bytes}
     access-ttl-minutes: 30
     refresh-ttl-days: 7
+
+  # 管理接口令牌:未配置时 /api/admin/** 全部停用(403),避免裸奔
+  admin:
+    token: ${ADMIN_TOKEN:}
+
+  # 大模型服务。
+  # 渠道(地址/名称)和模型目录已迁到数据库 llm_channels / llm_models,
+  # 这里只放密钥(环境变量注入)和全局参数。没配 key 的厂商不会出现在前端下拉框。
+  llm:
+    system-prompt: "你是 Grindset 的面试复习助手,用中文回答,简洁准确、条理清晰;讲题时先给思路要点再补充细节。"
+    max-history-messages: 20
+    # 加密库里 API Key 的主密钥:换掉会导致已存的 key 全部解不开,生产务必固定配置
+    master-key: ${LLM_MASTER_KEY:}
+    api-keys:
+      deepseek: ${DEEPSEEK_API_KEY:}
+      qwen: ${DASHSCOPE_API_KEY:}
+      zhipu: ${ZHIPU_API_KEY:}
+      minimax: ${MINIMAX_API_KEY:}
+      doubao: ${ARK_API_KEY:}
