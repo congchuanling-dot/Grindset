@@ -1,10 +1,24 @@
+import { Route, Routes } from 'react-router-dom'
+import RequireAuth from './auth/RequireAuth'
+import HomePage from './pages/HomePage'
+import LoginPage from './pages/LoginPage'
+
 function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <h1 className="text-3xl font-bold text-teal-600">
-        Tailwind 生效了 ✅
-      </h1>
-    </div>
+    <Routes>
+      {/* 登录页:谁都能访问 */}
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* 主页:用 RequireAuth 包住,没登录会被踢到 /login */}
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <HomePage />
+          </RequireAuth>
+        }
+      />
+    </Routes>
   )
 }
 
