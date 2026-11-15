@@ -1,15 +1,15 @@
-// 登录状态的唯一来源。MVP 先用内存变量占位,
-// 等后端接口做好后,把 token 换成后端返回的 access token。
-let accessToken: string | null = null
+// 登录状态的唯一来源。后端目前只返回 userId(JWT 下一步接入),
+// 所以先用内存里的 userId 判登录态;它和 access token 一样只存内存,刷新页面即退出。
+let userId: string | null = null
 
-export function getAccessToken(): string | null {
-  return accessToken
+export function getUserId(): string | null {
+  return userId
 }
 
-export function setAccessToken(token: string | null): void {
-  accessToken = token
+export function setUserId(id: string | null): void {
+  userId = id
 }
 
 export function isLoggedIn(): boolean {
-  return accessToken !== null
+  return userId !== null
 }

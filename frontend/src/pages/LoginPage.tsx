@@ -1,7 +1,8 @@
 import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { setAccessToken } from '../auth/authStore'
+import { login, register } from '../api/auth'
+import { setUserId } from '../auth/authStore'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -16,23 +17,31 @@ function LoginPage() {
 
   const isLogin = mode === 'login'
 
-  // 提交:现在还是假的。下一步接后端时,把这里换成
-  // fetch('/api/auth/login' 或 '/register', ...) 即可。
+  // 提交:走真实接口,后端返回 userId 后写入登录态并进首页
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault() // 阻止表单默认的刷新页面行为
     setError('')
 
-    if (!account || !password) {
+    const trimmedAccount = account.trim()
+    if (!trimmedAccount || !password) {
       setError('账号和密码都要填')
       return
     }
 
     setLoading(true)
-    // 假装在请求后端,等 600ms
-    await new Promise((r) => setTimeout(r, 600))
-    setAccessToken('fake-token-for-now')
-    setLoading(false)
-    navigate('/')
+    try {
+      // 注册成功即建号,直接当已登录处理
+      const result = isLogin
+        ? await login(trimmedAccount, password)
+        : await register(trimmedAccount, password)
+      setUserId(result.userId)
+      navigate('/')
+    } catch (err) {
+      // 后端已把错误文案统一成中文(400/401/409 等),直接展示
+      setError(err instanceof Error ? err.message : '请求失败，请稍后重试')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -48,7 +57,10 @@ function LoginPage() {
         <div className="mb-6 flex rounded-lg bg-slate-100 p-1">
           <button
             type="button"
-            onClick={() => setMode('login')}
+            onClick={() => {
+              setMode('login')
+              setError('')
+            }}
             className={`flex-1 rounded-md py-1.5 text-sm font-medium transition ${
               isLogin ? 'bg-white text-teal-600 shadow' : 'text-slate-500'
             }`}
@@ -57,7 +69,10 @@ function LoginPage() {
           </button>
           <button
             type="button"
-            onClick={() => setMode('register')}
+            onClick={() => {
+              setMode('register')
+              setError('')
+            }}
             className={`flex-1 rounded-md py-1.5 text-sm font-medium transition ${
               !isLogin ? 'bg-white text-teal-600 shadow' : 'text-slate-500'
             }`}

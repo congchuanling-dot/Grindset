@@ -25,15 +25,16 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ApiResponse<Map<String, Object>> register(@RequestBody RegisterRequest req) {
+    public ApiResponse<Map<String, String>> register(@RequestBody RegisterRequest req) {
         Long userId = authService.register(req.getAccount(), req.getPassword());
-        return ApiResponse.ok(Map.of("userId", userId));
+        // 雪花 ID 超过 JS Number.MAX_SAFE_INTEGER,必须按字符串下发,否则前端会精度丢失
+        return ApiResponse.ok(Map.of("userId", String.valueOf(userId)));
     }
 
     @PostMapping("/login")
-    public ApiResponse<Map<String, Object>> login(@RequestBody LoginRequest req) {
+    public ApiResponse<Map<String, String>> login(@RequestBody LoginRequest req) {
         Long userId = authService.login(req.getAccount(), req.getPassword());
         // 暂时先返回 userId;下一步换成签发 JWT + 种 refresh Cookie
-        return ApiResponse.ok(Map.of("userId", userId));
+        return ApiResponse.ok(Map.of("userId", String.valueOf(userId)));
     }
 }
