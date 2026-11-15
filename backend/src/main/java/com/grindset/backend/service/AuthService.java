@@ -12,7 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 @Service
 public class AuthService {
@@ -22,8 +22,15 @@ public class AuthService {
     /** 与 users.nickname VARCHAR(64) 对齐,超长会在写库时被截断报错 */
     private static final int MAX_ACCOUNT_LENGTH = 64;
 
-    /** BCrypt 只处理前 72 字节,超出部分被静默忽略,必须提前拒绝 */
-    private static final int MAX_PASSWORD_BYTES = 72;
+    /** 账号统一用邮箱:本地部分@域名.后缀,够 MVP 用,不做 RFC 全量校验 */
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
+    /** 密码 8~16 位,且必须同时含字母和数字 */
+    private static final int MIN_PASSWORD_LENGTH = 8;
+    private static final int MAX_PASSWORD_LENGTH = 16;
+    private static final Pattern PASSWORD_LETTER = Pattern.compile("[A-Za-z]");
+    private static final Pattern PASSWORD_DIGIT = Pattern.compile("[0-9]");
 
     private final UserMapper userMapper;
     private final UserIdentityMapper identityMapper;
@@ -48,7 +55,7 @@ public class AuthService {
 
         // 先查一次,给出友好提示(唯一索引是并发下的最后防线)
         if (findLocalIdentity(account) != null) {
-            throw new BizException(409, "该账号已存在");
+            throw new BizException(409, "该邮箱已存在");
         }
 
         // 建用户
@@ -69,7 +76,7 @@ public class AuthService {
             identityMapper.insert(identity);
         } catch (DuplicateKeyException e) {
             // 并发下两个请求都通过了上面的查重,唯一索引在此兜底
-            throw new BizException(409, "该账号已存在");
+            throw new BizException(409, "该邮箱已存在");
         }
 
         return user.getId();
@@ -97,18 +104,24 @@ public class AuthService {
     }
 
     /**
-     * 注册/登录共用的入参校验。
-     * 密码按 UTF-8 字节数限制在 72 以内,避免 BCrypt 静默截断导致"不同密码也能登录"。
+     * 注册/登录共用的入参校验:账号必须是邮箱,密码 8~16 位且同时含字母和数字。
      */
     private void validateCredentials(String account, String rawPassword) {
         if (account == null || account.isBlank() || rawPassword == null || rawPassword.isBlank()) {
-            throw new BizException(400, "账号和密码不能为空");
+            throw new BizException(400, "邮箱和密码不能为空");
         }
         if (account.length() > MAX_ACCOUNT_LENGTH) {
-            throw new BizException(400, "账号长度不能超过 " + MAX_ACCOUNT_LENGTH + " 个字符");
+            throw new BizException(400, "邮箱长度不能超过 " + MAX_ACCOUNT_LENGTH + " 个字符");
         }
-        if (rawPassword.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
-            throw new BizException(400, "密码过长,不能超过 " + MAX_PASSWORD_BYTES + " 字节(中文约 24 个字)");
+        if (!EMAIL_PATTERN.matcher(account).matches()) {
+            throw new BizException(400, "请输入正确的邮箱地址");
+        }
+        if (rawPassword.length() < MIN_PASSWORD_LENGTH || rawPassword.length() > MAX_PASSWORD_LENGTH) {
+            throw new BizException(400,
+                    "密码长度需为 " + MIN_PASSWORD_LENGTH + "-" + MAX_PASSWORD_LENGTH + " 位");
+        }
+        if (!PASSWORD_LETTER.matcher(rawPassword).find() || !PASSWORD_DIGIT.matcher(rawPassword).find()) {
+            throw new BizException(400, "密码必须同时包含字母和数字");
         }
     }
 }

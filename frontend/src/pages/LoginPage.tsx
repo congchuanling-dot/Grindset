@@ -4,6 +4,17 @@ import { useNavigate } from 'react-router-dom'
 import { login, register } from '../api/auth'
 import { setUserId } from '../auth/authStore'
 
+// 与后端 AuthService 保持一致的规则:邮箱格式 + 8~16 位字母数字密码
+const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+
+function validateInput(email: string, password: string): string {
+  if (!email || !password) return '邮箱和密码都要填'
+  if (!EMAIL_PATTERN.test(email)) return '请输入正确的邮箱地址'
+  if (password.length < 8 || password.length > 16) return '密码长度需为 8-16 位'
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return '密码必须同时包含字母和数字'
+  return ''
+}
+
 function LoginPage() {
   const navigate = useNavigate()
 
@@ -23,8 +34,9 @@ function LoginPage() {
     setError('')
 
     const trimmedAccount = account.trim()
-    if (!trimmedAccount || !password) {
-      setError('账号和密码都要填')
+    const message = validateInput(trimmedAccount, password)
+    if (message) {
+      setError(message)
       return
     }
 
@@ -81,17 +93,19 @@ function LoginPage() {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* 账号输入框(受控) */}
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+          {/* 邮箱输入框(受控):账号统一用邮箱,以后接邮箱验证码 */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              账号
+            <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
+              邮箱
             </label>
             <input
-              type="text"
+              id="email"
+              type="email"
+              autoComplete="email"
               value={account}
               onChange={(e) => setAccount(e.target.value)}
-              placeholder="请输入账号"
+              placeholder="you@example.com"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-800 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
             />
           </div>
@@ -106,7 +120,7 @@ function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="请输入密码"
+                placeholder="8-16 位，含字母和数字"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 pr-10 text-slate-800 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
               />
               <button
