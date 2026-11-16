@@ -2,6 +2,7 @@ import {
   AlertCircle,
   ArrowLeft,
   BookOpen,
+  BookX,
   CheckCircle2,
   Loader2,
   MessageSquare,
@@ -46,6 +47,7 @@ function InterviewSessionPage() {
   const [pendingText, setPendingText] = useState('')
   const [finishing, setFinishing] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [wrongHint, setWrongHint] = useState<{ questionId: string; wrongId: string } | null>(null)
 
   const [resume, setResume] = useState<ResumeDetail | null>(null)
   const [resumeOpen, setResumeOpen] = useState(false)
@@ -169,6 +171,9 @@ function InterviewSessionPage() {
       const result = await submitAnswer(sessionId, content)
       setAnswer('')
       setDetail((prev) => (prev ? applyAnswer(prev, activeQuestion.id, content, result) : prev))
+      if (result.wrongQuestionId) {
+        setWrongHint({ questionId: activeQuestion.id, wrongId: result.wrongQuestionId })
+      }
       if (result.nextAction === 'REPORT_READY') {
         void handleFinish(true)
       }
@@ -209,6 +214,9 @@ function InterviewSessionPage() {
 
   const finished = detail.status === 1
   const waiting = asking || submitting
+  const wrongCount = detail.questions.filter(
+    (question) => question.status === 3 && question.score != null && question.score <= 2,
+  ).length
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-50">
@@ -287,6 +295,21 @@ function InterviewSessionPage() {
           {detail.questions.map((question) => (
             <QuestionThread key={question.id} question={question} />
           ))}
+
+          {wrongHint && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-800">
+              <span className="flex items-center gap-1.5">
+                <BookX size={13} className="shrink-0" />
+                本题已加入错题本
+              </span>
+              <Link
+                to={`/wrong-questions?open=${wrongHint.wrongId}`}
+                className="font-medium text-teal-700 hover:text-teal-900"
+              >
+                立即重练 →
+              </Link>
+            </div>
+          )}
 
           {asking && (
             <div className="flex gap-2">
@@ -401,7 +424,13 @@ function InterviewSessionPage() {
       )}
 
       {reportOpen && detail.report && (
-        <ReportDialog report={detail.report} onClose={() => setReportOpen(false)} onRetry={() => navigate('/interview')} />
+        <ReportDialog
+          report={detail.report}
+          sessionId={detail.id}
+          wrongCount={wrongCount}
+          onClose={() => setReportOpen(false)}
+          onRetry={() => navigate('/interview')}
+        />
       )}
     </div>
   )
@@ -489,10 +518,14 @@ function MessageBubble({ message }: { message: InterviewMessage }) {
 
 function ReportDialog({
   report,
+  sessionId,
+  wrongCount,
   onClose,
   onRetry,
 }: {
   report: InterviewReport
+  sessionId: string
+  wrongCount: number
   onClose: () => void
   onRetry: () => void
 }) {
@@ -535,6 +568,19 @@ function ReportDialog({
         <ReportList title="薄弱知识点" items={report.weakPoints} tone="rose" />
         <ReportList title="亮点" items={report.highlights} tone="teal" />
         <ReportList title="改进建议" items={report.advice} tone="slate" />
+
+        {wrongCount > 0 && (
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <span>本场有 {wrongCount} 道错题已加入错题本。</span>
+            <Link
+              to={`/wrong-questions?status=ALL&sessionId=${sessionId}`}
+              onClick={onClose}
+              className="shrink-0 font-medium text-amber-700 hover:text-amber-900"
+            >
+              去重练 →
+            </Link>
+          </div>
+        )}
 
         <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
           <span>本场评分已同步到你的掌握度画像。</span>

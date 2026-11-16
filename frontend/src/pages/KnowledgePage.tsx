@@ -220,8 +220,16 @@ function KnowledgeRow({ item }: { item: KnowledgeState }) {
         </div>
       </div>
 
-      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${item.mastery}%` }} />
+      <div className="mt-2.5 flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${item.mastery}%` }} />
+        </div>
+        <Link
+          to={`/wrong-questions?status=ALL&kpId=${item.knowledgePointId}&kp=${encodeURIComponent(item.name)}`}
+          className="shrink-0 text-[11px] text-teal-600 transition hover:text-teal-800"
+        >
+          错题 →
+        </Link>
       </div>
     </div>
   )

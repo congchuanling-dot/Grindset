@@ -73,6 +73,7 @@ public class InterviewService {
     private final ResumeService resumeService;
     private final InterviewLlmService llmService;
     private final KnowledgeProfileService knowledgeProfileService;
+    private final WrongQuestionService wrongQuestionService;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
@@ -84,6 +85,7 @@ public class InterviewService {
                             InterviewMessageMapper messageMapper, ResumeMapper resumeMapper,
                             ResumeService resumeService, InterviewLlmService llmService,
                             KnowledgeProfileService knowledgeProfileService,
+                            WrongQuestionService wrongQuestionService,
                             SnowflakeIdGenerator idGenerator, TransactionTemplate transactionTemplate,
                             ObjectMapper objectMapper) {
         this.sessionMapper = sessionMapper;
@@ -93,6 +95,7 @@ public class InterviewService {
         this.resumeService = resumeService;
         this.llmService = llmService;
         this.knowledgeProfileService = knowledgeProfileService;
+        this.wrongQuestionService = wrongQuestionService;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
@@ -317,7 +320,7 @@ public class InterviewService {
                 });
                 return new AnswerResult(feedback, followUpQuestion, false, null,
                         "ANSWER_FOLLOW_UP", intValue(session.getCompletedQuestions()),
-                        intValue(session.getQuestionCount()));
+                        intValue(session.getQuestionCount()), null);
             }
 
             InterviewTurnDecision.Evaluation evaluation = decision.getEvaluation();
@@ -357,13 +360,23 @@ public class InterviewService {
                 log.error("掌握度画像更新失败 userId={} sessionId={}", userId, id, e);
             }
 
+            // 错题收录同样是旁路:失败返回 null,不显示"已加入错题本"提示
+            Long wrongQuestionId = null;
+            try {
+                wrongQuestionId = wrongQuestionService.collect(userId, id, question.getId());
+            } catch (Exception e) {
+                log.error("错题收录失败 userId={} sessionId={} questionId={}",
+                        userId, id, question.getId(), e);
+            }
+
             String nextAction = completed >= intValue(session.getQuestionCount())
                     ? "REPORT_READY" : "NEXT_QUESTION";
             return new AnswerResult(feedback, null, true,
                     new AnswerResult.Evaluation(finalEvaluation.getScore(),
                             finalEvaluation.getKnowledgePoints() == null ? List.of() : finalEvaluation.getKnowledgePoints(),
                             finalEvaluation.getComment(), finalEvaluation.getSuggestion()),
-                    nextAction, completed, intValue(session.getQuestionCount()));
+                    nextAction, completed, intValue(session.getQuestionCount()),
+                    wrongQuestionId == null ? null : String.valueOf(wrongQuestionId));
         } finally {
             lock.unlock();
         }

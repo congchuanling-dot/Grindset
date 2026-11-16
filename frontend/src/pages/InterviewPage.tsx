@@ -294,9 +294,14 @@ function WeakPointsCard({ items }: { items: KnowledgeState[] }) {
         ))}
       </div>
 
-      <p className="mt-2 text-[11px] text-teal-700/70">
-        完成面试后系统会自动沉淀评分，下一场优先考察这些薄弱点。
-      </p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] text-teal-700/70">
+          完成面试后系统会自动沉淀评分，下一场优先考察这些薄弱点。
+        </p>
+        <Link to="/wrong-questions" className="shrink-0 text-xs font-medium text-teal-700 hover:text-teal-900">
+          去错题本重练 →
+        </Link>
+      </div>
     </section>
   )
 }

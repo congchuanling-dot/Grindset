@@ -73,6 +73,8 @@ export interface AnswerResult {
   nextAction: 'ANSWER_FOLLOW_UP' | 'NEXT_QUESTION' | 'REPORT_READY'
   completedQuestions: number
   questionCount: number
+  /** 本题被收录为错题时的 ID,未收录为 null */
+  wrongQuestionId: string | null
 }
 
 export interface CreateInterviewPayload {
