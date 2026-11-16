@@ -1,26 +1,61 @@
 package com.grindset.backend.config;
 
+import com.grindset.backend.security.JwtAuthFilter;
+import com.grindset.backend.security.JwtService;
+import com.grindset.backend.security.RestAccessDeniedHandler;
+import com.grindset.backend.security.RestAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * MVP 阶段的安全配置。
- * 现在先放行所有请求,方便联调;等做 JWT 鉴权时再收紧。
+ * 无状态 JWT 鉴权配置。
+ * 默认所有接口都要登录,只放行健康检查、登录/注册/刷新/登出和管理接口;
+ * 管理接口继续靠 X-Admin-Token 自校验,不纳入 JWT。
  */
 @Configuration
 public class SecurityConfig {
 
+    private final JwtService jwtService;
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
+    private final RestAccessDeniedHandler accessDeniedHandler;
+
+    public SecurityConfig(JwtService jwtService,
+                          RestAuthenticationEntryPoint authenticationEntryPoint,
+                          RestAccessDeniedHandler accessDeniedHandler) {
+        this.jwtService = jwtService;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 前后端分离 + JWT,不需要 CSRF
-                .csrf(csrf -> csrf.disable())
-                // 暂时全部放行
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                // 前后端分离 + JWT,不需要 CSRF 和 Session
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
+                .authorizeHttpRequests(auth -> auth
+                        // 预检请求放行
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/health", "/error",
+                                "/api/auth/login", "/api/auth/register",
+                                "/api/auth/refresh", "/api/auth/logout").permitAll()
+                        // 管理接口用 X-Admin-Token 自己校验,避免被 JWT 拦死
+                        .requestMatchers("/api/admin/**").permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

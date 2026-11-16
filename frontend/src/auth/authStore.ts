@@ -1,8 +1,9 @@
-// 登录状态的唯一来源。后端目前只返回 userId,邮箱由登录时前端记下,仅用于顶栏展示。
-// 它和 access token 一样只存内存,刷新页面即退出登录。
+// 登录状态的唯一来源。access token 与 userId 都只存内存,刷新页面后靠 refresh Cookie 恢复。
 export interface Session {
   userId: string
   account: string
+  /** 短期 access token,请求头 Authorization: Bearer 用 */
+  accessToken: string
 }
 
 let session: Session | null = null

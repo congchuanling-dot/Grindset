@@ -42,11 +42,15 @@ function LoginPage() {
 
     setLoading(true)
     try {
-      // 注册成功即建号,直接当已登录处理
+      // 注册成功即建号,直接当已登录处理;后端同时下发 access token 和 refresh Cookie
       const result = isLogin
         ? await login(trimmedAccount, password)
         : await register(trimmedAccount, password)
-      setSession({ userId: result.userId, account: trimmedAccount })
+      setSession({
+        userId: result.userId,
+        account: trimmedAccount,
+        accessToken: result.accessToken,
+      })
       navigate('/')
     } catch (err) {
       // 后端已把错误文案统一成中文(400/401/409 等),直接展示

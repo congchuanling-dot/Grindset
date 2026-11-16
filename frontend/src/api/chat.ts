@@ -1,4 +1,5 @@
 // 对话接口封装。模型列表走普通 JSON,对话走 SSE(fetch + ReadableStream)。
+import { authFetch } from './http'
 
 export interface ModelInfo {
   /** 调用厂商时传的模型 ID */
@@ -48,7 +49,7 @@ export interface StreamHandlers {
 export async function fetchModels(): Promise<ProviderInfo[]> {
   let res: Response
   try {
-    res = await fetch('/api/chat/models')
+    res = await authFetch('/api/chat/models')
   } catch {
     throw new Error('无法连接服务器，请确认后端已启动')
   }
@@ -77,7 +78,7 @@ export async function streamChat(
 ): Promise<void> {
   let res: Response
   try {
-    res = await fetch('/api/chat', {
+    res = await authFetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

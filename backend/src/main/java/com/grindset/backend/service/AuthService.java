@@ -62,6 +62,7 @@ public class AuthService {
         User user = new User();
         user.setId(idGenerator.nextId());
         user.setNickname(account);
+        user.setEmail(account);
         user.setStatus(0);
         userMapper.insert(user);
 
@@ -94,6 +95,21 @@ public class AuthService {
             throw new BizException(401, "账号或密码错误");
         }
         return identity.getUserId();
+    }
+
+    /**
+     * 取当前登录用户。用户不存在或已禁用时抛业务异常,
+     * 供 /api/auth/me、简历等需要用户资料的接口复用。
+     */
+    public User requireActiveUser(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BizException(401, "用户不存在，请重新登录");
+        }
+        if (user.getStatus() != null && user.getStatus() == 1) {
+            throw new BizException(403, "账号已被禁用");
+        }
+        return user;
     }
 
     /** 按账号名查 LOCAL 身份,查不到返回 null */

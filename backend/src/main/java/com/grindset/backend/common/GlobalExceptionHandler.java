@@ -3,6 +3,7 @@ package com.grindset.backend.common;
 import com.grindset.backend.dto.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -39,6 +40,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotFound(NoResourceFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404, "接口不存在"));
+    }
+
+    /** Redis 不可用:登录/刷新依赖它,给用户明确提示而不是 500 */
+    @ExceptionHandler(RedisConnectionFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRedis(RedisConnectionFailureException e) {
+        log.error("Redis 连接失败", e);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(503, "会话服务暂不可用，请稍后再试"));
     }
 
     /** 兜底:未预料的异常,日志留全量堆栈便于排查,响应不暴露细节 */

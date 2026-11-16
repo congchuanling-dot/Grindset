@@ -1,4 +1,5 @@
 // 认证接口封装。后端统一返回 {code, message, data},code=0 才算成功。
+// access token 在响应体,refresh token 由后端写入 HttpOnly Cookie,前端无需处理。
 
 interface ApiResponse<T> {
   code: number
@@ -9,16 +10,17 @@ interface ApiResponse<T> {
 export interface AuthResult {
   /** 雪花 ID,后端按字符串下发 */
   userId: string
+  accessToken: string
+  /** access token 有效期(秒) */
+  expiresIn: number
+  nickname: string
 }
 
-async function post<T>(path: string, body: unknown): Promise<T> {
+/** 统一请求:始终携带 Cookie,登录/刷新/登出都依赖它 */
+async function request<T>(path: string, init: RequestInit): Promise<T> {
   let res: Response
   try {
-    res = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    res = await fetch(path, { ...init, credentials: 'include' })
   } catch {
     throw new Error('无法连接服务器，请确认后端已启动')
   }
@@ -37,7 +39,15 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return payload.data
 }
 
-/** 注册账号,成功返回新用户 ID(后端会直接建号,等同已登录) */
+function post<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>(path, {
+    method: 'POST',
+    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+}
+
+/** 注册账号,成功返回令牌(后端会直接建号,等同已登录) */
 export function register(account: string, password: string): Promise<AuthResult> {
   return post<AuthResult>('/api/auth/register', { account, password })
 }
@@ -45,4 +55,14 @@ export function register(account: string, password: string): Promise<AuthResult>
 /** 账号密码登录 */
 export function login(account: string, password: string): Promise<AuthResult> {
   return post<AuthResult>('/api/auth/login', { account, password })
+}
+
+/** 用 HttpOnly Cookie 里的 refresh token 换一对新令牌 */
+export function refresh(): Promise<AuthResult> {
+  return post<AuthResult>('/api/auth/refresh')
+}
+
+/** 登出:后端删 Redis 里的 refresh 并清 Cookie */
+export function logout(): Promise<void> {
+  return post<void>('/api/auth/logout')
 }

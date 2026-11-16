@@ -6,6 +6,7 @@ import {
   Mic,
 } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { logout } from '../api/auth'
 import { getSession, setSession } from '../auth/authStore'
 
 // 侧边栏栏目。除 AI 助手外都是占位,后续逐个接功能
@@ -22,9 +23,16 @@ function AppLayout() {
   const navigate = useNavigate()
   const session = getSession()
 
-  function handleLogout() {
-    setSession(null)
-    navigate('/login', { replace: true })
+  async function handleLogout() {
+    try {
+      // 后端删 Redis 里的 refresh token 并清 Cookie
+      await logout()
+    } catch {
+      // 后端不可用也要保证本地退出
+    } finally {
+      setSession(null)
+      navigate('/login', { replace: true })
+    }
   }
 
   return (

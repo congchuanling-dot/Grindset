@@ -37,6 +37,10 @@ app:
     secret: ${JWT_SECRET:dev-only-secret-change-me-please-make-it-long-enough-32bytes}
     access-ttl-minutes: 30
     refresh-ttl-days: 7
+    # refresh Cookie 是否只在 https 下发;本地 http 开发必须 false
+    cookie-secure: ${JWT_COOKIE_SECURE:false}
+    # 同站部署用 Lax;前后端不同站用 None 且必须 cookie-secure=true
+    cookie-same-site: ${JWT_COOKIE_SAME_SITE:Lax}
 
   # 管理接口令牌:未配置时 /api/admin/** 全部停用(403),避免裸奔
   admin:
