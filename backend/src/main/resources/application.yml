@@ -72,3 +72,9 @@ app:
     llm:
       provider: ${RESUME_LLM_PROVIDER:}
       model: ${RESUME_LLM_MODEL:}
+
+  # AI 面试用哪组模型,规则同上
+  interview:
+    llm:
+      provider: ${INTERVIEW_LLM_PROVIDER:}
+      model: ${INTERVIEW_LLM_MODEL:}
