@@ -20,6 +20,12 @@ spring:
       host: localhost
       port: 6379
 
+  # 简历上传限制:单文件 10MB,整个请求留一点余量
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+
 server:
   port: 8081
 
@@ -60,3 +66,9 @@ app:
       zhipu: ${ZHIPU_API_KEY:}
       minimax: ${MINIMAX_API_KEY:}
       doubao: ${ARK_API_KEY:}
+
+  # 简历解析用哪组模型:两项都配就固定使用,都不配则取第一个可用厂商的第一个模型
+  resume:
+    llm:
+      provider: ${RESUME_LLM_PROVIDER:}
+      model: ${RESUME_LLM_MODEL:}

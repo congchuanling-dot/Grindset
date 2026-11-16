@@ -54,4 +54,25 @@ public class LlmRouter {
         }
         throw last == null ? new LlmException(502, "没有可用的模型服务") : last;
     }
+
+    /**
+     * 非流式调用:逐个候选 key 尝试,直到拿到完整结果。
+     * 非流式没有"已吐字不能重试"的限制,失败可以直接换下一把 key。
+     */
+    public String complete(List<LlmTarget> targets, String model, List<ChatMessage> messages) {
+        LlmException last = null;
+        for (LlmTarget target : targets) {
+            try {
+                String text = client.complete(target, model, messages);
+                keyService.markUsed(target.keyId());
+                return text;
+            } catch (LlmException e) {
+                log.warn("模型调用失败,尝试下一个 key provider={} keyId={} reason={}",
+                        target.providerId(), target.keyId(), e.getMessage());
+                last = e;
+                keyService.markFailed(target.keyId(), e.getUpstreamStatus());
+            }
+        }
+        throw last == null ? new LlmException(502, "没有可用的模型服务") : last;
+    }
 }

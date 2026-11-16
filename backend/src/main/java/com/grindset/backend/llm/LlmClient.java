@@ -18,4 +18,11 @@ public interface LlmClient {
      */
     void streamChat(LlmTarget target, String model, List<ChatMessage> messages,
                     Consumer<String> onDelta);
+
+    /**
+     * 非流式调用,一次性返回完整文本;供简历结构化解析这类"要完整 JSON"的场景使用。
+     *
+     * @return 模型输出的完整文本
+     */
+    String complete(LlmTarget target, String model, List<ChatMessage> messages);
 }

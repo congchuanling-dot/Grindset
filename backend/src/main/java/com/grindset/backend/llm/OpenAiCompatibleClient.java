@@ -38,6 +38,8 @@ public class OpenAiCompatibleClient implements LlmClient {
 
     /** 上游接口整体超时;流式请求拿到响应头后即可持续读,不会被这个值掐断 */
     private static final Duration REQUEST_TIMEOUT = Duration.ofMinutes(5);
+    /** 非流式解析可能要输出上千 token,给足 120 秒 */
+    private static final Duration COMPLETE_TIMEOUT = Duration.ofSeconds(120);
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(15);
 
     private final ObjectMapper objectMapper;
@@ -54,7 +56,7 @@ public class OpenAiCompatibleClient implements LlmClient {
     public void streamChat(LlmTarget target, String model, List<ChatMessage> messages,
                            Consumer<String> onDelta) {
         String url = trimTrailingSlash(target.baseUrl()) + "/chat/completions";
-        String body = buildRequestBody(model, messages);
+        String body = buildRequestBody(model, messages, true);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -111,6 +113,57 @@ public class OpenAiCompatibleClient implements LlmClient {
         }
     }
 
+    @Override
+    public String complete(LlmTarget target, String model, List<ChatMessage> messages) {
+        String url = trimTrailingSlash(target.baseUrl()) + "/chat/completions";
+        String body = buildRequestBody(model, messages, false);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(COMPLETE_TIMEOUT)
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .header("Authorization", "Bearer " + target.apiKey())
+                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+                .build();
+
+        HttpResponse<String> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            log.warn("请求模型服务失败 provider={} url={}", target.providerId(), url, e);
+            throw new LlmException(502, "无法连接模型服务,请稍后再试");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new LlmException(502, "请求模型服务被中断");
+        }
+
+        if (response.statusCode() >= 400) {
+            log.warn("模型服务返回错误 provider={} status={} body={}",
+                    target.providerId(), response.statusCode(), response.body());
+            throw mapUpstreamError(target, response.statusCode(), response.body());
+        }
+
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(response.body());
+        } catch (IOException e) {
+            log.warn("模型服务返回非 JSON provider={} body={}", target.providerId(), response.body());
+            throw new LlmException(502, "模型服务返回内容无法解析,请稍后再试");
+        }
+
+        JsonNode error = root.path("error");
+        if (!error.isMissingNode() && !error.isNull()) {
+            throw new LlmException(502, error.path("message").asText("模型服务返回错误"));
+        }
+
+        JsonNode content = root.path("choices").path(0).path("message").path("content");
+        if (!content.isTextual() || content.asText().isBlank()) {
+            throw new LlmException(502, "模型服务返回内容为空,请稍后再试");
+        }
+        return content.asText();
+    }
+
     /** 从一条 SSE data 里取出增量文本,取不到就返回空列表 */
     private List<String> parseDelta(String data, String providerId) {
         JsonNode root;
@@ -135,7 +188,7 @@ public class OpenAiCompatibleClient implements LlmClient {
         return List.of();
     }
 
-    private String buildRequestBody(String model, List<ChatMessage> messages) {
+    private String buildRequestBody(String model, List<ChatMessage> messages, boolean stream) {
         List<Map<String, String>> payloadMessages = new ArrayList<>(messages.size());
         for (ChatMessage message : messages) {
             Map<String, String> item = new LinkedHashMap<>();
@@ -147,7 +200,11 @@ public class OpenAiCompatibleClient implements LlmClient {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", model);
         payload.put("messages", payloadMessages);
-        payload.put("stream", true);
+        payload.put("stream", stream);
+        if (!stream) {
+            // 结构化解析要求结果稳定,温度降到 0
+            payload.put("temperature", 0);
+        }
 
         try {
             return objectMapper.writeValueAsString(payload);
