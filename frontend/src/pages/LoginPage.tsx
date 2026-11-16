@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login, register } from '../api/auth'
 import { setSession } from '../auth/authStore'
+import { useToast } from '../components/toast/ToastProvider'
 
 // 与后端 AuthService 保持一致的规则:邮箱格式 + 8~16 位字母数字密码
 const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
@@ -17,6 +18,7 @@ function validateInput(email: string, password: string): string {
 
 function LoginPage() {
   const navigate = useNavigate()
+  const toast = useToast()
 
   // ── 表单状态:每个都用 useState 管理 ──
   const [mode, setMode] = useState<'login' | 'register'>('login')
@@ -51,6 +53,7 @@ function LoginPage() {
         account: trimmedAccount,
         accessToken: result.accessToken,
       })
+      toast.success(isLogin ? '登录成功' : '注册成功，已自动登录')
       navigate('/')
     } catch (err) {
       // 后端已把错误文案统一成中文(400/401/409 等),直接展示
