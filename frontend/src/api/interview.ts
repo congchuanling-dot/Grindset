@@ -125,8 +125,12 @@ export async function createInterview(payload: CreateInterviewPayload): Promise<
   return unwrap<InterviewDetail>(res, '创建面试失败')
 }
 
-export async function listInterviews(): Promise<InterviewSummary[]> {
-  const res = await request('/api/interviews')
+/** 面试记录列表,可按简历 id 过滤(多个简历取并集) */
+export async function listInterviews(resumeIds?: string[]): Promise<InterviewSummary[]> {
+  const params = new URLSearchParams()
+  for (const id of resumeIds ?? []) params.append('resumeIds', id)
+  const query = params.toString()
+  const res = await request(`/api/interviews${query ? `?${query}` : ''}`)
   return unwrap<InterviewSummary[]>(res, '加载面试记录失败')
 }
 

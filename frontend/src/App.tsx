@@ -3,6 +3,7 @@ import RequireAuth from './auth/RequireAuth'
 import AppLayout from './layouts/AppLayout'
 import ChatPage from './pages/ChatPage'
 import InterviewPage from './pages/InterviewPage'
+import InterviewRecordsPage from './pages/InterviewRecordsPage'
 import InterviewSessionPage from './pages/InterviewSessionPage'
 import LoginPage from './pages/LoginPage'
 import PlaceholderPage from './pages/PlaceholderPage'
@@ -41,6 +42,8 @@ function App() {
         {/* AI 面试:入口配置 + 面试对话页 */}
         <Route path="/interview" element={<InterviewPage />} />
         <Route path="/interview/:sessionId" element={<InterviewSessionPage />} />
+        {/* 面试记录:按简历筛选,进入详情查看复盘 */}
+        <Route path="/records" element={<InterviewRecordsPage />} />
       </Route>
     </Routes>
   )

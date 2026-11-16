@@ -153,11 +153,18 @@ public class InterviewService {
     }
 
     /** 历史会话列表,最新 50 条 */
-    public List<InterviewSummary> list(long userId) {
-        List<InterviewSession> sessions = sessionMapper.selectList(new QueryWrapper<InterviewSession>()
+    public List<InterviewSummary> list(long userId, List<Long> filterResumeIds) {
+        QueryWrapper<InterviewSession> wrapper = new QueryWrapper<InterviewSession>()
                 .eq("user_id", userId)
                 .orderByDesc("created_at")
-                .last("LIMIT 50"));
+                .last("LIMIT 50");
+        if (filterResumeIds != null && !filterResumeIds.isEmpty()) {
+            if (filterResumeIds.size() > 50) {
+                throw new BizException(400, "简历筛选数量过多");
+            }
+            wrapper.in("resume_id", filterResumeIds);
+        }
+        List<InterviewSession> sessions = sessionMapper.selectList(wrapper);
         if (sessions.isEmpty()) {
             return List.of();
         }

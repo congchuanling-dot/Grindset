@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -60,8 +61,9 @@ public class InterviewController {
     }
 
     @GetMapping
-    public ApiResponse<List<InterviewSummary>> list(@AuthenticationPrincipal LoginUser loginUser) {
-        return ApiResponse.ok(interviewService.list(userId(loginUser)));
+    public ApiResponse<List<InterviewSummary>> list(@AuthenticationPrincipal LoginUser loginUser,
+                                                    @RequestParam(required = false) List<Long> resumeIds) {
+        return ApiResponse.ok(interviewService.list(userId(loginUser), resumeIds));
     }
 
     @GetMapping("/{id}")
