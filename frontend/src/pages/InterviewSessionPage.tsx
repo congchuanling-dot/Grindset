@@ -536,6 +536,13 @@ function ReportDialog({
         <ReportList title="亮点" items={report.highlights} tone="teal" />
         <ReportList title="改进建议" items={report.advice} tone="slate" />
 
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          <span>本场评分已同步到你的掌握度画像。</span>
+          <Link to="/knowledge" onClick={onClose} className="shrink-0 text-teal-600 hover:text-teal-700">
+            去看看 →
+          </Link>
+        </div>
+
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"

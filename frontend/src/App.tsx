@@ -5,6 +5,7 @@ import ChatPage from './pages/ChatPage'
 import InterviewPage from './pages/InterviewPage'
 import InterviewRecordsPage from './pages/InterviewRecordsPage'
 import InterviewSessionPage from './pages/InterviewSessionPage'
+import KnowledgePage from './pages/KnowledgePage'
 import LoginPage from './pages/LoginPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import ResumePage from './pages/ResumePage'
@@ -44,6 +45,8 @@ function App() {
         <Route path="/interview/:sessionId" element={<InterviewSessionPage />} />
         {/* 面试记录:按简历筛选,进入详情查看复盘 */}
         <Route path="/records" element={<InterviewRecordsPage />} />
+        {/* 掌握度画像:按知识点沉淀历次面试评分 */}
+        <Route path="/knowledge" element={<KnowledgePage />} />
       </Route>
     </Routes>
   )

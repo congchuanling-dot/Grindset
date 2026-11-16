@@ -72,6 +72,7 @@ public class InterviewService {
     private final ResumeMapper resumeMapper;
     private final ResumeService resumeService;
     private final InterviewLlmService llmService;
+    private final KnowledgeProfileService knowledgeProfileService;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
@@ -82,6 +83,7 @@ public class InterviewService {
     public InterviewService(InterviewSessionMapper sessionMapper, InterviewQuestionMapper questionMapper,
                             InterviewMessageMapper messageMapper, ResumeMapper resumeMapper,
                             ResumeService resumeService, InterviewLlmService llmService,
+                            KnowledgeProfileService knowledgeProfileService,
                             SnowflakeIdGenerator idGenerator, TransactionTemplate transactionTemplate,
                             ObjectMapper objectMapper) {
         this.sessionMapper = sessionMapper;
@@ -90,6 +92,7 @@ public class InterviewService {
         this.resumeMapper = resumeMapper;
         this.resumeService = resumeService;
         this.llmService = llmService;
+        this.knowledgeProfileService = knowledgeProfileService;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
@@ -219,9 +222,10 @@ public class InterviewService {
 
             String resumeText = resumeText(userId, session.getResumeId());
             List<String> covered = coveredPoints(id);
+            List<KnowledgeProfileService.Candidate> candidates = weakCandidates(userId, covered);
 
             StringBuilder buffer = new StringBuilder();
-            llmService.streamQuestion(session, resumeText, seq, covered, text -> {
+            llmService.streamQuestion(session, resumeText, seq, covered, candidates, text -> {
                 buffer.append(text);
                 onDelta.accept(text);
             });
@@ -284,8 +288,10 @@ public class InterviewService {
             thread.add(userMessage);
 
             String resumeText = resumeText(userId, session.getResumeId());
+            List<String> knownPoints = knownPoints(userId);
 
-            InterviewTurnDecision decision = llmService.decide(session, resumeText, question, thread);
+            InterviewTurnDecision decision = llmService.decide(session, resumeText, question, thread,
+                    knownPoints);
             String feedback = decision.getFeedback();
             int followUpCount = intValue(question.getFollowUpCount());
 
@@ -316,7 +322,7 @@ public class InterviewService {
 
             InterviewTurnDecision.Evaluation evaluation = decision.getEvaluation();
             if (evaluation == null) {
-                evaluation = llmService.evaluateOnly(session, resumeText, question, thread);
+                evaluation = llmService.evaluateOnly(session, resumeText, question, thread, knownPoints);
             }
             InterviewTurnDecision.Evaluation finalEvaluation = evaluation;
             int completed = intValue(session.getCompletedQuestions()) + 1;
@@ -342,6 +348,14 @@ public class InterviewService {
                 session.setCompletedQuestions(completed);
                 sessionMapper.updateById(session);
             });
+
+            // 画像走独立事务,失败不影响已经保存的答题记录;可由管理员重建修复
+            try {
+                knowledgeProfileService.record(userId, id,
+                        finalEvaluation.getKnowledgePoints(), finalEvaluation.getScore());
+            } catch (Exception e) {
+                log.error("掌握度画像更新失败 userId={} sessionId={}", userId, id, e);
+            }
 
             String nextAction = completed >= intValue(session.getQuestionCount())
                     ? "REPORT_READY" : "NEXT_QUESTION";
@@ -503,6 +517,26 @@ public class InterviewService {
             }
         }
         return points;
+    }
+
+    /** 画像候选失败时降级为原出题逻辑,不影响主流程 */
+    private List<KnowledgeProfileService.Candidate> weakCandidates(long userId, List<String> covered) {
+        try {
+            return knowledgeProfileService.weightedCandidates(userId, covered, 5);
+        } catch (Exception e) {
+            log.warn("掌握度候选查询失败,按原逻辑出题 userId={}", userId, e);
+            return List.of();
+        }
+    }
+
+    /** 评分时让模型优先复用已有知识点名称,失败时不影响评分 */
+    private List<String> knownPoints(long userId) {
+        try {
+            return knowledgeProfileService.knownNames(userId, 30);
+        } catch (Exception e) {
+            log.warn("已有知识点查询失败,本次评分不复用名称 userId={}", userId, e);
+            return List.of();
+        }
     }
 
     private int nextMessageSeq(long questionId) {

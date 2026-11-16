@@ -1,6 +1,7 @@
-import { AlertCircle, Briefcase, Clock3, FileText, Loader2, Sparkles } from 'lucide-react'
+import { AlertCircle, Briefcase, Clock3, FileText, Loader2, Sparkles, Target } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { getKnowledgeProfile, type KnowledgeState } from '../api/knowledge'
 import {
   createInterview,
   listInterviews,
@@ -66,6 +67,7 @@ function InterviewPage() {
 
   const [history, setHistory] = useState<InterviewSummary[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [weakPoints, setWeakPoints] = useState<KnowledgeState[]>([])
 
   // 进页面拉简历列表,默认选中最新一份
   useEffect(() => {
@@ -98,6 +100,21 @@ function InterviewPage() {
       })
       .finally(() => {
         if (!cancelled) setHistoryLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // 薄弱知识点:失败或为空时整块隐藏,不影响创建面试
+  useEffect(() => {
+    let cancelled = false
+    getKnowledgeProfile({ level: 'WEAK', limit: 5 })
+      .then((data) => {
+        if (!cancelled) setWeakPoints(data.items)
+      })
+      .catch(() => {
+        // 画像失败不打扰主流程
       })
     return () => {
       cancelled = true
@@ -182,6 +199,8 @@ function InterviewPage() {
           </div>
         )}
 
+        <WeakPointsCard items={weakPoints} />
+
         {resumes.length === 0 ? (
           <NoResumeState />
         ) : (
@@ -243,6 +262,42 @@ function InterviewPage() {
         <HistorySection items={history} loading={historyLoading} />
       </div>
     </div>
+  )
+}
+
+/** 面试入口的薄弱知识点提示:为空时整块不渲染 */
+function WeakPointsCard({ items }: { items: KnowledgeState[] }) {
+  if (items.length === 0) return null
+
+  return (
+    <section className="mb-4 rounded-xl border border-teal-100 bg-teal-50/60 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 text-sm font-medium text-teal-800">
+          <Target size={15} className="text-teal-600" />
+          你的薄弱知识点
+        </div>
+        <Link to="/knowledge" className="shrink-0 text-xs text-teal-700 hover:text-teal-800">
+          查看完整画像 →
+        </Link>
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {items.map((item) => (
+          <span
+            key={item.knowledgePointId}
+            title={`练习 ${item.practiceCount} 次，最近得分 ${item.lastScore ?? '—'}`}
+            className="rounded-full border border-teal-200 bg-white px-2.5 py-1 text-xs text-slate-600"
+          >
+            {item.name}
+            <span className="ml-1 text-rose-500">{item.mastery}</span>
+          </span>
+        ))}
+      </div>
+
+      <p className="mt-2 text-[11px] text-teal-700/70">
+        完成面试后系统会自动沉淀评分，下一场优先考察这些薄弱点。
+      </p>
+    </section>
   )
 }
 
