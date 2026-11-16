@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import RequireAuth from './auth/RequireAuth'
 import AppLayout from './layouts/AppLayout'
 import ChatPage from './pages/ChatPage'
+import InterviewPage from './pages/InterviewPage'
 import LoginPage from './pages/LoginPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 import ResumePage from './pages/ResumePage'
@@ -36,15 +37,8 @@ function App() {
             />
           }
         />
-        <Route
-          path="/interview"
-          element={
-            <PlaceholderPage
-              title="AI 面试"
-              description="AI 扮演面试官多轮追问，结束后生成复盘报告。功能建设中。"
-            />
-          }
-        />
+        {/* AI 面试 */}
+        <Route path="/interview" element={<InterviewPage />} />
       </Route>
     </Routes>
   )

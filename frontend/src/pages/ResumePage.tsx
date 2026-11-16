@@ -1,6 +1,5 @@
 import {
   AlertCircle,
-  Briefcase,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -10,7 +9,6 @@ import {
   Plus,
   Printer,
   RotateCw,
-  Sparkles,
   Trash2,
   ZoomIn,
   ZoomOut,
@@ -24,6 +22,7 @@ import {
   type ResumeDetail,
   type ResumeSummary,
 } from '../api/resume'
+import ResumePaper from '../components/resume/ResumePaper'
 
 const ACCEPT = '.pdf,.docx,.md,.txt'
 const MAX_BYTES = 10 * 1024 * 1024
@@ -179,9 +178,9 @@ function ResumePage() {
       <header className="border-b border-slate-200 bg-white px-4 py-4 md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-base font-semibold text-slate-800">简历解析</h1>
+            <h1 className="text-base font-semibold text-slate-800">简历管理</h1>
             <p className="mt-1 text-xs text-slate-500">
-              上传一次，AI 拆成技能、项目与经历。原件只在本次会话可预览，不落库。
+              上传 PDF / DOCX / MD / TXT，一人可保存多份，随时切换查看解析结果。原件只在本次会话可预览，不落库。
             </p>
           </div>
           <button
@@ -232,8 +231,8 @@ function ResumePage() {
               onDelete={handleDelete}
             />
 
-            <div className="mt-4 flex flex-col gap-4 min-[780px]:flex-row">
-              <div className="relative min-w-0 flex-1">
+            <div className="mt-4">
+              <div className="relative min-w-0">
                 {loadingDetail && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70">
                     <Loader2 size={22} className="animate-spin text-teal-600" />
@@ -258,8 +257,6 @@ function ResumePage() {
                   </div>
                 )}
               </div>
-
-              <InterviewSettings />
             </div>
           </>
         )}
@@ -520,7 +517,7 @@ function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; origin
             className="mx-auto h-[680px] w-full max-w-[760px] rounded-sm bg-white shadow-sm ring-1 ring-slate-200"
           />
         ) : (
-          <PaperResume detail={detail} />
+          <ResumePaper detail={detail} />
         )}
       </div>
 
@@ -548,68 +545,6 @@ function ToolbarButton({ title, children }: { title: string; children: React.Rea
 }
 
 /** 用解析结果还原的纸张版式,同时作为原件不可用时的兜底 */
-function PaperResume({ detail }: { detail: ResumeDetail }) {
-  return (
-    <div className="mx-auto min-h-[680px] w-full max-w-[760px] bg-white px-8 py-8 shadow-sm ring-1 ring-slate-200 md:px-12">
-      <h2 className="text-center text-xl font-semibold text-slate-800">
-        {detail.candidateName || '未识别姓名'}
-      </h2>
-      <p className="mt-1 text-center text-xs text-slate-400">{detail.fileName}</p>
-
-      {detail.sections.map((section) => (
-        <section key={section.id} className="mt-6">
-          <h3 className="border-b border-slate-200 pb-1 text-sm font-semibold tracking-wide text-slate-700">
-            {section.title}
-          </h3>
-          {section.items.length === 0 && <p className="mt-2 text-xs text-slate-400">（无条目）</p>}
-          {section.items.map((item) => (
-            <div key={item.id} className="mt-3">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm font-medium text-slate-800">
-                  {item.title || '未命名'}
-                  {item.subtitle && <span className="font-normal text-slate-500"> · {item.subtitle}</span>}
-                </p>
-                {(item.startDate || item.endDate) && (
-                  <span className="text-xs text-slate-400">
-                    {[item.startDate, item.endDate].filter(Boolean).join(' - ')}
-                  </span>
-                )}
-              </div>
-              {item.description && (
-                <p className="mt-1 text-xs leading-6 whitespace-pre-line text-slate-600">{item.description}</p>
-              )}
-              {item.tags.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-1">
-                  {item.tags.map((tag) => (
-                    <span key={tag} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </section>
-      ))}
-
-      {detail.skills.length > 0 && (
-        <section className="mt-6">
-          <h3 className="border-b border-slate-200 pb-1 text-sm font-semibold tracking-wide text-slate-700">
-            技能清单
-          </h3>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {detail.skills.map((skill) => (
-              <span key={skill.id} className="rounded bg-teal-50 px-2 py-0.5 text-xs text-teal-700">
-                {skill.name}
-                {skill.proficiency ? ` · ${skill.proficiency}/5` : ''}
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
-  )
-}
 
 function TextEditor({
   detail,
@@ -668,128 +603,6 @@ function TextEditor({
 
       {hint && <p className="border-t border-slate-200 bg-white px-4 py-2 text-[11px] text-amber-600">{hint}</p>}
     </div>
-  )
-}
-
-const POSITIONS = [
-  '2027 校招 · AI 应用开发工程师',
-  '2027 校招 · Java 后端',
-  '实习 · 后端开发',
-  '社招 · 高级后端',
-]
-
-const TONES = [
-  { value: 'pressure', label: '压力面' },
-  { value: 'middle', label: '适中' },
-  { value: 'relaxed', label: '轻松' },
-]
-
-const ROUNDS = ['一面 · 技术基础', '二面 · 项目深挖', 'HR 面']
-
-const FOCUS_OPTIONS = ['项目深挖', '基础八股', '系统设计', '场景题']
-
-/** 右侧 AI 面试设置:纯前端占位,不提交任何请求 */
-function InterviewSettings() {
-  const [position, setPosition] = useState(POSITIONS[0])
-  const [tone, setTone] = useState('middle')
-  const [round, setRound] = useState(ROUNDS[0])
-  const [focus, setFocus] = useState<string[]>(['项目深挖', '基础八股'])
-  const [hint, setHint] = useState('')
-
-  function toggleFocus(item: string) {
-    setFocus((prev) => (prev.includes(item) ? prev.filter((v) => v !== item) : [...prev, item]))
-  }
-
-  return (
-    <aside className="w-full shrink-0 min-[780px]:w-[280px]">
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-          <Sparkles size={16} className="text-teal-600" />
-          AI 面试设置
-        </div>
-        <p className="mt-1 text-[11px] text-slate-400">前端占位，后端接入后生效</p>
-
-        <label className="mt-4 block text-xs text-slate-500">
-          面试职位
-          <select
-            value={position}
-            onChange={(e) => setPosition(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-teal-400"
-          >
-            {POSITIONS.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="mt-4">
-          <span className="text-xs text-slate-500">面试官倾向</span>
-          <div className="mt-1 grid grid-cols-3 gap-1">
-            {TONES.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => setTone(item.value)}
-                className={`rounded-lg border px-1 py-1.5 text-xs transition ${
-                  tone === item.value
-                    ? 'border-teal-300 bg-teal-50 font-medium text-teal-700'
-                    : 'border-slate-200 text-slate-500 hover:border-slate-300'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <label className="mt-4 block text-xs text-slate-500">
-          面试轮次
-          <select
-            value={round}
-            onChange={(e) => setRound(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-teal-400"
-          >
-            {ROUNDS.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="mt-4">
-          <span className="text-xs text-slate-500">侧重方向</span>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {FOCUS_OPTIONS.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => toggleFocus(item)}
-                className={`rounded-full border px-2.5 py-1 text-xs transition ${
-                  focus.includes(item)
-                    ? 'border-teal-300 bg-teal-50 text-teal-700'
-                    : 'border-slate-200 text-slate-500 hover:border-slate-300'
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setHint('AI 面试尚未接入，当前只完成简历解析')}
-          className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-teal-600 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
-        >
-          <Briefcase size={15} />
-          开始 AI 面试
-        </button>
-        {hint && <p className="mt-2 text-[11px] leading-5 text-slate-400">{hint}</p>}
-      </div>
-    </aside>
   )
 }
 
