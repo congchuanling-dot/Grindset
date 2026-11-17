@@ -2,7 +2,18 @@
 import { authFetch } from './http'
 
 export type QuestionStatus = 'TODO' | 'DONE' | 'WRONG'
-export type QuestionType = 'BASICS' | 'SCENARIO' | 'PROJECT'
+export type QuestionType = 'BASICS' | 'SCENARIO' | 'PROJECT' | 'CODE'
+export type JudgeMode = 'TEXT' | 'CODING'
+export type CodeLanguage = 'JAVA' | 'PYTHON'
+export type CodingStatus =
+  | 'PENDING'
+  | 'RUNNING'
+  | 'ACCEPTED'
+  | 'WRONG_ANSWER'
+  | 'COMPILE_ERROR'
+  | 'RUNTIME_ERROR'
+  | 'TIME_LIMIT_EXCEEDED'
+  | 'SYSTEM_ERROR'
 
 export interface QuestionBankSummary {
   total: number
@@ -17,6 +28,7 @@ export interface QuestionBankItem {
   title: string
   preview: string
   type: QuestionType
+  judgeMode: JudgeMode
   difficulty: number
   domain: string
   knowledgePoints: string[]
@@ -51,6 +63,7 @@ export interface QuestionBankDetail {
   title: string
   content: string
   type: QuestionType
+  judgeMode: JudgeMode
   difficulty: number
   domain: string
   knowledgePoints: string[]
@@ -140,4 +153,94 @@ export async function submitQuestionAnswer(id: string, answer: string): Promise<
     body: JSON.stringify({ answer }),
   })
   return unwrap<QuestionAttemptResult>(res, '提交作答失败')
+}
+
+// ---------- 编程题 ----------
+
+export interface CodingSampleCase {
+  input: string
+  expectedOutput: string
+  sort: number
+}
+
+export interface CodingDetail {
+  id: string
+  title: string
+  content: string
+  type: QuestionType
+  difficulty: number
+  domain: string
+  knowledgePoints: string[]
+  starterCode: Partial<Record<CodeLanguage, string>>
+  timeLimitMs: number
+  memoryLimitMb: number
+  samples: CodingSampleCase[]
+  status: QuestionStatus
+  submissionCount: number
+  accepted: boolean
+}
+
+export interface CodeCaseResult {
+  index: number
+  input: string
+  expectedOutput: string
+  actualOutput: string
+  passed: boolean
+  message: string
+}
+
+export interface CodeRunResult {
+  status: CodingStatus
+  passed: number
+  total: number
+  runtimeMs: number
+  errorMessage: string | null
+  cases: CodeCaseResult[]
+}
+
+export interface CodingSubmission {
+  id: string
+  questionId: string
+  language: CodeLanguage
+  code: string
+  status: CodingStatus
+  passed: number
+  total: number
+  runtimeMs: number | null
+  errorMessage: string | null
+  createdAt: string | null
+  finishedAt: string | null
+}
+
+export async function getCodingDetail(id: string): Promise<CodingDetail> {
+  const res = await request(`/api/questions/${id}/coding`)
+  return unwrap<CodingDetail>(res, '加载编程题失败')
+}
+
+export async function runCode(id: string, language: CodeLanguage, code: string): Promise<CodeRunResult> {
+  const res = await request(`/api/questions/${id}/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ language, code }),
+  })
+  return unwrap<CodeRunResult>(res, '运行失败')
+}
+
+export async function submitCode(id: string, language: CodeLanguage, code: string): Promise<CodingSubmission> {
+  const res = await request(`/api/questions/${id}/submissions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ language, code }),
+  })
+  return unwrap<CodingSubmission>(res, '提交失败')
+}
+
+export async function getSubmission(submissionId: string): Promise<CodingSubmission> {
+  const res = await request(`/api/questions/submissions/${submissionId}`)
+  return unwrap<CodingSubmission>(res, '查询判题结果失败')
+}
+
+export async function getCodingSubmissions(id: string): Promise<CodingSubmission[]> {
+  const res = await request(`/api/questions/${id}/submissions`)
+  return unwrap<CodingSubmission[]>(res, '加载提交历史失败')
 }

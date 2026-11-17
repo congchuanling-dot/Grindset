@@ -41,6 +41,7 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   BASICS: '八股',
   SCENARIO: '场景',
   PROJECT: '项目',
+  CODE: '编程',
 }
 
 /**
@@ -341,7 +342,11 @@ function QuestionRow({ item, index }: { item: QuestionBankItem; index: number })
         <p className="truncate text-sm font-medium text-slate-800">{item.title}</p>
         <p className="mt-0.5 truncate text-xs text-slate-400">{item.preview}</p>
         <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">
+          <span
+            className={`rounded px-1.5 py-0.5 ${
+              item.judgeMode === 'CODING' ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-500'
+            }`}
+          >
             {TYPE_LABELS[item.type]}
           </span>
           {item.knowledgePoints.slice(0, 3).map((point) => (
@@ -363,6 +368,13 @@ function QuestionRow({ item, index }: { item: QuestionBankItem; index: number })
       <div className="w-20 shrink-0 text-right text-[11px] text-slate-400">
         {item.attemptCount === 0 ? (
           <span>未作答</span>
+        ) : item.judgeMode === 'CODING' ? (
+          <>
+            <p className={statusTextClass(item.status)}>
+              {item.status === 'DONE' ? '已通过' : '未通过'}
+            </p>
+            <p className="mt-0.5">提交 {item.attemptCount} 次</p>
+          </>
         ) : (
           <>
             <p className={statusTextClass(item.status)}>

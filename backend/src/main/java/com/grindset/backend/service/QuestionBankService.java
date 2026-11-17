@@ -60,7 +60,7 @@ public class QuestionBankService {
     private static final int PREVIEW_MAX = 120;
     private static final int TITLE_MAX = 60;
 
-    private static final Set<String> TYPES = Set.of("BASICS", "SCENARIO", "PROJECT");
+    private static final Set<String> TYPES = Set.of("BASICS", "SCENARIO", "PROJECT", "CODE");
     private static final Set<String> STATUS_FILTERS = Set.of("TODO", "DONE", "WRONG");
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -156,6 +156,7 @@ public class QuestionBankService {
                 question.getTitle(),
                 question.getContent(),
                 question.getType(),
+                question.getJudgeMode() == null ? "TEXT" : question.getJudgeMode(),
                 intValue(question.getDifficulty()),
                 question.getDomain(),
                 names(question.getKpNames()),
@@ -251,6 +252,40 @@ public class QuestionBankService {
             return result;
         } finally {
             lock.unlock();
+        }
+    }
+
+    // ---------- 编程题联动 ----------
+
+    /** 取编程题;非编程题直接拒绝 */
+    public QuestionBank requireCodingQuestion(long id) {
+        QuestionBank question = requireOn(id);
+        if (!"CODING".equalsIgnoreCase(question.getJudgeMode())) {
+            throw new BizException(400, "这道题不是编程题");
+        }
+        return question;
+    }
+
+    /** 当前用户在这道题上的状态标签 TODO / DONE / WRONG */
+    public String progressStatus(long userId, long id) {
+        return statusLabel(findProgress(userId, id));
+    }
+
+    /** 判题结束后回写做题进度与掌握度;未通过则收录到错题本 */
+    public void recordCodingOutcome(long userId, long id, boolean accepted, String code, String message) {
+        QuestionBank question = requireOn(id);
+        int score = accepted ? 5 : 1;
+        transactionTemplate.executeWithoutResult(status -> upsertProgress(userId, id, score, LocalDateTime.now()));
+        try {
+            knowledgeProfileService.record(userId, 0L, names(question.getKpNames()), score);
+        } catch (Exception e) {
+            log.error("编程题掌握度回写失败 userId={} questionId={}", userId, id, e);
+        }
+        if (!accepted) {
+            wrongQuestionService.collectFromBank(userId, id, question.getContent(),
+                    names(question.getKpNames()), code, score,
+                    "编程题未通过：" + (message == null || message.isBlank() ? "未知原因" : message),
+                    "对照例题和边界条件重写代码后重新提交");
         }
     }
 
@@ -400,6 +435,7 @@ public class QuestionBankService {
                 question.getTitle(),
                 preview(question.getContent(), PREVIEW_MAX),
                 question.getType(),
+                question.getJudgeMode() == null ? "TEXT" : question.getJudgeMode(),
                 intValue(question.getDifficulty()),
                 question.getDomain(),
                 names(question.getKpNames()),

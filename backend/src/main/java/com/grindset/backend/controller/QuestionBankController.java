@@ -2,11 +2,16 @@ package com.grindset.backend.controller;
 
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.dto.ApiResponse;
+import com.grindset.backend.dto.CodeRunRequest;
+import com.grindset.backend.dto.CodeRunResult;
+import com.grindset.backend.dto.CodingDetail;
+import com.grindset.backend.dto.CodingSubmissionView;
 import com.grindset.backend.dto.QuestionAnswerRequest;
 import com.grindset.backend.dto.QuestionAttemptResult;
 import com.grindset.backend.dto.QuestionBankDetail;
 import com.grindset.backend.dto.QuestionBankView;
 import com.grindset.backend.security.LoginUser;
+import com.grindset.backend.service.CodingService;
 import com.grindset.backend.service.QuestionBankService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,15 +31,22 @@ import java.util.List;
  * GET  /api/questions/{id}           题目详情 + 我的作答历史
  * GET  /api/questions/{id}/attempts  某道题的作答历史
  * POST /api/questions/{id}/attempts  提交作答，AI 评分
+ * GET  /api/questions/{id}/coding    编程题详情（题面 + 例题 + 初始代码）
+ * POST /api/questions/{id}/run       运行例题，同步返回结果
+ * POST /api/questions/{id}/submissions 提交代码判题（异步，返回 PENDING）
+ * GET  /api/questions/submissions/{submissionId} 轮询判题结果
+ * GET  /api/questions/{id}/submissions 我的提交历史
  */
 @RestController
 @RequestMapping("/api/questions")
 public class QuestionBankController {
 
     private final QuestionBankService questionBankService;
+    private final CodingService codingService;
 
-    public QuestionBankController(QuestionBankService questionBankService) {
+    public QuestionBankController(QuestionBankService questionBankService, CodingService codingService) {
         this.questionBankService = questionBankService;
+        this.codingService = codingService;
     }
 
     @GetMapping
@@ -72,6 +84,38 @@ public class QuestionBankController {
                                                       @RequestBody QuestionAnswerRequest request) {
         String answer = request == null ? null : request.answer();
         return ApiResponse.ok(questionBankService.attempt(userId(loginUser), id, answer));
+    }
+
+    @GetMapping("/{id}/coding")
+    public ApiResponse<CodingDetail> coding(@AuthenticationPrincipal LoginUser loginUser,
+                                            @PathVariable long id) {
+        return ApiResponse.ok(codingService.detail(userId(loginUser), id));
+    }
+
+    @PostMapping("/{id}/run")
+    public ApiResponse<CodeRunResult> run(@AuthenticationPrincipal LoginUser loginUser,
+                                          @PathVariable long id,
+                                          @RequestBody CodeRunRequest request) {
+        return ApiResponse.ok(codingService.run(userId(loginUser), id, request));
+    }
+
+    @PostMapping("/{id}/submissions")
+    public ApiResponse<CodingSubmissionView> submit(@AuthenticationPrincipal LoginUser loginUser,
+                                                    @PathVariable long id,
+                                                    @RequestBody CodeRunRequest request) {
+        return ApiResponse.ok(codingService.submit(userId(loginUser), id, request));
+    }
+
+    @GetMapping("/submissions/{submissionId}")
+    public ApiResponse<CodingSubmissionView> submission(@AuthenticationPrincipal LoginUser loginUser,
+                                                        @PathVariable long submissionId) {
+        return ApiResponse.ok(codingService.submission(userId(loginUser), submissionId));
+    }
+
+    @GetMapping("/{id}/submissions")
+    public ApiResponse<List<CodingSubmissionView>> submissions(
+            @AuthenticationPrincipal LoginUser loginUser, @PathVariable long id) {
+        return ApiResponse.ok(codingService.history(userId(loginUser), id));
     }
 
     private static long userId(LoginUser loginUser) {

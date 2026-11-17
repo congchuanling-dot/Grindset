@@ -8,10 +8,12 @@ import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * question_bank 表:题库内容。
- * type 为 BASICS / SCENARIO / PROJECT;key_points / kp_ids / kp_names 是 JSON 列。
+ * type 为 BASICS / SCENARIO / PROJECT / CODE;
+ * judge_mode 为 TEXT 问答 / CODING 编程;starter_code 是 JSON 列（语言 -> 初始代码）。
  */
 @TableName(value = "question_bank", autoResultMap = true)
 public class QuestionBank {
@@ -23,15 +25,28 @@ public class QuestionBank {
 
     private String content;
 
-    /** BASICS 八股 / SCENARIO 场景 / PROJECT 项目 */
+    /** BASICS 八股 / SCENARIO 场景 / PROJECT 项目 / CODE 编程 */
     private String type;
+
+    /** TEXT 问答 / CODING 编程 */
+    private String judgeMode;
 
     /** 难度 1~3 */
     private Integer difficulty;
 
+    /** 单用例运行时限(毫秒) */
+    private Integer timeLimitMs;
+
+    /** 运行内存限制(MB) */
+    private Integer memoryLimitMb;
+
     private String domain;
 
     private String referenceAnswer;
+
+    /** 各语言初始代码 {"JAVA":"...","PYTHON":"..."} */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, String> starterCode;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> keyPoints;
@@ -86,6 +101,38 @@ public class QuestionBank {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getJudgeMode() {
+        return judgeMode;
+    }
+
+    public void setJudgeMode(String judgeMode) {
+        this.judgeMode = judgeMode;
+    }
+
+    public Integer getTimeLimitMs() {
+        return timeLimitMs;
+    }
+
+    public void setTimeLimitMs(Integer timeLimitMs) {
+        this.timeLimitMs = timeLimitMs;
+    }
+
+    public Integer getMemoryLimitMb() {
+        return memoryLimitMb;
+    }
+
+    public void setMemoryLimitMb(Integer memoryLimitMb) {
+        this.memoryLimitMb = memoryLimitMb;
+    }
+
+    public Map<String, String> getStarterCode() {
+        return starterCode;
+    }
+
+    public void setStarterCode(Map<String, String> starterCode) {
+        this.starterCode = starterCode;
     }
 
     public Integer getDifficulty() {

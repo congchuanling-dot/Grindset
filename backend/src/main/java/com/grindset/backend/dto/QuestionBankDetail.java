@@ -10,6 +10,7 @@ public record QuestionBankDetail(
         String title,
         String content,
         String type,
+        String judgeMode,
         int difficulty,
         String domain,
         List<String> knowledgePoints,

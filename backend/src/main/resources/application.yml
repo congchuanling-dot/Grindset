@@ -78,3 +78,11 @@ app:
     llm:
       provider: ${INTERVIEW_LLM_PROVIDER:}
       model: ${INTERVIEW_LLM_MODEL:}
+
+  # 判题沙箱镜像。国内网络可先按镜像站地址拉取,例如:
+  #   docker pull docker.m.daocloud.io/library/eclipse-temurin:21-jdk-alpine
+  #   docker tag  docker.m.daocloud.io/library/eclipse-temurin:21-jdk-alpine eclipse-temurin:21-jdk-alpine
+  # 再把下面的镜像名改成实际存在的那个(也可以是镜像站全名)。
+  judge:
+    java-image: ${JUDGE_JAVA_IMAGE:eclipse-temurin:21-jdk-alpine}
+    python-image: ${JUDGE_PYTHON_IMAGE:python:3.12-slim}

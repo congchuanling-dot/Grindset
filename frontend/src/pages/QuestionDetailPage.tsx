@@ -19,11 +19,13 @@ import {
   type QuestionBankDetail,
 } from '../api/questionBank'
 import { StatusBadge, difficultyClass, difficultyLabel } from './QuestionBankPage'
+import CodingWorkspace from './CodingWorkspace'
 
 const TYPE_LABELS: Record<string, string> = {
   BASICS: '八股',
   SCENARIO: '场景',
   PROJECT: '项目',
+  CODE: '编程',
 }
 
 /**
@@ -95,6 +97,11 @@ function QuestionDetailPage() {
     setSubmitError(null)
     setShowReference(false)
     setTimeout(() => textareaRef.current?.focus(), 0)
+  }
+
+  // 编程题走独立的工作台（编辑器 + 判题），这里只负责加载与分流
+  if (!loading && !loadError && detail?.judgeMode === 'CODING') {
+    return <CodingWorkspace questionId={detail.id} />
   }
 
   return (
