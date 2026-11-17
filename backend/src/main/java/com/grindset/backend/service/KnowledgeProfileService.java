@@ -3,6 +3,7 @@ package com.grindset.backend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.KnowledgeProfileView;
 import com.grindset.backend.entity.InterviewQuestion;
 import com.grindset.backend.entity.InterviewSession;
@@ -25,7 +26,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.text.Normalizer;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -42,6 +42,12 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.grindset.backend.common.constant.MasteryRules.EMA_OLD_WEIGHT;
+import static com.grindset.backend.common.constant.MasteryRules.MASTERED_THRESHOLD;
+import static com.grindset.backend.common.constant.MasteryRules.STALE_DAYS;
+import static com.grindset.backend.common.constant.MasteryRules.WEAK_THRESHOLD;
+import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
+
 /**
  * 掌握度画像:知识点归一、EMA 掌握度、加权候选、画像查询与重建。
  *
@@ -53,18 +59,11 @@ public class KnowledgeProfileService {
 
     private static final Logger log = LoggerFactory.getLogger(KnowledgeProfileService.class);
 
-    /** 旧掌握度权重,越大越稳定;新观测权重 = 1 - EMA_OLD_WEIGHT */
-    private static final double EMA_OLD_WEIGHT = 0.7;
     private static final int CANDIDATE_LIMIT = 5;
     private static final int KNOWN_NAME_LIMIT = 30;
-    private static final int WEAK_THRESHOLD = 40;
-    private static final int MASTERED_THRESHOLD = 75;
-    private static final int STALE_DAYS = 30;
-    private static final int QUESTION_DONE = 3;
     private static final int MAX_LIMIT = 200;
     private static final int MIN_POINT_LENGTH = 2;
 
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final Pattern PUNCT = Pattern.compile("[\\s\\p{Punct}，。、；：（）【】《》“”‘’·—…]");
     private static final Set<String> LEVELS = Set.of("WEAK", "LEARNING", "MASTERED");
 
@@ -361,7 +360,7 @@ public class KnowledgeProfileService {
                 List<InterviewQuestion> questions = questionMapper.selectList(
                         new QueryWrapper<InterviewQuestion>()
                                 .eq("session_id", session.getId())
-                                .eq("status", QUESTION_DONE)
+                                .eq("status", QuestionStatus.DONE)
                                 .isNotNull("score")
                                 .orderByAsc("seq"));
                 for (InterviewQuestion question : questions) {
@@ -523,7 +522,7 @@ public class KnowledgeProfileService {
                 mastery, prev, levelOf(mastery), trend,
                 intValue(state.getPracticeCount()), intValue(state.getCorrectCount()),
                 state.getLastScore(),
-                state.getLastPracticedAt() == null ? null : state.getLastPracticedAt().format(TIME_FORMAT));
+                state.getLastPracticedAt() == null ? null : state.getLastPracticedAt().format(STANDARD));
     }
 
     private static String normalizeFilter(String level) {

@@ -13,17 +13,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static com.grindset.backend.common.constant.InputLimits.CHAT_MAX_MESSAGE_LENGTH;
+import static com.grindset.backend.common.constant.InputLimits.CHAT_MAX_REQUEST_MESSAGES;
+
 /**
  * 对话业务:从模型目录里挑候选渠道和 key、校验参数、拼历史,再交给 LlmRouter 调度。
  */
 @Service
 public class ChatService {
-
-    /** 单条消息最大字符数,挡住超长粘贴导致的巨额 token 消耗 */
-    private static final int MAX_MESSAGE_LENGTH = 8000;
-
-    /** 前端一次最多能带多少条历史,超过直接拒,避免被刷 */
-    private static final int MAX_REQUEST_MESSAGES = 200;
 
     private final LlmProperties properties;
     private final ModelCatalogService catalog;
@@ -81,7 +78,7 @@ public class ChatService {
         if (raw == null || raw.isEmpty()) {
             throw new BizException(400, "消息不能为空");
         }
-        if (raw.size() > MAX_REQUEST_MESSAGES) {
+        if (raw.size() > CHAT_MAX_REQUEST_MESSAGES) {
             throw new BizException(400, "消息数量过多");
         }
 
@@ -103,8 +100,8 @@ public class ChatService {
             if (content.isBlank()) {
                 throw new BizException(400, "消息内容不能为空");
             }
-            if (content.length() > MAX_MESSAGE_LENGTH) {
-                throw new BizException(400, "单条消息不能超过 " + MAX_MESSAGE_LENGTH + " 字");
+            if (content.length() > CHAT_MAX_MESSAGE_LENGTH) {
+                throw new BizException(400, "单条消息不能超过 " + CHAT_MAX_MESSAGE_LENGTH + " 字");
             }
             result.add(new ChatMessage(role, content));
         }

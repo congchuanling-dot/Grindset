@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.AnswerRequest;
 import com.grindset.backend.dto.AnswerResult;
 import com.grindset.backend.dto.InterviewDetail;
@@ -29,8 +30,8 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
-import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_ANSWERED;
-import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_DONE;
+import static com.grindset.backend.common.constant.InputLimits.MAX_ANSWER_LENGTH;
+import static com.grindset.backend.service.interview.InterviewConstants.MAX_FOLLOW_UP;
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_INTERVIEWER;
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_USER;
 import static com.grindset.backend.service.interview.InterviewConstants.SESSION_ONGOING;
@@ -48,9 +49,6 @@ import static com.grindset.backend.service.interview.InterviewViews.toView;
 public class InterviewTurnService {
 
     private static final Logger log = LoggerFactory.getLogger(InterviewTurnService.class);
-
-    private static final int MAX_ANSWER_LENGTH = 4000;
-    private static final int MAX_FOLLOW_UP = 3;
 
     private final InterviewSessionService sessionService;
     private final InterviewSessionLocks locks;
@@ -107,7 +105,7 @@ public class InterviewTurnService {
             }
 
             InterviewQuestion latest = latestQuestion(id);
-            if (latest != null && intValue(latest.getStatus()) != QUESTION_DONE) {
+            if (latest != null && intValue(latest.getStatus()) != QuestionStatus.DONE) {
                 throw new BizException(409, "请先回答当前题目");
             }
 
@@ -136,14 +134,14 @@ public class InterviewTurnService {
             question.setId(questionId);
             question.setSessionId(id);
             question.setSeq(seq);
-            question.setStatus(QUESTION_ANSWERED);
+            question.setStatus(QuestionStatus.ANSWERED);
             question.setFollowUpCount(0);
             questionMapper.insert(question);
 
             InterviewMessage message = newMessage(questionId, 1, ROLE_INTERVIEWER, TYPE_QUESTION, questionText);
             messageMapper.insert(message);
 
-            return new InterviewDetail.QuestionView(String.valueOf(questionId), seq, QUESTION_ANSWERED,
+            return new InterviewDetail.QuestionView(String.valueOf(questionId), seq, QuestionStatus.ANSWERED,
                     0, null, List.of(), null, null, List.of(toView(message)));
         } finally {
             lock.unlock();
@@ -174,7 +172,7 @@ public class InterviewTurnService {
             }
 
             InterviewQuestion question = latestQuestion(id);
-            if (question == null || intValue(question.getStatus()) != QUESTION_ANSWERED) {
+            if (question == null || intValue(question.getStatus()) != QuestionStatus.ANSWERED) {
                 throw new BizException(409, "当前没有待回答的问题");
             }
 
@@ -232,7 +230,7 @@ public class InterviewTurnService {
                     messageMapper.insert(newMessage(question.getId(), seq, ROLE_INTERVIEWER,
                             TYPE_FEEDBACK, feedback));
                 }
-                question.setStatus(QUESTION_DONE);
+                question.setStatus(QuestionStatus.DONE);
                 question.setScore(finalEvaluation.getScore());
                 question.setKnowledgePoints(finalEvaluation.getKnowledgePoints());
                 question.setComment(finalEvaluation.getComment());
@@ -285,7 +283,7 @@ public class InterviewTurnService {
     private List<InterviewQuestion> finishedQuestions(long sessionId) {
         return questionMapper.selectList(new QueryWrapper<InterviewQuestion>()
                 .eq("session_id", sessionId)
-                .eq("status", QUESTION_DONE)
+                .eq("status", QuestionStatus.DONE)
                 .orderByAsc("seq"));
     }
 

@@ -8,7 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+
+import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
  * 面试视图转换的公共方法,会话详情和出题返回都要用。
@@ -16,8 +17,6 @@ import java.time.format.DateTimeFormatter;
 final class InterviewViews {
 
     private static final Logger log = LoggerFactory.getLogger(InterviewViews.class);
-
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private InterviewViews() {
     }
@@ -42,6 +41,6 @@ final class InterviewViews {
     }
 
     static String format(LocalDateTime time) {
-        return time == null ? "" : time.format(TIME_FORMAT);
+        return time == null ? "" : time.format(STANDARD);
     }
 }

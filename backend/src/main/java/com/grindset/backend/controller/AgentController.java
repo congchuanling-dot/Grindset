@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static com.grindset.backend.common.constant.SseTimeouts.DEFAULT_MS;
+
 /**
  * Agent 对话接口。
  * POST /api/agent/chat  SSE 事件:status / tool_call / tool_result / delta / done / error。
@@ -29,8 +31,6 @@ import java.util.Map;
 public class AgentController {
 
     private static final Logger log = LoggerFactory.getLogger(AgentController.class);
-
-    private static final long SSE_TIMEOUT_MS = 5 * 60 * 1000L;
 
     private final AgentService agentService;
     private final ObjectMapper objectMapper;
@@ -42,7 +42,7 @@ public class AgentController {
 
     @PostMapping("/chat")
     public SseEmitter chat(@AuthenticationPrincipal LoginUser loginUser, @RequestBody ChatRequest request) {
-        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
+        SseEmitter emitter = new SseEmitter(DEFAULT_MS);
         long userId = loginUser.userId();
         Thread.ofVirtual().name("agent-sse-", 0).start(() -> runChat(userId, request, emitter));
         return emitter;

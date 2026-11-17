@@ -3,6 +3,8 @@ package com.grindset.backend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.constant.JudgeLanguages;
+import com.grindset.backend.common.constant.SubmissionStatus;
 import com.grindset.backend.dto.CodeRunRequest;
 import com.grindset.backend.dto.CodeRunResult;
 import com.grindset.backend.dto.CodingDetail;
@@ -17,13 +19,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static com.grindset.backend.common.constant.InputLimits.MAX_CODE_LENGTH;
+import static com.grindset.backend.common.constant.InputLimits.MAX_FEEDBACK_LENGTH;
+import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
  * 编程题:题目视图、运行样例、异步提交与判题历史。
@@ -39,14 +44,6 @@ public class CodingService {
     private static final int TIME_LIMIT_DEFAULT = 2000;
     private static final int MEMORY_LIMIT_DEFAULT = 256;
     private static final int HISTORY_LIMIT = 20;
-    private static final int CODE_MAX_LENGTH = 64 * 1024;
-    private static final int STORED_CODE_MAX = 64 * 1024;
-    private static final int MESSAGE_MAX_LENGTH = 4000;
-
-    private static final String STATUS_PENDING = "PENDING";
-    private static final String STATUS_RUNNING = "RUNNING";
-
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final QuestionBankService questionBankService;
     private final QuestionTestCaseMapper testCaseMapper;
@@ -92,7 +89,7 @@ public class CodingService {
         long acceptedCount = submissionMapper.selectCount(new QueryWrapper<QuestionSubmission>()
                 .eq("user_id", userId)
                 .eq("question_id", id)
-                .eq("status", JudgeService.STATUS_ACCEPTED));
+                .eq("status", SubmissionStatus.ACCEPTED));
 
         return new CodingDetail(
                 String.valueOf(question.getId()),
@@ -164,7 +161,7 @@ public class CodingService {
         submission.setQuestionId(id);
         submission.setLanguage(language);
         submission.setCode(code);
-        submission.setStatus(STATUS_PENDING);
+        submission.setStatus(SubmissionStatus.PENDING);
         submission.setPassed(0);
         submission.setTotal(cases.size());
         submission.setCreatedAt(LocalDateTime.now());
@@ -180,7 +177,7 @@ public class CodingService {
         try {
             QuestionSubmission running = new QuestionSubmission();
             running.setId(submissionId);
-            running.setStatus(STATUS_RUNNING);
+            running.setStatus(SubmissionStatus.RUNNING);
             submissionMapper.updateById(running);
 
             JudgeService.JudgeOutcome outcome = judgeService.judge(language, code, cases,
@@ -193,11 +190,11 @@ public class CodingService {
             finished.setPassed(outcome.passed());
             finished.setTotal(outcome.total());
             finished.setRuntimeMs(outcome.runtimeMs());
-            finished.setErrorMessage(truncate(outcome.errorMessage(), MESSAGE_MAX_LENGTH));
+            finished.setErrorMessage(truncate(outcome.errorMessage(), MAX_FEEDBACK_LENGTH));
             finished.setFinishedAt(LocalDateTime.now());
             submissionMapper.updateById(finished);
 
-            boolean accepted = JudgeService.STATUS_ACCEPTED.equals(outcome.status());
+            boolean accepted = SubmissionStatus.ACCEPTED.equals(outcome.status());
             try {
                 questionBankService.recordCodingOutcome(userId, question.getId(), accepted, code,
                         outcome.errorMessage());
@@ -208,8 +205,8 @@ public class CodingService {
             log.error("判题异常 submissionId={}", submissionId, e);
             QuestionSubmission failed = new QuestionSubmission();
             failed.setId(submissionId);
-            failed.setStatus(JudgeService.STATUS_SYSTEM_ERROR);
-            failed.setErrorMessage(truncate("判题服务异常：" + e.getMessage(), MESSAGE_MAX_LENGTH));
+            failed.setStatus(SubmissionStatus.SYSTEM_ERROR);
+            failed.setErrorMessage(truncate("判题服务异常：" + e.getMessage(), MAX_FEEDBACK_LENGTH));
             failed.setFinishedAt(LocalDateTime.now());
             submissionMapper.updateById(failed);
         } finally {
@@ -257,7 +254,7 @@ public class CodingService {
 
     private static String requireLanguage(CodeRunRequest request) {
         String language = request == null ? null : JudgeService.normalizeLanguage(request.language());
-        if (!JudgeService.JAVA.equals(language) && !JudgeService.PYTHON.equals(language)) {
+        if (!JudgeLanguages.JAVA.equals(language) && !JudgeLanguages.PYTHON.equals(language)) {
             throw new BizException(400, "暂时只支持 Java 和 Python");
         }
         return language;
@@ -268,8 +265,8 @@ public class CodingService {
         if (code.isBlank()) {
             throw new BizException(400, "请先写代码再运行");
         }
-        if (code.length() > CODE_MAX_LENGTH) {
-            throw new BizException(400, "代码不能超过 " + CODE_MAX_LENGTH + " 字符");
+        if (code.length() > MAX_CODE_LENGTH) {
+            throw new BizException(400, "代码不能超过 " + MAX_CODE_LENGTH + " 字符");
         }
         return code;
     }
@@ -279,7 +276,7 @@ public class CodingService {
                 String.valueOf(submission.getId()),
                 String.valueOf(submission.getQuestionId()),
                 submission.getLanguage(),
-                truncate(submission.getCode(), STORED_CODE_MAX),
+                truncate(submission.getCode(), MAX_CODE_LENGTH),
                 submission.getStatus(),
                 submission.getPassed() == null ? 0 : submission.getPassed(),
                 submission.getTotal() == null ? 0 : submission.getTotal(),
@@ -305,6 +302,6 @@ public class CodingService {
     }
 
     private static String format(LocalDateTime time) {
-        return time == null ? null : time.format(TIME_FORMAT);
+        return time == null ? null : time.format(STANDARD);
     }
 }

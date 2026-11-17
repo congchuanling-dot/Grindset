@@ -18,11 +18,12 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
  * 模型目录:每次请求直接读 llm_channels / llm_models / llm_keys,
@@ -33,7 +34,6 @@ import java.util.Map;
 public class ModelCatalogService {
 
     private static final Logger log = LoggerFactory.getLogger(ModelCatalogService.class);
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final LlmProperties properties;
     private final LlmChannelMapper channelMapper;
@@ -165,7 +165,7 @@ public class ModelCatalogService {
                     .toList();
             BalanceInfo balanceInfo = balanceSum == null ? null
                     : new BalanceInfo(balanceSum, currency == null ? "CNY" : currency,
-                    balanceUpdatedAt == null ? null : balanceUpdatedAt.format(TIME_FORMAT), balanceSource);
+                    balanceUpdatedAt == null ? null : balanceUpdatedAt.format(STANDARD), balanceSource);
 
             providers.add(new ProviderInfo(providerId, providerName, modelInfos, balanceInfo, keyCount));
             runtimeChannels.put(providerId, List.copyOf(candidateChannels));

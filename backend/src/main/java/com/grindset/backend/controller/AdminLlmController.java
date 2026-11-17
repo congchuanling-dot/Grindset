@@ -22,11 +22,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
  * 模型服务管理接口(需要 X-Admin-Token)。
@@ -35,8 +36,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/llm")
 public class AdminLlmController {
-
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final AdminGuard guard;
     private final LlmChannelMapper channelMapper;
@@ -161,7 +160,7 @@ public class AdminLlmController {
     }
 
     private static String format(LocalDateTime time) {
-        return time == null ? null : time.format(TIME_FORMAT);
+        return time == null ? null : time.format(STANDARD);
     }
 
     public record ChannelView(long id, String providerId, String name, String baseUrl, int priority,

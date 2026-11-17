@@ -3,6 +3,7 @@ package com.grindset.backend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.RetryEvaluation;
 import com.grindset.backend.dto.RetryResult;
 import com.grindset.backend.dto.WrongQuestionDetail;
@@ -26,13 +27,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+
+import static com.grindset.backend.common.constant.DisplayLimits.MAX_PREVIEW_CHARS;
+import static com.grindset.backend.common.constant.InputLimits.MAX_ANSWER_LENGTH;
+import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
+import static com.grindset.backend.common.constant.MasteryRules.MASTERED_SCORE_MIN;
+import static com.grindset.backend.common.constant.MasteryRules.REVIEW_DAYS_HIGH;
+import static com.grindset.backend.common.constant.MasteryRules.REVIEW_DAYS_LOW;
+import static com.grindset.backend.common.constant.MasteryRules.REVIEW_DAYS_MID;
+import static com.grindset.backend.common.constant.MasteryRules.WRONG_SCORE_MAX;
 
 /**
  * 错题重练闭环:低分题自动收录、错题本查询、单题重练与历史回填。
@@ -45,29 +54,14 @@ public class WrongQuestionService {
 
     private static final Logger log = LoggerFactory.getLogger(WrongQuestionService.class);
 
-    /** 本题得分 <= 2 才收录 */
-    private static final int WRONG_SCORE_MAX = 2;
-    /** 重练得分 >= 3 标记已掌握 */
-    private static final int MASTERED_SCORE_MIN = 3;
-
     private static final int STATUS_PENDING = 0;
     private static final int STATUS_MASTERED = 1;
 
-    private static final int QUESTION_DONE = 3;
-
-    private static final int REVIEW_DAYS_LOW = 1;
-    private static final int REVIEW_DAYS_MID = 3;
-    private static final int REVIEW_DAYS_HIGH = 7;
-
-    private static final int MAX_ANSWER_LENGTH = 4000;
     private static final int MIN_RETRY_LENGTH = 10;
     private static final int LIST_LIMIT_DEFAULT = 50;
     private static final int LIST_LIMIT_MAX = 200;
     private static final int SNAPSHOT_ANSWER_MAX = 6000;
     private static final int RETRY_HISTORY_LIMIT = 20;
-    private static final int PREVIEW_MAX = 120;
-
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final WrongQuestionMapper wrongQuestionMapper;
     private final QuestionRetryMapper retryMapper;
@@ -424,7 +418,7 @@ public class WrongQuestionService {
             List<InterviewQuestion> questions = questionMapper.selectList(
                     new QueryWrapper<InterviewQuestion>()
                             .eq("session_id", session.getId())
-                            .eq("status", QUESTION_DONE)
+                            .eq("status", QuestionStatus.DONE)
                             .le("score", WRONG_SCORE_MAX)
                             .orderByAsc("seq"));
             for (InterviewQuestion question : questions) {
@@ -450,7 +444,7 @@ public class WrongQuestionService {
 
     static boolean shouldCollect(InterviewQuestion question) {
         return question != null
-                && intValue(question.getStatus()) == QUESTION_DONE
+                && intValue(question.getStatus()) == QuestionStatus.DONE
                 && question.getScore() != null
                 && question.getScore() <= WRONG_SCORE_MAX;
     }
@@ -562,7 +556,7 @@ public class WrongQuestionService {
             return "";
         }
         String text = content.replaceAll("\\s+", " ").strip();
-        return truncate(text, PREVIEW_MAX);
+        return truncate(text, MAX_PREVIEW_CHARS);
     }
 
     private static String normalizeStatus(String status) {
@@ -578,7 +572,7 @@ public class WrongQuestionService {
     }
 
     private static String format(LocalDateTime time) {
-        return time == null ? null : time.format(TIME_FORMAT);
+        return time == null ? null : time.format(STANDARD);
     }
 
     private static String truncate(String value, int max) {

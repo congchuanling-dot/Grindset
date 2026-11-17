@@ -22,11 +22,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.grindset.backend.common.constant.InputLimits.MAX_RESUME_FILE_BYTES;
+import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
  * 简历业务:上传 → 抽文本 → LLM 结构化 → 落库;以及列表、详情、删除。
@@ -37,8 +39,6 @@ public class ResumeService {
 
     private static final Logger log = LoggerFactory.getLogger(ResumeService.class);
 
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    private static final int MAX_FILE_BYTES = 10 * 1024 * 1024;
     private static final int MAX_ERROR_LENGTH = 500;
 
     private final ResumeMapper resumeMapper;
@@ -69,7 +69,7 @@ public class ResumeService {
         if (file == null || file.isEmpty()) {
             throw new BizException(400, "请选择要上传的简历文件");
         }
-        if (file.getSize() > MAX_FILE_BYTES) {
+        if (file.getSize() > MAX_RESUME_FILE_BYTES) {
             throw new BizException(413, "文件不能超过 10MB");
         }
 
@@ -275,6 +275,6 @@ public class ResumeService {
     }
 
     private static String format(Resume resume) {
-        return resume.getCreatedAt() == null ? "" : resume.getCreatedAt().format(TIME_FORMAT);
+        return resume.getCreatedAt() == null ? "" : resume.getCreatedAt().format(STANDARD);
     }
 }

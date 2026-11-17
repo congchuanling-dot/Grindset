@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.InterviewDetail;
 import com.grindset.backend.dto.InterviewReport;
 import com.grindset.backend.entity.InterviewMessage;
@@ -20,10 +21,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_ABANDONED;
-import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_ANSWERED;
-import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_ASKING;
-import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_DONE;
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_USER;
 import static com.grindset.backend.service.interview.InterviewConstants.SESSION_FINISHED;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_FEEDBACK;
@@ -85,11 +82,11 @@ public class InterviewReportService {
             // 即使报告生成失败,会话也不会一直停在"进行中",用户可以重试生成报告。
             transactionTemplate.executeWithoutResult(status -> {
                 InterviewQuestion patch = new InterviewQuestion();
-                patch.setStatus(QUESTION_ABANDONED);
+                patch.setStatus(QuestionStatus.ABANDONED);
                 patch.setFinishedAt(LocalDateTime.now());
                 questionMapper.update(patch, new QueryWrapper<InterviewQuestion>()
                         .eq("session_id", id)
-                        .in("status", QUESTION_ASKING, QUESTION_ANSWERED));
+                        .in("status", QuestionStatus.ASKING, QuestionStatus.ANSWERED));
                 session.setStatus(SESSION_FINISHED);
                 sessionMapper.updateById(session);
             });
@@ -117,7 +114,7 @@ public class InterviewReportService {
     private List<InterviewQuestion> finishedQuestions(long sessionId) {
         return questionMapper.selectList(new QueryWrapper<InterviewQuestion>()
                 .eq("session_id", sessionId)
-                .eq("status", QUESTION_DONE)
+                .eq("status", QuestionStatus.DONE)
                 .orderByAsc("seq"));
     }
 

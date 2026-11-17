@@ -25,9 +25,11 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+import static com.grindset.backend.service.interview.InterviewConstants.MAX_FOCUS;
+import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_COUNTS;
 import static com.grindset.backend.service.interview.InterviewConstants.SESSION_ONGOING;
+import static com.grindset.backend.service.interview.InterviewConstants.STYLES;
 import static com.grindset.backend.service.interview.InterviewViews.format;
 import static com.grindset.backend.service.interview.InterviewViews.intValue;
 
@@ -37,10 +39,6 @@ import static com.grindset.backend.service.interview.InterviewViews.intValue;
  */
 @Service
 public class InterviewSessionService {
-
-    private static final Set<String> STYLES = Set.of("pressure", "middle", "relaxed");
-    private static final Set<Integer> QUESTION_COUNTS = Set.of(3, 5, 8);
-    private static final int MAX_FOCUS = 4;
 
     private final InterviewSessionMapper sessionMapper;
     private final InterviewQuestionMapper questionMapper;

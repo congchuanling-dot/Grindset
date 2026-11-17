@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.common.constant.SseTimeouts.DEFAULT_MS;
+
 /**
  * AI 面试接口。
  * POST   /api/interviews                        创建会话
@@ -45,8 +47,6 @@ import java.util.Map;
 public class InterviewController {
 
     private static final Logger log = LoggerFactory.getLogger(InterviewController.class);
-
-    private static final long SSE_TIMEOUT_MS = 5 * 60 * 1000L;
 
     private final InterviewSessionService sessionService;
     private final InterviewTurnService turnService;
@@ -86,7 +86,7 @@ public class InterviewController {
     public SseEmitter nextQuestion(@AuthenticationPrincipal LoginUser loginUser,
                                    @PathVariable long id) {
         long ownerId = userId(loginUser);
-        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
+        SseEmitter emitter = new SseEmitter(DEFAULT_MS);
         Thread.ofVirtual().name("interview-sse-", 0).start(() -> runQuestion(ownerId, id, emitter));
         return emitter;
     }

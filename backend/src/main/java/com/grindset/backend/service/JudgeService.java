@@ -1,5 +1,7 @@
 package com.grindset.backend.service;
 
+import com.grindset.backend.common.constant.JudgeLanguages;
+import com.grindset.backend.common.constant.SubmissionStatus;
 import com.grindset.backend.entity.QuestionTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static com.grindset.backend.common.constant.InputLimits.MAX_CODE_LENGTH;
+import static com.grindset.backend.common.constant.InputLimits.MAX_FEEDBACK_LENGTH;
+
 /**
  * 代码判题:每次运行起一个一次性 Docker 容器,断网、限 CPU/内存/进程数,超时即杀。
  *
@@ -34,21 +39,9 @@ public class JudgeService {
 
     private static final Logger log = LoggerFactory.getLogger(JudgeService.class);
 
-    public static final String JAVA = "JAVA";
-    public static final String PYTHON = "PYTHON";
-
-    public static final String STATUS_ACCEPTED = "ACCEPTED";
-    public static final String STATUS_WRONG_ANSWER = "WRONG_ANSWER";
-    public static final String STATUS_COMPILE_ERROR = "COMPILE_ERROR";
-    public static final String STATUS_RUNTIME_ERROR = "RUNTIME_ERROR";
-    public static final String STATUS_TIME_LIMIT_EXCEEDED = "TIME_LIMIT_EXCEEDED";
-    public static final String STATUS_SYSTEM_ERROR = "SYSTEM_ERROR";
-
     private static final int COMPILE_TIMEOUT_MS = 30_000;
     private static final int HOST_GRACE_MS = 15_000;
     private static final int OUTPUT_LIMIT = 20_000;
-    private static final int CODE_MAX_LENGTH = 64 * 1024;
-    private static final int MESSAGE_MAX_LENGTH = 4000;
 
     /**
      * 容器内运行脚本:按秒限时执行,stdin 走 input.txt,并把程序自身耗时打到 stderr。
@@ -83,14 +76,14 @@ public class JudgeService {
     }
 
     public boolean supports(String language) {
-        return JAVA.equals(normalizeLanguage(language)) || PYTHON.equals(normalizeLanguage(language));
+        return JudgeLanguages.JAVA.equals(normalizeLanguage(language)) || JudgeLanguages.PYTHON.equals(normalizeLanguage(language));
     }
 
     public static String normalizeLanguage(String language) {
         String value = language == null ? "" : language.strip().toUpperCase(Locale.ROOT);
         return switch (value) {
-            case "JAVA", "JDK" -> JAVA;
-            case "PYTHON", "PY", "PYTHON3" -> PYTHON;
+            case "JAVA", "JDK" -> JudgeLanguages.JAVA;
+            case "PYTHON", "PY", "PYTHON3" -> JudgeLanguages.PYTHON;
             default -> value;
         };
     }
@@ -102,22 +95,22 @@ public class JudgeService {
     public JudgeOutcome judge(String language, String code, List<QuestionTestCase> cases,
                               int timeLimitMs, int memoryLimitMb) {
         String lang = normalizeLanguage(language);
-        if (!JAVA.equals(lang) && !PYTHON.equals(lang)) {
-            return new JudgeOutcome(STATUS_SYSTEM_ERROR, 0, cases.size(), 0,
+        if (!JudgeLanguages.JAVA.equals(lang) && !JudgeLanguages.PYTHON.equals(lang)) {
+            return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
                     "暂不支持的语言：" + language, List.of());
         }
         if (code == null || code.isBlank()) {
-            return new JudgeOutcome(STATUS_COMPILE_ERROR, 0, cases.size(), 0, "代码不能为空", List.of());
+            return new JudgeOutcome(SubmissionStatus.COMPILE_ERROR, 0, cases.size(), 0, "代码不能为空", List.of());
         }
-        if (code.length() > CODE_MAX_LENGTH) {
-            return new JudgeOutcome(STATUS_COMPILE_ERROR, 0, cases.size(), 0,
-                    "代码不能超过 " + CODE_MAX_LENGTH + " 字符", List.of());
+        if (code.length() > MAX_CODE_LENGTH) {
+            return new JudgeOutcome(SubmissionStatus.COMPILE_ERROR, 0, cases.size(), 0,
+                    "代码不能超过 " + MAX_CODE_LENGTH + " 字符", List.of());
         }
 
-        String image = JAVA.equals(lang) ? javaImage : pythonImage;
+        String image = JudgeLanguages.JAVA.equals(lang) ? javaImage : pythonImage;
         if (!dockerImageExists(image)) {
             log.error("判题镜像不存在 image={}", image);
-            return new JudgeOutcome(STATUS_SYSTEM_ERROR, 0, cases.size(), 0,
+            return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
                     "判题环境未就绪，缺少镜像 " + image + "，请先执行 docker pull " + image, List.of());
         }
 
@@ -125,15 +118,15 @@ public class JudgeService {
         try {
             workspace = Files.createTempDirectory("grindset-judge-");
             Files.writeString(workspace.resolve("runner.sh"), RUNNER_SCRIPT, StandardCharsets.UTF_8);
-            if (JAVA.equals(lang)) {
+            if (JudgeLanguages.JAVA.equals(lang)) {
                 Files.writeString(workspace.resolve("Main.java"), code, StandardCharsets.UTF_8);
                 ExecResult compile = exec(dockerRun(workspace, image, memoryLimitMb,
                                 List.of("sh", "-c", "javac -encoding UTF-8 -d out Main.java")),
                         COMPILE_TIMEOUT_MS);
                 if (!compile.ok()) {
-                    return new JudgeOutcome(STATUS_COMPILE_ERROR, 0, cases.size(), 0,
-                            firstNonBlank(limit(compile.stderr(), MESSAGE_MAX_LENGTH),
-                                    limit(compile.stdout(), MESSAGE_MAX_LENGTH)),
+                    return new JudgeOutcome(SubmissionStatus.COMPILE_ERROR, 0, cases.size(), 0,
+                            firstNonBlank(limit(compile.stderr(), MAX_FEEDBACK_LENGTH),
+                                    limit(compile.stdout(), MAX_FEEDBACK_LENGTH)),
                             List.of());
                 }
             } else {
@@ -143,7 +136,7 @@ public class JudgeService {
             List<CaseOutcome> outcomes = new ArrayList<>();
             int passed = 0;
             int totalRuntime = 0;
-            String overallStatus = STATUS_ACCEPTED;
+            String overallStatus = SubmissionStatus.ACCEPTED;
             String errorMessage = null;
             int index = 0;
             for (QuestionTestCase testCase : cases) {
@@ -155,16 +148,16 @@ public class JudgeService {
                 if (run.timedOut()) {
                     outcomes.add(new CaseOutcome(index, testCase.getInput(), testCase.getExpectedOutput(),
                             actual, false, "超出时间限制"));
-                    overallStatus = STATUS_TIME_LIMIT_EXCEEDED;
+                    overallStatus = SubmissionStatus.TIME_LIMIT_EXCEEDED;
                     errorMessage = "用例 " + index + " 运行超时（限制 " + timeLimitMs + "ms）";
                     break;
                 }
                 if (run.exitCode() != 0) {
                     outcomes.add(new CaseOutcome(index, testCase.getInput(), testCase.getExpectedOutput(),
                             actual, false, "运行出错"));
-                    overallStatus = STATUS_RUNTIME_ERROR;
+                    overallStatus = SubmissionStatus.RUNTIME_ERROR;
                     errorMessage = "用例 " + index + " 运行出错："
-                            + limit(firstNonBlank(run.stderr(), run.stdout()), MESSAGE_MAX_LENGTH);
+                            + limit(firstNonBlank(run.stderr(), run.stdout()), MAX_FEEDBACK_LENGTH);
                     break;
                 }
                 boolean ok = normalize(actual).equals(normalize(testCase.getExpectedOutput()));
@@ -172,15 +165,15 @@ public class JudgeService {
                         actual, ok, ok ? "通过" : "输出与期望不一致"));
                 if (ok) {
                     passed++;
-                } else if (STATUS_ACCEPTED.equals(overallStatus)) {
-                    overallStatus = STATUS_WRONG_ANSWER;
+                } else if (SubmissionStatus.ACCEPTED.equals(overallStatus)) {
+                    overallStatus = SubmissionStatus.WRONG_ANSWER;
                     errorMessage = "用例 " + index + " 输出与期望不一致";
                 }
             }
             return new JudgeOutcome(overallStatus, passed, cases.size(), totalRuntime, errorMessage, outcomes);
         } catch (IOException e) {
             log.error("判题失败 language={}", language, e);
-            return new JudgeOutcome(STATUS_SYSTEM_ERROR, 0, cases.size(), 0,
+            return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
                     "判题服务异常：" + e.getMessage(), List.of());
         } finally {
             deleteQuietly(workspace);
@@ -194,7 +187,7 @@ public class JudgeService {
         Files.writeString(workspace.resolve("input.txt"),
                 testCase.getInput() == null ? "" : testCase.getInput(), StandardCharsets.UTF_8);
 
-        List<String> program = JAVA.equals(lang)
+        List<String> program = JudgeLanguages.JAVA.equals(lang)
                 ? List.of("java", "-Xmx" + heapMb(memoryLimitMb) + "m", "-Xss16m", "-cp", "out", "Main")
                 : List.of("python3", "-I", "-B", "main.py");
         List<String> args = new ArrayList<>(List.of("sh", "/workspace/runner.sh", String.valueOf(seconds)));

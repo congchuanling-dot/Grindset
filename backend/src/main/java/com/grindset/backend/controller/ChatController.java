@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.common.constant.SseTimeouts.DEFAULT_MS;
+
 /**
  * 对话接口。
  * GET  /api/chat/models  可用模型列表(只含有 key 的厂商)
@@ -30,9 +32,6 @@ import java.util.Map;
 public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
-
-    /** 单次对话最长挂多久,超时由容器关闭连接 */
-    private static final long SSE_TIMEOUT_MS = 5 * 60 * 1000L;
 
     private final ChatService chatService;
     private final ObjectMapper objectMapper;
@@ -49,7 +48,7 @@ public class ChatController {
 
     @PostMapping
     public SseEmitter chat(@RequestBody ChatRequest request) {
-        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
+        SseEmitter emitter = new SseEmitter(DEFAULT_MS);
         // 虚拟线程:一个用户一条对话挂住不占平台线程,几十个人同时用也不怕
         Thread.ofVirtual().name("chat-sse-", 0).start(() -> runChat(request, emitter));
         return emitter;

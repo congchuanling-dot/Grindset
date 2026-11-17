@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,6 +33,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.grindset.backend.common.constant.DisplayLimits.MAX_PREVIEW_CHARS;
+import static com.grindset.backend.common.constant.InputLimits.MAX_ANSWER_LENGTH;
+import static com.grindset.backend.common.constant.MasteryRules.WRONG_SCORE_MAX;
+import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
  * 题库第一版:列表筛选、题目详情、AI 评分作答、做题进度与错题联动。
@@ -49,21 +53,15 @@ public class QuestionBankService {
     private static final int STATUS_ON = 1;
     private static final int PROGRESS_DONE = 1;
     private static final int PROGRESS_WRONG = 2;
-    /** 本题得分 <= 2 才收录错题本 */
-    private static final int WRONG_SCORE_MAX = 2;
 
     private static final int PAGE_SIZE_DEFAULT = 20;
     private static final int PAGE_SIZE_MAX = 100;
     private static final int MIN_ANSWER_LENGTH = 10;
-    private static final int MAX_ANSWER_LENGTH = 4000;
     private static final int ATTEMPT_HISTORY_LIMIT = 20;
-    private static final int PREVIEW_MAX = 120;
     private static final int TITLE_MAX = 60;
 
     private static final Set<String> TYPES = Set.of("BASICS", "SCENARIO", "PROJECT", "CODE");
     private static final Set<String> STATUS_FILTERS = Set.of("TODO", "DONE", "WRONG");
-
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final QuestionBankMapper bankMapper;
     private final UserQuestionProgressMapper progressMapper;
@@ -433,7 +431,7 @@ public class QuestionBankService {
         return new QuestionBankView.Item(
                 String.valueOf(question.getId()),
                 question.getTitle(),
-                preview(question.getContent(), PREVIEW_MAX),
+                preview(question.getContent(), MAX_PREVIEW_CHARS),
                 question.getType(),
                 question.getJudgeMode() == null ? "TEXT" : question.getJudgeMode(),
                 intValue(question.getDifficulty()),
@@ -536,7 +534,7 @@ public class QuestionBankService {
     }
 
     private static String format(LocalDateTime time) {
-        return time == null ? null : time.format(TIME_FORMAT);
+        return time == null ? null : time.format(STANDARD);
     }
 
     private static int intValue(Integer value) {

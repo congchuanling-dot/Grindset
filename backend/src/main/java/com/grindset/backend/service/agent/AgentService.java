@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.common.constant.InputLimits.CHAT_MAX_MESSAGE_LENGTH;
+import static com.grindset.backend.common.constant.InputLimits.CHAT_MAX_REQUEST_MESSAGES;
+import static com.grindset.backend.service.agent.AgentConstants.MAX_OBSERVATION_CHARS;
+import static com.grindset.backend.service.agent.AgentConstants.MAX_STEPS;
+
 /**
  * Agent 主循环:模型决策 -> 执行只读工具 -> 观察结果回填,直到 final 后用真实流式输出正文。
  * 决策和最终回答是两次模型调用:决策轮只出 JSON,避免正文和工具调用混在一起。
@@ -27,15 +32,6 @@ import java.util.Map;
 public class AgentService {
 
     private static final Logger log = LoggerFactory.getLogger(AgentService.class);
-
-    /** 最多几轮工具决策,防止模型绕圈 */
-    private static final int MAX_STEPS = 5;
-    /** 单条消息最大字符数,和对话接口保持一致 */
-    private static final int MAX_MESSAGE_LENGTH = 8000;
-    /** 前端一次最多能带多少条历史 */
-    private static final int MAX_REQUEST_MESSAGES = 200;
-    /** 单个工具结果回填给模型前的截断长度,防止上下文爆炸 */
-    private static final int MAX_OBSERVATION_CHARS = 4000;
 
     private final LlmProperties properties;
     private final ChatService chatService;
@@ -180,7 +176,7 @@ public class AgentService {
         if (raw == null || raw.isEmpty()) {
             throw new BizException(400, "消息不能为空");
         }
-        if (raw.size() > MAX_REQUEST_MESSAGES) {
+        if (raw.size() > CHAT_MAX_REQUEST_MESSAGES) {
             throw new BizException(400, "消息数量过多");
         }
 
@@ -197,8 +193,8 @@ public class AgentService {
             if (content.isBlank()) {
                 throw new BizException(400, "消息内容不能为空");
             }
-            if (content.length() > MAX_MESSAGE_LENGTH) {
-                throw new BizException(400, "单条消息不能超过 " + MAX_MESSAGE_LENGTH + " 字");
+            if (content.length() > CHAT_MAX_MESSAGE_LENGTH) {
+                throw new BizException(400, "单条消息不能超过 " + CHAT_MAX_MESSAGE_LENGTH + " 字");
             }
             result.add(new ChatMessage(role, content));
         }
