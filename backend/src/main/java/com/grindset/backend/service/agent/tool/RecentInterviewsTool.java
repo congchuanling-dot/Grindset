@@ -1,9 +1,9 @@
 package com.grindset.backend.service.agent.tool;
 
 import com.grindset.backend.dto.InterviewSummary;
-import com.grindset.backend.service.InterviewService;
 import com.grindset.backend.service.agent.AgentTool;
 import com.grindset.backend.service.agent.AgentToolResult;
+import com.grindset.backend.service.interview.InterviewSessionService;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
@@ -16,10 +16,10 @@ import java.util.Map;
 @Component
 public class RecentInterviewsTool implements AgentTool {
 
-    private final InterviewService interviewService;
+    private final InterviewSessionService interviewSessionService;
 
-    public RecentInterviewsTool(InterviewService interviewService) {
-        this.interviewService = interviewService;
+    public RecentInterviewsTool(InterviewSessionService interviewSessionService) {
+        this.interviewSessionService = interviewSessionService;
     }
 
     @Override
@@ -41,7 +41,7 @@ public class RecentInterviewsTool implements AgentTool {
     @Override
     public AgentToolResult execute(long userId, Map<String, Object> args) {
         int limit = AgentToolArgs.integer(args, "limit", 5, 1, 20);
-        List<InterviewSummary> all = interviewService.list(userId, null);
+        List<InterviewSummary> all = interviewSessionService.list(userId, null);
         List<InterviewSummary> items = all.size() > limit ? all.subList(0, limit) : all;
 
         Map<String, Object> data = new LinkedHashMap<>();

@@ -10,7 +10,9 @@ import com.grindset.backend.dto.InterviewDetail;
 import com.grindset.backend.dto.InterviewSummary;
 import com.grindset.backend.llm.LlmException;
 import com.grindset.backend.security.LoginUser;
-import com.grindset.backend.service.InterviewService;
+import com.grindset.backend.service.interview.InterviewReportService;
+import com.grindset.backend.service.interview.InterviewSessionService;
+import com.grindset.backend.service.interview.InterviewTurnService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,30 +48,37 @@ public class InterviewController {
 
     private static final long SSE_TIMEOUT_MS = 5 * 60 * 1000L;
 
-    private final InterviewService interviewService;
+    private final InterviewSessionService sessionService;
+    private final InterviewTurnService turnService;
+    private final InterviewReportService reportService;
     private final ObjectMapper objectMapper;
 
-    public InterviewController(InterviewService interviewService, ObjectMapper objectMapper) {
-        this.interviewService = interviewService;
+    public InterviewController(InterviewSessionService sessionService,
+                               InterviewTurnService turnService,
+                               InterviewReportService reportService,
+                               ObjectMapper objectMapper) {
+        this.sessionService = sessionService;
+        this.turnService = turnService;
+        this.reportService = reportService;
         this.objectMapper = objectMapper;
     }
 
     @PostMapping
     public ApiResponse<InterviewDetail> create(@AuthenticationPrincipal LoginUser loginUser,
                                               @RequestBody CreateInterviewRequest request) {
-        return ApiResponse.ok(interviewService.create(userId(loginUser), request));
+        return ApiResponse.ok(sessionService.create(userId(loginUser), request));
     }
 
     @GetMapping
     public ApiResponse<List<InterviewSummary>> list(@AuthenticationPrincipal LoginUser loginUser,
                                                     @RequestParam(required = false) List<Long> resumeIds) {
-        return ApiResponse.ok(interviewService.list(userId(loginUser), resumeIds));
+        return ApiResponse.ok(sessionService.list(userId(loginUser), resumeIds));
     }
 
     @GetMapping("/{id}")
     public ApiResponse<InterviewDetail> detail(@AuthenticationPrincipal LoginUser loginUser,
                                                @PathVariable long id) {
-        return ApiResponse.ok(interviewService.detail(userId(loginUser), id));
+        return ApiResponse.ok(sessionService.detail(userId(loginUser), id));
     }
 
     /** 出题走 SSE,和对话页保持一致的 delta / done / error 事件 */
@@ -86,25 +95,25 @@ public class InterviewController {
     public ApiResponse<AnswerResult> answer(@AuthenticationPrincipal LoginUser loginUser,
                                             @PathVariable long id,
                                             @RequestBody AnswerRequest request) {
-        return ApiResponse.ok(interviewService.answer(userId(loginUser), id, request));
+        return ApiResponse.ok(turnService.answer(userId(loginUser), id, request));
     }
 
     @PostMapping("/{id}/finish")
     public ApiResponse<InterviewDetail.ReportView> finish(@AuthenticationPrincipal LoginUser loginUser,
                                                           @PathVariable long id) {
-        return ApiResponse.ok(interviewService.finish(userId(loginUser), id));
+        return ApiResponse.ok(reportService.finish(userId(loginUser), id));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal LoginUser loginUser,
                                     @PathVariable long id) {
-        interviewService.delete(userId(loginUser), id);
+        sessionService.delete(userId(loginUser), id);
         return ApiResponse.ok(null);
     }
 
     private void runQuestion(long userId, long id, SseEmitter emitter) {
         try {
-            InterviewDetail.QuestionView question = interviewService.nextQuestion(userId, id,
+            InterviewDetail.QuestionView question = turnService.nextQuestion(userId, id,
                     text -> sendEvent(emitter, "delta", Map.of("text", text)));
             sendEvent(emitter, "done", Map.of(
                     "questionId", question.id(),
