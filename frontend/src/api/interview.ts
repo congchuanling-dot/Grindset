@@ -151,9 +151,10 @@ export async function submitAnswer(sessionId: string, content: string): Promise<
   return unwrap<AnswerResult>(res, '提交回答失败')
 }
 
-export async function finishInterview(sessionId: string): Promise<InterviewReport> {
+/** 生成复盘报告；没有完成任何题目时后端只结束会话，返回 null */
+export async function finishInterview(sessionId: string): Promise<InterviewReport | null> {
   const res = await request(`/api/interviews/${sessionId}/finish`, { method: 'POST' })
-  return unwrap<InterviewReport>(res, '生成复盘报告失败')
+  return unwrap<InterviewReport | null>(res, '生成复盘报告失败')
 }
 
 export interface QuestionStreamHandlers {

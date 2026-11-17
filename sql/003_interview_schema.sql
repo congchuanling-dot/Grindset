@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS interview_questions (
     id                BIGINT       NOT NULL COMMENT '主键,雪花 ID',
     session_id        BIGINT       NOT NULL COMMENT 'interview_sessions.id',
     seq               INT          NOT NULL COMMENT '第几题,从 1 开始',
-    status            TINYINT      NOT NULL DEFAULT 0 COMMENT '0 未开始 / 1 提问中 / 2 作答中 / 3 已收束',
+    status            TINYINT      NOT NULL DEFAULT 0 COMMENT '0 未开始 / 1 提问中 / 2 作答中 / 3 已收束 / 4 已放弃',
     follow_up_count   INT          NOT NULL DEFAULT 0 COMMENT '已追问次数,0~3',
     score             TINYINT      NULL COMMENT '本题评分 1~5',
     knowledge_points  JSON         NULL COMMENT '本题命中知识点',

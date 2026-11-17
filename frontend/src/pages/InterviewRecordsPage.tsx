@@ -1,7 +1,7 @@
-import { AlertCircle, ChevronRight, Clock3, FileText, History, Loader2 } from 'lucide-react'
+import { AlertCircle, ChevronRight, Clock3, FileText, History, Loader2, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listInterviews, type InterviewSummary } from '../api/interview'
+import { deleteInterview, listInterviews, type InterviewSummary } from '../api/interview'
 import { listResumes, type ResumeSummary } from '../api/resume'
 
 /**
@@ -16,6 +16,7 @@ function InterviewRecordsPage() {
   const [sessions, setSessions] = useState<InterviewSummary[]>([])
   const [loadingResumes, setLoadingResumes] = useState(true)
   const [loadingSessions, setLoadingSessions] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -58,6 +59,21 @@ function InterviewRecordsPage() {
     setSelectedResumeIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     )
+  }
+
+  async function handleDelete(id: string) {
+    if (deletingId) return
+    if (!window.confirm('删除后不可恢复，确定删除这场面试吗？')) return
+    setDeletingId(id)
+    setError(null)
+    try {
+      await deleteInterview(id)
+      setSessions((prev) => prev.filter((item) => item.id !== id))
+    } catch (e) {
+      setError(errMessage(e))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -173,25 +189,51 @@ function InterviewRecordsPage() {
           ) : (
             <div className="grid gap-2 lg:grid-cols-2">
               {sessions.map((session) => (
-                <button
+                <div
                   key={session.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => navigate(`/interview/${session.id}`)}
-                  className="group rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-teal-300 hover:shadow-sm"
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      navigate(`/interview/${session.id}`)
+                    }
+                  }}
+                  className="group cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-teal-300 hover:shadow-sm focus:outline-none focus-visible:border-teal-400"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="line-clamp-1 text-sm font-medium text-slate-800">
                       {session.position}
                     </span>
-                    {session.status === 1 ? (
-                      <span className="shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
-                        {session.overallScore != null ? `${session.overallScore} 分` : '已结束'}
-                      </span>
-                    ) : (
-                      <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
-                        进行中
-                      </span>
-                    )}
+                    <div className="flex shrink-0 items-center gap-1">
+                      {session.status === 1 ? (
+                        <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
+                          {session.overallScore != null ? `${session.overallScore} 分` : '已结束'}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
+                          进行中
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        title="删除这场面试"
+                        disabled={deletingId === session.id}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void handleDelete(session.id)
+                        }}
+                        className="rounded p-1 text-slate-300 transition hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
+                      >
+                        {deletingId === session.id ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={13} />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
@@ -208,11 +250,15 @@ function InterviewRecordsPage() {
                       {session.createdAt}
                     </span>
                     <span className="ml-auto flex items-center gap-0.5 text-teal-600">
-                      {session.status === 1 ? '查看复盘' : '继续面试'}
+                      {session.status === 1
+                        ? session.overallScore != null
+                          ? '查看复盘'
+                          : '查看详情'
+                        : '继续面试'}
                       <ChevronRight size={12} />
                     </span>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}

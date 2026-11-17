@@ -23,7 +23,7 @@ public class InterviewQuestion {
 
     private Integer seq;
 
-    /** 0 未开始 / 1 提问中 / 2 作答中 / 3 已收束 */
+    /** 0 未开始 / 1 提问中 / 2 作答中 / 3 已收束 / 4 已放弃 */
     private Integer status;
 
     private Integer followUpCount;

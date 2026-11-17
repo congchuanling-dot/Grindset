@@ -56,8 +56,10 @@ public class InterviewService {
 
     private static final int SESSION_ONGOING = 0;
     private static final int SESSION_FINISHED = 1;
+    private static final int QUESTION_ASKING = 1;
     private static final int QUESTION_ANSWERED = 2;
     private static final int QUESTION_DONE = 3;
+    private static final int QUESTION_ABANDONED = 4;
 
     private static final String ROLE_INTERVIEWER = "INTERVIEWER";
     private static final String ROLE_USER = "USER";
@@ -382,7 +384,7 @@ public class InterviewService {
         }
     }
 
-    /** 生成复盘报告;已生成过直接返回,支持提前结束 */
+    /** 生成复盘报告;已生成过直接返回,支持提前结束或 0 题结束 */
     public InterviewDetail.ReportView finish(long userId, long id) {
         ReentrantLock lock = lockOf(id);
         if (!lock.tryLock()) {
@@ -390,13 +392,30 @@ public class InterviewService {
         }
         try {
             InterviewSession session = requireOwned(userId, id);
-            if (intValue(session.getStatus()) == SESSION_FINISHED && session.getReportJson() != null) {
-                return parseReport(session.getReportJson());
+            if (session.getReportJson() != null && !session.getReportJson().isBlank()) {
+                InterviewDetail.ReportView existing = parseReport(session.getReportJson());
+                if (existing != null) {
+                    return existing;
+                }
             }
+
+            // 先关闭会话并把未答完的题标记为已放弃:
+            // 即使报告生成失败,会话也不会一直停在"进行中",用户可以重试生成报告。
+            transactionTemplate.executeWithoutResult(status -> {
+                InterviewQuestion patch = new InterviewQuestion();
+                patch.setStatus(QUESTION_ABANDONED);
+                patch.setFinishedAt(LocalDateTime.now());
+                questionMapper.update(patch, new QueryWrapper<InterviewQuestion>()
+                        .eq("session_id", id)
+                        .in("status", QUESTION_ASKING, QUESTION_ANSWERED));
+                session.setStatus(SESSION_FINISHED);
+                sessionMapper.updateById(session);
+            });
 
             List<InterviewQuestion> questions = finishedQuestions(id);
             if (questions.isEmpty()) {
-                throw new BizException(400, "还没有完成任何题目,无法生成复盘报告");
+                // 没有完成任何题目:只结束会话,不生成无意义的复盘报告
+                return null;
             }
 
             String resumeText = resumeText(userId, session.getResumeId());
@@ -405,7 +424,6 @@ public class InterviewService {
 
             session.setReportJson(toJson(report));
             session.setOverallScore(report.overallScore());
-            session.setStatus(SESSION_FINISHED);
             sessionMapper.updateById(session);
 
             return toReportView(report);

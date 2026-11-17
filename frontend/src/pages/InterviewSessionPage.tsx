@@ -8,11 +8,13 @@ import {
   MessageSquare,
   Send,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
+  deleteInterview,
   finishInterview,
   getInterview,
   streamNextQuestion,
@@ -46,6 +48,7 @@ function InterviewSessionPage() {
   const [asking, setAsking] = useState(false)
   const [pendingText, setPendingText] = useState('')
   const [finishing, setFinishing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [wrongHint, setWrongHint] = useState<{ questionId: string; wrongId: string } | null>(null)
 
@@ -145,19 +148,55 @@ function InterviewSessionPage() {
   async function handleFinish(auto = false) {
     if (finishing) return
     if (!auto && detail && detail.completedQuestions < detail.questionCount) {
-      const ok = window.confirm('结束后将根据已完成的题目生成复盘报告，确定现在结束吗？')
-      if (!ok) return
+      const message =
+        detail.completedQuestions === 0
+          ? '本场面试还没有完成任何题目，结束后不会生成复盘报告，确定结束吗？'
+          : '结束后将根据已完成的题目生成复盘报告，确定现在结束吗？'
+      if (!window.confirm(message)) return
     }
     setFinishing(true)
     setError(null)
     try {
       const report = await finishInterview(sessionId)
-      setDetail((prev) => (prev ? { ...prev, report, status: 1, overallScore: report.overallScore } : prev))
-      setReportOpen(true)
+      setDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 1,
+              report,
+              overallScore: report ? report.overallScore : prev.overallScore,
+              // 服务端会把未答完的题标记为已放弃，本地状态同步一下
+              questions: prev.questions.map((question) =>
+                question.status === 2 ? { ...question, status: 4 } : question,
+              ),
+            }
+          : prev,
+      )
+      if (report) setReportOpen(true)
     } catch (e) {
       setError(errMessage(e))
+      // 结束请求可能已在服务端生效(例如报告生成失败)，重新拉详情保证状态一致
+      try {
+        setDetail(await getInterview(sessionId))
+      } catch {
+        // 刷新失败时保留当前页面
+      }
     } finally {
       setFinishing(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (deleting) return
+    if (!window.confirm('删除后不可恢复，确定删除这场面试吗？')) return
+    setDeleting(true)
+    setError(null)
+    try {
+      await deleteInterview(sessionId)
+      navigate('/records')
+    } catch (e) {
+      setError(errMessage(e))
+      setDeleting(false)
     }
   }
 
@@ -266,17 +305,27 @@ function InterviewSessionPage() {
               <Sparkles size={14} />
               查看复盘
             </button>
-          ) : (
+          ) : detail.status === 0 ? (
             <button
               type="button"
               onClick={() => handleFinish(false)}
-              disabled={finishing || detail.completedQuestions === 0}
+              disabled={finishing || waiting}
               className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-600 transition hover:border-rose-200 hover:text-rose-600 disabled:opacity-50"
             >
               {finishing ? <Loader2 size={14} className="animate-spin" /> : null}
               结束面试
             </button>
-          )}
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void handleDelete()}
+            disabled={deleting || waiting || finishing}
+            title="删除这场面试"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-500 transition hover:border-rose-200 hover:text-rose-600 disabled:opacity-50"
+          >
+            {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            删除
+          </button>
         </div>
       </header>
 
@@ -334,14 +383,20 @@ function InterviewSessionPage() {
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center">
               <CheckCircle2 size={22} className="mx-auto text-teal-600" />
               <p className="mt-2 text-sm text-slate-600">这场面试已结束</p>
-              <button
-                type="button"
-                onClick={() => handleFinish(true)}
-                disabled={finishing}
-                className="mt-3 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-teal-700"
-              >
-                生成复盘报告
-              </button>
+              {detail.completedQuestions === 0 ? (
+                <p className="mt-1 text-xs text-slate-400">
+                  没有完成任何题目，未生成复盘报告。可以直接删除这场面试。
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleFinish(true)}
+                  disabled={finishing}
+                  className="mt-3 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-teal-700"
+                >
+                  {finishing ? '生成中…' : '生成复盘报告'}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -449,6 +504,9 @@ function QuestionThread({ question }: { question: InterviewQuestion }) {
         {question.status === 3 && question.score != null && (
           <span className="rounded-full bg-teal-50 px-2 py-0.5 text-teal-700">{question.score}/5</span>
         )}
+        {question.status === 4 && (
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">已放弃</span>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -471,6 +529,10 @@ function QuestionThread({ question }: { question: InterviewQuestion }) {
             </div>
           )}
         </div>
+      )}
+
+      {question.status === 4 && (
+        <p className="ml-9 text-[11px] text-slate-400">本题未答完，未计入复盘。</p>
       )}
     </section>
   )
