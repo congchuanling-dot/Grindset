@@ -1,0 +1,449 @@
+# AGENTS.md
+
+本文件面向在本仓库中工作的 AI Agent / 新协作者，说明项目定位、架构、接口、数据模型和硬性约定。改动代码前先读这里，再读 `docs/` 下对应的技术设计。
+
+## 1. 项目是什么
+
+Grindset 是一个「面试复习闭环」全栈应用：
+
+```
+上传简历 → AI 模拟面试 → 复盘报告 → 掌握度画像 → 错题重练 → 题库刷题（含编程题判题）
+```
+
+外加首页的 AI 助手对话。产品骨架是围绕「简历 → 面试 → 知识点 → 错题」这条数据闭环做复习，而不是一个通用聊天工具。
+
+技术栈：
+
+- 后端：Spring Boot 3.4.1 / Java 21 / Maven / MyBatis-Plus 3.5.9 / MySQL 8 / Redis / JWT(jjwt) / PDFBox / Apache POI
+- 前端：React 19 / TypeScript / Vite 8 / Tailwind CSS 4 / react-router-dom 7 / lucide-react / Monaco Editor
+- 判题：本机 Docker 一次性容器（Java / Python），断网并限制 CPU、内存、进程数
+
+## 2. 目录结构
+
+```
+Grindset/
+├── AGENTS.md                  # 本文件
+├── README.md                  # 快速说明（注意：端口信息已过期，见下文）
+├── backend/                   # Spring Boot 后端
+│   ├── src/main/java/com/grindset/backend/
+│   │   ├── controller/        # HTTP 入口，只做参数校验和调用 service
+│   │   ├── service/           # 业务逻辑（面试、简历、题库、判题、画像、错题、LLM 编排）
+│   │   ├── llm/               # LLM 客户端、路由、密钥加密
+│   │   ├── mapper/            # MyBatis-Plus Mapper
+│   │   ├── entity/            # 数据库实体
+│   │   ├── dto/               # 请求/响应对象
+│   │   ├── security/          # JWT 过滤器、token 签发/刷新、401/403 处理器
+│   │   ├── config/            # SecurityConfig、各类 @ConfigurationProperties
+│   │   └── common/            # 统一响应、异常、枚举、雪花 ID
+│   └── src/main/resources/
+│       ├── application.yml
+│       └── db/                # llm_catalog.sql / llm_keys_balance.sql（手工执行）
+├── frontend/                  # React 前端
+│   └── src/
+│       ├── api/               # 按业务域拆分的接口封装
+│       ├── auth/              # 会话存储、路由守卫
+│       ├── components/        # 简历预览、Toast 等
+│       ├── layouts/           # 侧边栏外壳
+│       └── pages/             # 各业务页面
+├── sql/                       # 按编号顺序手工执行的建表/种子脚本
+└── docs/                      # 各模块产品方案与技术设计
+```
+
+## 3. 启动与初始化
+
+### 3.1 前置依赖
+
+- JDK 21+、Maven 3.9+、Node.js 20+
+- MySQL 8（Docker 即可）、Redis
+- 使用编程题判题时需要本机 Docker，并提前拉取判题镜像
+
+### 3.2 数据库
+
+没有 Flyway / Liquibase，所有 DDL 都是手工执行。**按编号顺序执行**：
+
+```bash
+mysql -uroot -p123456 < sql/001_auth_schema.sql
+mysql -uroot -p123456 < sql/002_resume_schema.sql
+mysql -uroot -p123456 < sql/003_interview_schema.sql
+mysql -uroot -p123456 < sql/004_knowledge_schema.sql
+mysql -uroot -p123456 < sql/005_wrong_question_schema.sql
+mysql -uroot -p123456 < sql/006_question_bank_schema.sql
+mysql -uroot -p123456 < sql/007_question_bank_seed.sql
+mysql -uroot -p123456 < sql/008_coding_schema.sql
+mysql -uroot -p123456 < sql/009_coding_seed.sql
+```
+
+大模型渠道/模型/密钥表不在 `sql/` 下，需要额外执行（**必须带 utf8mb4 参数**，否则中文展示名会乱码）：
+
+```bash
+mysql --default-character-set=utf8mb4 -uroot -p123456 grindset < backend/src/main/resources/db/llm_catalog.sql
+mysql --default-character-set=utf8mb4 -uroot -p123456 grindset < backend/src/main/resources/db/llm_keys_balance.sql
+```
+
+默认连接：MySQL `localhost:3306/grindset`，root/123456；Redis `localhost:6379`，无密码（见 `backend/src/main/resources/application.yml`）。
+
+### 3.3 后端
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+**实际端口是 8081**（`application.yml` 中 `server.port: 8081`）。README 里写的 8080 是过期信息，不要被误导。健康检查：`GET http://localhost:8081/api/health`。
+
+### 3.4 前端
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+默认 `http://localhost:5173`，Vite 将 `/api` 代理到 `http://localhost:8081`（可用 `VITE_PROXY_TARGET` 覆盖）。
+
+### 3.5 常用环境变量
+
+| 变量 | 作用 |
+| --- | --- |
+| `JWT_SECRET` | access token 签名密钥 |
+| `ADMIN_TOKEN` | 管理接口 `X-Admin-Token`；未配置时 `/api/admin/**` 全部 403 |
+| `LLM_MASTER_KEY` | 加密数据库里 API Key 的主密钥；换掉会导致已存 key 全部解不开 |
+| `DEEPSEEK_API_KEY` / `DASHSCOPE_API_KEY` / `ZHIPU_API_KEY` / `MINIMAX_API_KEY` / `ARK_API_KEY` | 各厂商兜底 key（正常应通过管理接口写入数据库 key 池） |
+| `RESUME_LLM_PROVIDER` / `RESUME_LLM_MODEL` | 简历解析固定使用的厂商/模型；两者都不配则自动选第一个可用 |
+| `INTERVIEW_LLM_PROVIDER` / `INTERVIEW_LLM_MODEL` | AI 面试/评分/错题重练/题库评分固定使用；规则同上 |
+| `JUDGE_JAVA_IMAGE` / `JUDGE_PYTHON_IMAGE` | 判题镜像名 |
+| `VITE_PROXY_TARGET` | 前端开发代理目标 |
+
+## 4. 后端架构
+
+### 4.1 分层约定
+
+`Controller → Service → Mapper → MySQL`，Controller 不写业务逻辑；跨表事务放在 Service，使用 `TransactionTemplate`（项目里基本不用 `@Transactional` 注解，遵循现有风格）。
+
+统一响应：
+
+```json
+{ "code": 0, "message": "ok", "data": {} }
+```
+
+- `code = 0` 成功；非 0 为业务错误
+- 业务错误抛 `BizException(code, message)`，由 `GlobalExceptionHandler` 转成统一响应
+- 鉴权失败/无权限分别由 `RestAuthenticationEntryPoint`、`RestAccessDeniedHandler` 输出 JSON
+
+主键统一由 `SnowflakeIdGenerator` 生成 `BIGINT`，**数据库不用自增**。返回给前端的长 ID 在 DTO 里用 `String`（如 `resumeId`、`questionId`），避免 JS Number 精度丢失。
+
+### 4.2 认证与鉴权
+
+- 账号即邮箱，密码 BCrypt 存储（`users` + `user_identities`，provider=`LOCAL`）
+- access token：JWT，默认 30 分钟，放响应体，前端存内存/sessionStorage 并放在 `Authorization: Bearer`
+- refresh token：放 HttpOnly Cookie，路径限定 `/api/auth`，默认 7 天，存 Redis
+- `/api/auth/refresh` 采用**轮换**：旧 refresh 立即作废；`/api/auth/logout` 吊销并清 Cookie
+- 除 `/api/health`、`/api/auth/{login,register,refresh,logout}`、`/api/admin/**` 外，其余接口都必须登录
+- 需要当前用户的接口用 `@AuthenticationPrincipal LoginUser loginUser` 取 `userId`，**不要接受前端传入的 userId**
+- 管理接口不接 JWT，只校验请求头 `X-Admin-Token`（`AdminGuard`）
+- 简历/面试/错题等资源的所有权校验失败统一返回 404，避免泄露资源是否存在
+
+### 4.3 流式输出（SSE）
+
+对话和 AI 出题使用 Spring `SseEmitter`，跑在虚拟线程上（`spring.threads.virtual.enabled=true`）：
+
+- `POST /api/chat`：事件 `delta`（`{"text":"..."}`）→ `done` → 结束；失败发 `error`（`{"message":"..."}`）
+- `POST /api/interviews/{id}/questions`：同上，`done` 额外带 `{"questionId":"...","seq":"..."}`
+
+前端不用 `EventSource`，而是 `fetch` + `ReadableStream` 解析（见 `frontend/src/api/chat.ts`），因为需要带 `Authorization` 头。
+
+### 4.4 并发与事务约定
+
+- 单实例内用 `ConcurrentHashMap<Long, ReentrantLock>` 按用户/题目串行化，`tryLock()` 失败返回 409/429
+- 慢 LLM 调用放在数据库事务外，先拿到结果再开短事务落库
+- 画像、错题收录是**旁路**：失败只记日志，不回滚主流程，可通过管理员重建接口修复
+- 判题使用单线程 `ExecutorService` 串行执行，提交先落库 `PENDING`，前端轮询
+
+## 5. 前端架构
+
+### 5.1 路由与页面
+
+| 路由 | 页面 | 说明 |
+| --- | --- | --- |
+| `/login` | `LoginPage` | 登录/注册 |
+| `/` | `ChatPage` | AI 助手对话（SSE 流式） |
+| `/resume` | `ResumePage` | 上传简历、列表、预览 |
+| `/questions` | `QuestionBankPage` | 题库列表 + 筛选 + 统计 |
+| `/questions/:id` | `QuestionDetailPage` | 题目详情：问答题作答 / 编程题 IDE |
+| `/interview` | `InterviewPage` | 面试配置入口（简历、岗位、轮次、风格、题数） |
+| `/interview/:sessionId` | `InterviewSessionPage` | 面试对话、复盘报告 |
+| `/records` | `InterviewRecordsPage` | 面试记录列表、按简历筛选、删除 |
+| `/knowledge` | `KnowledgePage` | 掌握度画像 |
+| `/wrong-questions` | `WrongQuestionsPage` | 错题本与重练 |
+
+除 `/login` 外都套在 `RequireAuth` + `AppLayout` 下。
+
+### 5.2 请求层
+
+- `src/api/http.ts`：`authFetch` 自动带 access token；401 时**单飞**调用 refresh 并重试一次，避免并发刷新轮换两次
+- 浏览器请求统一 `credentials: 'include'`，保证 refresh Cookie 被携带
+- 各业务接口在 `src/api/*.ts` 中封装，页面不直接拼 URL
+
+## 6. 核心业务链路
+
+### 6.1 简历解析
+
+`ResumeController → ResumeService → ResumeTextExtractor → ResumeLlmParser`
+
+1. 上传 PDF/DOCX/MD/TXT（单文件 ≤ 10MB）
+2. 用 PDFBox / POI / 文本读取做**确定性文本抽取**（不交给 LLM）
+3. LLM 只负责把纯文本转成固定 JSON 结构（失败重试一次）
+4. 落库通用章节模型：`resumes` → `resume_sections` → `resume_section_items`，技能单独 `resume_skills`
+5. **不保存简历原件与原始纯文本**，只存结构化结果；解析失败写 `parse_status=2` 与 `error_msg`
+6. 章节类型见 `common/ResumeSectionType`，未知类型统一降级 `OTHER` 并保留原章节标题；新增类型只改枚举，不改表
+
+### 6.2 AI 面试
+
+`InterviewController → InterviewService → InterviewLlmService`
+
+- 创建会话：必须选一份已解析成功的简历，岗位/风格（`pressure`/`middle`/`relaxed`）/轮次/侧重点/题数（3/5/8）
+- 出题：`POST /{id}/questions` 流式生成下一道主问题，落 `interview_questions` + `interview_messages`
+- 答题：`POST /{id}/answers` 一次请求内完成「一句话点评 + 是否追问 + 是否收束本题」
+  - 一道大题 = 主问题 + 最多 3 次追问；题与题之间不共享上下文
+  - 收束时写入本题评分（1~5）、知识点、总评、建议
+- 收束后的副作用：
+  - `KnowledgeProfileService.record()` 更新掌握度（独立事务）
+  - 本题得分 ≤ 2 时 `WrongQuestionService.collect()` 自动收录错题本
+- 复盘：`POST /{id}/finish` 生成 0~100 总分与完整报告 JSON，存 `report_json`
+- 会话状态：`0 进行中 / 1 已结束`；题目状态：`0 未开始 / 1 提问中 / 2 作答中 / 3 已收束 / 4 已放弃`
+
+### 6.3 掌握度画像
+
+`KnowledgeProfileService`
+
+- 知识点名称先归一（去空白/标点、全半角），查或建 `knowledge_points`
+- 用户掌握度按 EMA 更新：`新值 = 旧值 × 0.7 + 本次观测 × 0.3`（观测为 1~5 分映射到 0~100）
+- 等级：`<40 WEAK`、`40~74 LEARNING`、`>=75 MASTERED`；超过 30 天未复习视为 stale
+- `weightedCandidates()`：面试出题时按掌握度加权，优先抽薄弱/陈旧知识点
+- `knownNames()`：限制评分时模型自造知识点名称，优先复用已有名称
+- 管理端 `POST /api/admin/knowledge/rebuild?userId=` 可按历史面试 + 错题重练重算
+
+### 6.4 错题本
+
+`WrongQuestionService`
+
+- 收录条件：面试题评分 ≤ 2；题库问答题评分 ≤ 2；编程题判题未通过
+- 错题是**快照**，与原面试解耦，删除原面试不影响错题本
+- 唯一键 `(user_id, question_id)`；`source` 区分 `INTERVIEW` / `BANK`
+- 重练：模型评分 + 参考答案，写 `question_retries`，同步回写掌握度
+- 重练得分 ≥ 3 标记已掌握；复习间隔 1 / 3 / 7 天（按得分）
+
+### 6.5 题库
+
+`QuestionBankService`
+
+- 题型 `type`：`BASICS` / `SCENARIO` / `PROJECT` / `CODE`
+- 判题形态 `judge_mode`：`TEXT` 问答 / `CODING` 编程
+- 问答题作答：调用 AI 评分（命中/遗漏要点、点评、建议），写 `question_attempts` 与 `user_question_progress`
+- 进度筛选状态：`TODO` / `DONE` / `WRONG`
+- 管理端导入：`POST /api/admin/questions/import`，按题干 SHA-256 幂等
+
+### 6.6 编程题判题
+
+`CodingService → JudgeService`
+
+- 语言：`JAVA`（`Main.java`，从 stdin 读、stdout 写，先编译再逐用例运行）/ `PYTHON`（`main.py`）
+- 每次运行起一次性 Docker 容器，断网，限制 CPU/内存/PID，超时即杀
+- `POST /{id}/run` 同步运行**例题**（不写历史）；`POST /{id}/submissions` 异步判题并立即返回 `PENDING`
+- `GET /api/questions/submissions/{submissionId}` 前端轮询
+- 同一用户同一时刻只允许一个运行/提交任务，否则 429
+- 判题结束回写进度与掌握度；未通过自动进错题本
+- 判题状态：`PENDING` / `RUNNING` / `ACCEPTED` / `WRONG_ANSWER` / `COMPILE_ERROR` / `RUNTIME_ERROR` / `TIME_LIMIT_EXCEEDED` / `SYSTEM_ERROR`
+
+## 7. 接口清单
+
+所有接口都以 `/api` 开头；除标注「公开」「管理」外都需要 JWT。
+
+### 认证 `/api/auth`
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/register` | 公开。邮箱 + 密码（8~16 位且含字母数字）注册，返回 access token 并下发 refresh Cookie |
+| POST | `/login` | 公开。登录，返回同上 |
+| POST | `/refresh` | 公开。用 Cookie 中的 refresh 轮换新 token 对 |
+| POST | `/logout` | 公开。吊销 refresh 并清 Cookie |
+| GET | `/me` | 当前用户资料（id/nickname/email） |
+
+### AI 助手 `/api/chat`
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/models` | 可用厂商 + 模型 + 余额 + 可用 key 数（只含已配置 key 的渠道） |
+| POST | `/` | 请求体 `{provider, model, messages:[{role,content}]}`；SSE 流式对话，system 提示词由服务端注入 |
+
+### 简历 `/api/resumes`
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/` | multipart 字段 `file`，上传并同步解析，返回结构化详情 |
+| GET | `/` | 当前用户简历列表 |
+| GET | `/{id}` | 简历详情（章节 + 条目 + 技能） |
+| DELETE | `/{id}` | 删除简历及子表数据 |
+
+### AI 面试 `/api/interviews`
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/` | 创建会话 `{resumeId, position, style, round, focus[], questionCount}` |
+| GET | `/` | 历史会话列表；可选 `resumeIds` 过滤 |
+| GET | `/{id}` | 会话详情（刷新页面恢复） |
+| POST | `/{id}/questions` | SSE 生成下一道主问题 |
+| POST | `/{id}/answers` | 提交回答 `{content}`，返回点评 + 追问/收束/评分 |
+| POST | `/{id}/finish` | 生成复盘报告 |
+| DELETE | `/{id}` | 删除会话 |
+
+### 掌握度画像 `/api/knowledge`
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/profile` | 可选 `level=WEAK/LEARNING/MASTERED`、`domain`、`limit` |
+
+### 题库 `/api/questions`
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/` | 列表 + 统计；可选 `domain`、`difficulty`、`status`、`keyword`、`page`、`size` |
+| GET | `/stats` | 只取做题统计 |
+| GET | `/{id}` | 题目详情 + 我的作答历史 |
+| GET | `/{id}/attempts` | 某题作答历史 |
+| POST | `/{id}/attempts` | 提交问答题 `{answer}`，AI 评分 |
+| GET | `/{id}/coding` | 编程题详情（题面 + 例题 + 初始代码 + 时限） |
+| POST | `/{id}/run` | 运行例题 `{language, code}`，同步返回逐用例结果 |
+| POST | `/{id}/submissions` | 提交判题 `{language, code}`，返回 PENDING |
+| GET | `/submissions/{submissionId}` | 轮询判题结果 |
+| GET | `/{id}/submissions` | 我的提交历史 |
+
+### 错题本 `/api/wrong-questions`
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/` | 列表 + summary；可选 `status`、`kpId`、`kp`、`sessionId`、`limit` |
+| GET | `/{id}` | 错题详情 + 重练历史 |
+| POST | `/{id}/retry` | 提交重练 `{answer}` |
+
+### 管理接口（需要 `X-Admin-Token`，不需要 JWT）
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/admin/llm/channels` | 渠道列表：余额、key 掩码、失败次数、冷却时间 |
+| POST | `/api/admin/llm/channels/{id}/keys` | 给渠道新增 key（加密存储，返回掩码） |
+| PATCH | `/api/admin/llm/keys/{id}` | 启用（0）/ 禁用（2）某把 key |
+| PUT | `/api/admin/llm/channels/{id}/balance` | 手工维护余额，来源改为 `MANUAL` |
+| POST | `/api/admin/llm/channels/{id}/balance/refresh` | 立即拉取余额（目前仅 DeepSeek） |
+| POST | `/api/admin/knowledge/rebuild?userId=` | 按用户重建掌握度画像 |
+| POST | `/api/admin/wrong-questions/rebuild?userId=` | 按用户回填历史错题 |
+| POST | `/api/admin/questions/import` | JSON 批量导入题库，按内容哈希幂等 |
+
+## 8. 大模型接入架构
+
+- 渠道、模型目录、key 池都在数据库：`llm_channels`、`llm_models`、`llm_keys`
+- key 用 AES-GCM 密文存储（`llm/SecretCipher`），主密钥来自 `LLM_MASTER_KEY`
+- `ModelCatalogService` 每次请求直接查库聚合，改库即时生效（无缓存）
+- `LlmRouter` 按「渠道优先级 + key 最久未用」依次尝试候选：
+  - **流式**：只有尚未吐出第一个字时才允许换 key；已输出后失败直接上报，避免内容重复
+  - **非流式**：失败可直接换下一把 key
+- 失败会 `markFailed()`，连续失败进入冷却，鉴权失败自动停用
+- 场景与模型配置：
+  - 简历解析：`app.resume.llm.*`，都是空则自动选第一个可用厂商/模型
+  - AI 面试、面试评分、复盘、错题重练、题库评分：`app.interview.llm.*`，规则同上
+  - 首页对话：前端选择的 provider/model
+- 所有结构化输出的 LLM 调用都要求固定 JSON，并做一次解析失败重试；再失败按业务错误返回
+
+## 9. 数据模型
+
+| 脚本 | 表 | 用途 |
+| --- | --- | --- |
+| `001_auth_schema.sql` | `users`、`user_identities` | 用户与登录身份（LOCAL 密码 / 预留 OAuth） |
+| `002_resume_schema.sql` | `resumes`、`resume_sections`、`resume_section_items`、`resume_skills` | 通用章节式简历结构 |
+| `003_interview_schema.sql` | `interview_sessions`、`interview_questions`、`interview_messages` | 面试会话、题目线程、线程内消息 |
+| `004_knowledge_schema.sql` | `knowledge_points`、`user_knowledge_states` | 知识点字典与用户掌握度 |
+| `005_wrong_question_schema.sql` | `wrong_questions`、`question_retries` | 错题快照与重练记录 |
+| `006_question_bank_schema.sql` | `question_bank`、`user_question_progress`、`question_attempts` | 题库、做题进度、作答记录 |
+| `007_question_bank_seed.sql` | — | 约 60 道多领域种子题 |
+| `008_coding_schema.sql` | `question_test_cases`、`question_submissions` + `question_bank` 扩展列 | 编程题用例与提交 |
+| `009_coding_seed.sql` | — | 编程题种子数据 |
+| `db/llm_catalog.sql` | `llm_channels`、`llm_models`、`llm_keys` | 大模型渠道/模型/密钥池 |
+| `db/llm_keys_balance.sql` | 余额相关扩展列 | 渠道余额维护字段 |
+
+约定：
+
+- 表之间**没有物理外键**，关联与级联由代码保证（删除简历/面试时要手动清理子表）
+- 主键均为雪花 `BIGINT`
+- 列表/快照类内容用 JSON 列（知识点、要点、章节条目、报告等）
+- 所有建表脚本尽量可重复执行（`IF NOT EXISTS` / `INSERT IGNORE` / 动态加列）
+
+## 10. 硬性约定（改代码时必须遵守）
+
+1. 简历解析第一版**不保存原件**，只保存结构化结果。
+2. 简历章节使用通用模型，新增经历类型只改枚举，不改表结构。
+3. 文本抽取只用 PDFBox / POI 等确定性库，**不要用 LLM 做文本抽取**。
+4. LLM 只负责「纯文本 → 固定 JSON」，未知章节统一 `OTHER` 并保留原标题。
+5. 资源归属校验失败统一返回 404，包括简历、面试、错题。
+6. 面试记录接口的用户身份只从 JWT 读取，不接受前端传 userId。
+7. 会话全程落库；刷新页面能通过 `GET /api/interviews/{id}` 恢复。
+8. 掌握度用 EMA（0.7/0.3），跨场记忆薄弱点并在出题时加权优先。
+9. 错题是快照，独立于原面试；删除原面试不影响错题本。
+10. 错题收录阈值：本题评分 ≤ 2 自动收录；重练 ≥ 3 标记已掌握。
+11. 题库第一版是力扣刷题形态，不做 PDF/爬虫导入、管理后台 UI、代码判题以外的扩展。
+12. 简历预览组件在简历管理页和 AI 面试页共用同一实现，两处样式/行为必须一致。
+
+## 11. 常见改动指引
+
+**新增一个业务接口**
+
+1. `controller/` 加方法，用 `@AuthenticationPrincipal LoginUser` 取用户
+2. 业务放 `service/`，长 ID 转 `String` 再出 DTO
+3. 前端在 `src/api/` 对应模块加封装，页面调用 `authFetch`
+
+**新增一张表**
+
+1. 在 `sql/` 追加编号脚本（可重复执行）
+2. `entity/` + `mapper/`（继承 MyBatis-Plus `BaseMapper`）
+3. 主键用 `SnowflakeIdGenerator`，不要用 `AUTO_INCREMENT`
+
+**新增一个 LLM 场景**
+
+1. 在对应 `XxxLlmService` 中拼 messages + 固定 JSON 协议
+2. 通过 `ModelCatalogService` + `LlmRouter` 选目标，不要直连 HTTP
+3. 非流式用 `complete()`，流式用 `stream()`；解析失败重试一次
+
+**新增前端页面**
+
+1. `pages/` 建组件，`App.tsx` 注册路由（默认放在 `AppLayout` 内）
+2. 侧边栏入口在 `layouts/AppLayout.tsx` 的 `navItems`
+
+## 12. 已知坑与注意事项
+
+- **端口**：后端实际 8081，README 的 8080 是过期信息；前端代理也只指向 8081。
+- **SQL 手工执行**：没有自动迁移，新环境必须按顺序跑完 `sql/` + `db/` 脚本。
+- **LLM 表脚本编码**：执行 `llm_catalog.sql` 必须带 `--default-character-set=utf8mb4`。
+- **管理接口默认关闭**：`ADMIN_TOKEN` 为空时所有 `/api/admin/**` 返回 403。
+- **判题需要 Docker**：Docker 未启动、镜像不存在时提交会失败；镜像名可在 `application.yml` 或环境变量里改。
+- **长 ID 精度**：所有返回给前端的雪花 ID 用字符串；前端不要用 `Number` 解析 ID。
+- **SSE 参数错误**：对话/出题在响应头发出后再出错，只能走 `error` 事件，前端要处理。
+- **单实例假设**：锁和判题队列都是进程内实现，暂不支持多实例水平扩展。
+- **旁路失败**：画像更新、错题收录失败不会让主流程报错，排查时要看日志，并用管理端 rebuild 修复。
+- **JSON 列**：修改实体 JSON 字段时注意 MyBatis-Plus 的类型处理器配置，避免写入变成字符串。
+- **时间**：数据库时区 `Asia/Shanghai`，展示格式统一 `yyyy-MM-dd HH:mm`。
+
+## 13. 文档索引（docs/）
+
+| 文档 | 内容 |
+| --- | --- |
+| `登录模块-技术设计.md` | JWT + refresh 轮换、表结构、接口约定 |
+| `简历解析-技术设计.md` | 文本抽取、LLM JSON 协议、通用章节模型、LLM 渠道表 |
+| `AI面试-技术设计.md` | 会话状态机、出题/追问/评分/复盘、SSE |
+| `P0-掌握度画像与加权出题-产品方案.md` | 画像产品规则与展示口径 |
+| `P0-掌握度画像与加权出题-技术设计.md` | 知识点归一、EMA、加权候选、重建 |
+| `错题重练闭环-产品方案.md` | 收录/重练/掌握规则 |
+| `错题重练闭环-技术设计.md` | 错题快照、重练记录、画像回写 |
+| `面试复习闭环-PRD.md` | 整体产品闭环 |
+| `编程题判题-技术设计.md` | Docker 沙箱、判题流程、异步提交与轮询 |
+| `JWT鉴权-技术设计.md` | 鉴权细节补充 |
+
+修改任何模块前，先读对应设计文档；实现与文档冲突时，以代码现状为准并同步更新文档。
