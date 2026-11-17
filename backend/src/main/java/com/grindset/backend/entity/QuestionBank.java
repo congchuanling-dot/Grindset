@@ -1,0 +1,186 @@
+package com.grindset.backend.entity;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * question_bank 表:题库内容。
+ * type 为 BASICS / SCENARIO / PROJECT;key_points / kp_ids / kp_names 是 JSON 列。
+ */
+@TableName(value = "question_bank", autoResultMap = true)
+public class QuestionBank {
+
+    @TableId(type = IdType.INPUT)
+    private Long id;
+
+    private String title;
+
+    private String content;
+
+    /** BASICS 八股 / SCENARIO 场景 / PROJECT 项目 */
+    private String type;
+
+    /** 难度 1~3 */
+    private Integer difficulty;
+
+    private String domain;
+
+    private String referenceAnswer;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> keyPoints;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<Long> kpIds;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> kpNames;
+
+    /** MANUAL / AI / PDF / CRAWL */
+    private String source;
+
+    private String sourceUrl;
+
+    private String contentHash;
+
+    /** 1 上架 / 0 下架 */
+    private Integer status;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Integer getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(Integer difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public String getReferenceAnswer() {
+        return referenceAnswer;
+    }
+
+    public void setReferenceAnswer(String referenceAnswer) {
+        this.referenceAnswer = referenceAnswer;
+    }
+
+    public List<String> getKeyPoints() {
+        return keyPoints;
+    }
+
+    public void setKeyPoints(List<String> keyPoints) {
+        this.keyPoints = keyPoints;
+    }
+
+    public List<Long> getKpIds() {
+        return kpIds;
+    }
+
+    public void setKpIds(List<Long> kpIds) {
+        this.kpIds = kpIds;
+    }
+
+    public List<String> getKpNames() {
+        return kpNames;
+    }
+
+    public void setKpNames(List<String> kpNames) {
+        this.kpNames = kpNames;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
+    }
+
+    public String getContentHash() {
+        return contentHash;
+    }
+
+    public void setContentHash(String contentHash) {
+        this.contentHash = contentHash;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+}

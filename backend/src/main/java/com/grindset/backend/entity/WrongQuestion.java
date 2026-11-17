@@ -26,6 +26,9 @@ public class WrongQuestion {
 
     private Long questionId;
 
+    /** INTERVIEW 面试 / BANK 题库 */
+    private String source;
+
     private String position;
 
     private String round;
@@ -101,6 +104,14 @@ public class WrongQuestion {
 
     public void setQuestionId(Long questionId) {
         this.questionId = questionId;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     public String getPosition() {

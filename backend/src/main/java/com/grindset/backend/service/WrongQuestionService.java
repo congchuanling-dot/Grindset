@@ -140,6 +140,7 @@ public class WrongQuestionService {
         wrong.setUserId(userId);
         wrong.setSessionId(sessionId);
         wrong.setQuestionId(questionId);
+        wrong.setSource("INTERVIEW");
         wrong.setPosition(session == null ? null : session.getPosition());
         wrong.setRound(session == null ? null : session.getRound());
         wrong.setQuestionContent(questionContent);
@@ -164,8 +165,82 @@ public class WrongQuestionService {
         }
     }
 
-    // ---------- 列表与详情 ----------
+    // ---------- 题库错题收录 ----------
 
+    /**
+     * 题库作答得分 {@code <= WRONG_SCORE_MAX} 时收录/更新错题本,来源标记为 BANK。
+     * best-effort,失败只记日志,不阻塞题库答题主流程。
+     */
+    public void collectFromBank(long userId, long bankQuestionId, String questionContent,
+                                List<String> knowledgePoints, String answer, int score,
+                                String comment, String suggestion) {
+        try {
+            transactionTemplate.executeWithoutResult(status -> doCollectFromBank(
+                    userId, bankQuestionId, questionContent, knowledgePoints, answer, score, comment, suggestion));
+        } catch (Exception e) {
+            log.error("题库错题收录失败 userId={} bankId={}", userId, bankQuestionId, e);
+        }
+    }
+
+    private void doCollectFromBank(long userId, long bankQuestionId, String questionContent,
+                                   List<String> knowledgePoints, String answer, int score,
+                                   String comment, String suggestion) {
+        LocalDateTime now = LocalDateTime.now();
+        List<Long> kpIds = knowledgeProfileService.resolvePointIds(knowledgePoints);
+        WrongQuestion existing = findByQuestion(userId, bankQuestionId);
+        if (existing == null) {
+            WrongQuestion wrong = new WrongQuestion();
+            wrong.setId(idGenerator.nextId());
+            wrong.setUserId(userId);
+            wrong.setQuestionId(bankQuestionId);
+            wrong.setSource("BANK");
+            wrong.setQuestionContent(questionContent);
+            wrong.setOriginalAnswer(truncate(answer, SNAPSHOT_ANSWER_MAX));
+            wrong.setOriginalScore(score);
+            wrong.setOriginalComment(truncate(comment, 500));
+            wrong.setOriginalSuggestion(truncate(suggestion, 500));
+            wrong.setKnowledgePoints(knowledgePoints);
+            wrong.setKpIds(kpIds);
+            wrong.setStatus(STATUS_PENDING);
+            wrong.setRetryCount(0);
+            wrong.setNextReviewAt(now);
+            wrong.setCreatedAt(now);
+            try {
+                wrongQuestionMapper.insert(wrong);
+            } catch (DuplicateKeyException e) {
+                // 并发下已有同题记录,转为更新
+                WrongQuestion concurrent = findByQuestion(userId, bankQuestionId);
+                if (concurrent != null) {
+                    applyBankSnapshot(concurrent, questionContent, knowledgePoints, kpIds,
+                            answer, score, comment, suggestion, now);
+                    wrongQuestionMapper.updateById(concurrent);
+                }
+            }
+        } else {
+            applyBankSnapshot(existing, questionContent, knowledgePoints, kpIds,
+                    answer, score, comment, suggestion, now);
+            wrongQuestionMapper.updateById(existing);
+        }
+    }
+
+    private static void applyBankSnapshot(WrongQuestion wrong, String questionContent,
+                                          List<String> knowledgePoints, List<Long> kpIds,
+                                          String answer, int score, String comment,
+                                          String suggestion, LocalDateTime now) {
+        wrong.setSource("BANK");
+        wrong.setQuestionContent(questionContent);
+        wrong.setOriginalAnswer(truncate(answer, SNAPSHOT_ANSWER_MAX));
+        wrong.setOriginalScore(score);
+        wrong.setOriginalComment(truncate(comment, 500));
+        wrong.setOriginalSuggestion(truncate(suggestion, 500));
+        wrong.setKnowledgePoints(knowledgePoints);
+        wrong.setKpIds(kpIds);
+        wrong.setStatus(STATUS_PENDING);
+        wrong.setMasteredAt(null);
+        wrong.setNextReviewAt(now);
+    }
+
+    // ---------- 列表与详情 ----------
     /** 错题本列表;summary 全量统计,items 按 status / 知识点 / 会话筛选后返回 */
     public WrongQuestionView list(long userId, String status, Long kpId,
                                   String kpName, Long sessionId, int limit) {
