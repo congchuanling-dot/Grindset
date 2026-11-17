@@ -45,13 +45,21 @@ public class ChatService {
      * 参数问题抛 BizException(400),上游问题由 LlmRouter 抛 LlmException。
      */
     public void stream(ChatRequest request, Consumer<String> onDelta) {
-        String providerId = strip(request.getProvider());
+        String model = strip(request.getModel());
+        router.stream(resolveTargets(strip(request.getProvider()), model), model,
+                buildMessages(request.getMessages()), onDelta);
+    }
+
+    /**
+     * 解析候选 (渠道, key) 组合,对话和 Agent 共用。
+     * 参数不合法抛 BizException(400)。
+     */
+    public List<LlmTarget> resolveTargets(String providerId, String model) {
         List<ModelCatalogService.CatalogChannel> channels = catalog.findChannels(providerId);
         if (channels.isEmpty()) {
             throw new BizException(400, "不支持的模型服务:" + providerId);
         }
 
-        String model = strip(request.getModel());
         List<LlmTarget> targets = new ArrayList<>();
         for (ModelCatalogService.CatalogChannel channel : channels) {
             if (!channel.supports(model)) {
@@ -65,8 +73,7 @@ public class ChatService {
         if (targets.isEmpty()) {
             throw new BizException(400, "不支持的模型:" + model);
         }
-
-        router.stream(targets, model, buildMessages(request.getMessages()), onDelta);
+        return targets;
     }
 
     /** 校验历史消息,裁到最近若干条,并在最前面注入 system 提示词 */

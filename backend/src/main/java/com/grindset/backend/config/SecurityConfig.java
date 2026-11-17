@@ -4,6 +4,7 @@ import com.grindset.backend.security.JwtAuthFilter;
 import com.grindset.backend.security.JwtService;
 import com.grindset.backend.security.RestAccessDeniedHandler;
 import com.grindset.backend.security.RestAuthenticationEntryPoint;
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -47,6 +48,9 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
+                        // SSE 结束后容器会再做一次 ASYNC 派发,此时没有安全上下文,
+                        // 不放行会在响应已提交后重复鉴权并报 Access Denied。初始请求仍然要登录。
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         // 预检请求放行
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/health", "/error",

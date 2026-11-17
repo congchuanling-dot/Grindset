@@ -1,12 +1,13 @@
 import { ArrowUp, Plus, Sparkles, Square, Wallet } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { streamAgentChat, type AgentToolStep } from '../api/agent'
 import {
   fetchModels,
-  streamChat,
   type BalanceInfo,
   type ChatMessage,
   type ProviderInfo,
 } from '../api/chat'
+import AgentToolCard from '../components/AgentToolCard'
 
 interface Message {
   id: number
@@ -14,9 +15,13 @@ interface Message {
   content: string
   /** 这条回复是不是报错信息,报错用红色展示 */
   error?: boolean
+  /** Agent 本轮调用过的工具,按执行顺序排列 */
+  steps?: AgentToolStep[]
+  /** 当前阶段提示,回答开始输出后清空 */
+  status?: string
 }
 
-const SUGGESTIONS = ['不知道怎么开始？', '帮我出 3 道 Redis 题', '知识点掌握度是什么？']
+const SUGGESTIONS = ['分析一下我的薄弱点', '我最近面试表现怎么样', '我该优先刷哪些题']
 
 function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -79,9 +84,37 @@ function ChatPage() {
     setMessages((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)))
   }
 
-  function appendToMessage(id: number, text: string) {
+  function appendStep(id: number, step: AgentToolStep) {
     setMessages((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, content: item.content + text } : item)),
+      prev.map((item) =>
+        item.id === id ? { ...item, steps: [...(item.steps ?? []), step] } : item,
+      ),
+    )
+  }
+
+  function updateStep(messageId: number, stepId: string, patch: Partial<AgentToolStep>) {
+    setMessages((prev) =>
+      prev.map((item) =>
+        item.id === messageId
+          ? {
+              ...item,
+              steps: (item.steps ?? []).map((step) =>
+                step.id === stepId ? { ...step, ...patch } : step,
+              ),
+            }
+          : item,
+      ),
+    )
+  }
+
+  /** 正文开始输出后,阶段提示就没用了 */
+  function appendDelta(id: number, text: string) {
+    setMessages((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, content: item.content + text, status: undefined }
+          : item,
+      ),
     )
   }
 
@@ -111,11 +144,16 @@ function ChatPage() {
     setStreamingId(assistantId)
 
     try {
-      await streamChat(
+      await streamAgentChat(
         { provider, model, messages: history },
         {
-          onDelta: (delta) => appendToMessage(assistantId, delta),
-          onError: (message) => updateMessage(assistantId, { content: message, error: true }),
+          onStatus: (text) => updateMessage(assistantId, { status: text }),
+          onToolCall: (step) => appendStep(assistantId, step),
+          onToolResult: (id, ok, summary) =>
+            updateStep(assistantId, id, { status: ok ? 'done' : 'failed', summary }),
+          onDelta: (delta) => appendDelta(assistantId, delta),
+          onError: (message) =>
+            updateMessage(assistantId, { content: message, error: true, status: undefined }),
         },
         controller.signal,
       )
@@ -191,7 +229,7 @@ function ChatPage() {
               你想让我帮你复习什么？
             </h1>
             <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
-              我是你的面试复习助手，不知道怎么操作也可以直接问我。
+              我可以直接查你的掌握度、错题和刷题记录，再给可执行的建议。
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((item) => (
@@ -212,22 +250,50 @@ function ChatPage() {
         ) : (
           <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6">
             {messages.map((message) => {
-              const pending = message.role === 'assistant' && !message.content
+              const steps = message.steps ?? []
+              const pending = message.role === 'assistant' && !message.content && steps.length === 0
               return (
                 <div
                   key={message.id}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-6 ${
-                      message.role === 'user'
-                        ? 'bg-teal-600 text-white'
-                        : message.error
-                          ? 'bg-red-50 text-red-600'
-                          : 'bg-slate-100 text-slate-700'
+                    className={`flex flex-col gap-2 ${
+                      message.role === 'user' ? 'max-w-[80%] items-end' : 'max-w-[85%] items-start'
                     }`}
                   >
-                    {pending ? <span className="text-slate-400">正在思考…</span> : message.content}
+                    {steps.length > 0 && (
+                      <div className="w-full space-y-1.5">
+                        {steps.map((step) => (
+                          <AgentToolCard key={step.id} step={step} />
+                        ))}
+                      </div>
+                    )}
+
+                    {(pending || message.content) && (
+                      <div
+                        className={`whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-6 ${
+                          message.role === 'user'
+                            ? 'bg-teal-600 text-white'
+                            : message.error
+                              ? 'bg-red-50 text-red-600'
+                              : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {pending ? (
+                          <span className="text-slate-400">正在思考…</span>
+                        ) : (
+                          message.content
+                        )}
+                      </div>
+                    )}
+
+                    {message.status && !message.content && steps.length > 0 && (
+                      <p className="flex items-center gap-1.5 px-1 text-xs text-slate-400">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal-500" />
+                        {message.status}
+                      </p>
+                    )}
                   </div>
                 </div>
               )
