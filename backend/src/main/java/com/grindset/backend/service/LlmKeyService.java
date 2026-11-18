@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+import static com.grindset.backend.common.constant.LlmKeyStatus.DISABLED;
+import static com.grindset.backend.common.constant.LlmKeyStatus.INVALID;
+import static com.grindset.backend.common.constant.LlmKeyStatus.NORMAL;
+
 /**
  * Key 池维护:加密入库、启停、以及调度后的健康状态回写。
  * 只有这里和 ModelCatalogService 会碰密文,其余代码只见掩码。
@@ -21,12 +25,6 @@ import java.time.LocalDateTime;
 public class LlmKeyService {
 
     private static final Logger log = LoggerFactory.getLogger(LlmKeyService.class);
-
-    public static final int STATUS_NORMAL = 0;
-    /** 鉴权失败(401/403)被自动停用 */
-    public static final int STATUS_INVALID = 1;
-    /** 手动禁用 */
-    public static final int STATUS_DISABLED = 2;
 
     private final LlmKeyMapper keyMapper;
     private final SecretCipher cipher;
@@ -50,7 +48,7 @@ public class LlmKeyService {
         entity.setChannelId(channelId);
         entity.setKeyCipher(cipher.encrypt(key, channelId));
         entity.setKeyMask(SecretCipher.mask(key));
-        entity.setStatus(STATUS_NORMAL);
+        entity.setStatus(NORMAL);
         entity.setFailCount(0);
         keyMapper.insert(entity);
         return entity.getKeyMask();
@@ -58,7 +56,7 @@ public class LlmKeyService {
 
     /** 启用(0) / 手动禁用(2);启用时清掉失败次数和冷却 */
     public void updateStatus(long keyId, int status) {
-        if (status != STATUS_NORMAL && status != STATUS_DISABLED) {
+        if (status != NORMAL && status != DISABLED) {
             throw new BizException(ErrorCode.BAD_REQUEST, "只支持启用(0)或禁用(2)");
         }
         int updated = keyMapper.update(null, new UpdateWrapper<LlmKey>()
@@ -99,7 +97,7 @@ public class LlmKeyService {
         if (upstreamStatus != null && (upstreamStatus == 401 || upstreamStatus == 403)) {
             keyMapper.update(null, new UpdateWrapper<LlmKey>()
                     .eq("id", keyId)
-                    .set("status", STATUS_INVALID)
+                    .set("status", INVALID)
                     .set("fail_count", fails)
                     .set("cooldown_until", null));
             log.warn("Key {} 鉴权失败已自动停用", keyId);

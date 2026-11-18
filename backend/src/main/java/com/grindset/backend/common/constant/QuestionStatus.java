@@ -7,6 +7,9 @@ package com.grindset.backend.common.constant;
  */
 public final class QuestionStatus {
 
+    /** 已出题但尚未开始作答(数据库默认值,代码一般直接从 ASKING 开始) */
+    public static final int NOT_STARTED = 0;
+
     /** 已出题,尚未收到候选人回答(追问时会再次进入该状态) */
     public static final int ASKING = 1;
 

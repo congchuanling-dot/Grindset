@@ -35,7 +35,7 @@ import static com.grindset.backend.common.constant.InputLimits.MAX_ANSWER_LENGTH
 import static com.grindset.backend.service.interview.InterviewConstants.MAX_FOLLOW_UP;
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_INTERVIEWER;
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_USER;
-import static com.grindset.backend.service.interview.InterviewConstants.SESSION_ONGOING;
+import static com.grindset.backend.common.constant.InterviewSessionStatus.ONGOING;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_ANSWER;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_FEEDBACK;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_FOLLOW_UP;
@@ -101,7 +101,7 @@ public class InterviewTurnService {
         }
         try {
             InterviewSession session = sessionService.requireOwned(userId, id);
-            if (intValue(session.getStatus()) != SESSION_ONGOING) {
+            if (intValue(session.getStatus()) != ONGOING) {
                 throw new BizException(ErrorCode.CONFLICT, "这场面试已经结束");
             }
 
@@ -168,7 +168,7 @@ public class InterviewTurnService {
         }
         try {
             InterviewSession session = sessionService.requireOwned(userId, id);
-            if (intValue(session.getStatus()) != SESSION_ONGOING) {
+            if (intValue(session.getStatus()) != ONGOING) {
                 throw new BizException(ErrorCode.CONFLICT, "这场面试已经结束");
             }
 

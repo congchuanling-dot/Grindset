@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
 import static com.grindset.backend.common.constant.DisplayLimits.MAX_PREVIEW_CHARS;
 import static com.grindset.backend.common.constant.InputLimits.MAX_ANSWER_LENGTH;
 import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
+import static com.grindset.backend.common.constant.WrongQuestionStatus.MASTERED;
+import static com.grindset.backend.common.constant.WrongQuestionStatus.PENDING;
 import static com.grindset.backend.common.constant.MasteryRules.MASTERED_SCORE_MIN;
 import static com.grindset.backend.common.constant.MasteryRules.REVIEW_DAYS_HIGH;
 import static com.grindset.backend.common.constant.MasteryRules.REVIEW_DAYS_LOW;
@@ -54,9 +56,6 @@ import static com.grindset.backend.common.constant.MasteryRules.WRONG_SCORE_MAX;
 public class WrongQuestionService {
 
     private static final Logger log = LoggerFactory.getLogger(WrongQuestionService.class);
-
-    private static final int STATUS_PENDING = 0;
-    private static final int STATUS_MASTERED = 1;
 
     private static final int MIN_RETRY_LENGTH = 10;
     private static final int LIST_LIMIT_DEFAULT = 50;
@@ -147,7 +146,7 @@ public class WrongQuestionService {
         wrong.setOriginalFeedback(truncate(joinMessages(messages, "FEEDBACK", "\n"), 1000));
         wrong.setKnowledgePoints(question.getKnowledgePoints());
         wrong.setKpIds(knowledgeProfileService.resolvePointIds(question.getKnowledgePoints()));
-        wrong.setStatus(STATUS_PENDING);
+        wrong.setStatus(PENDING);
         wrong.setRetryCount(0);
         wrong.setNextReviewAt(LocalDateTime.now());
 
@@ -196,7 +195,7 @@ public class WrongQuestionService {
             wrong.setOriginalSuggestion(truncate(suggestion, 500));
             wrong.setKnowledgePoints(knowledgePoints);
             wrong.setKpIds(kpIds);
-            wrong.setStatus(STATUS_PENDING);
+            wrong.setStatus(PENDING);
             wrong.setRetryCount(0);
             wrong.setNextReviewAt(now);
             wrong.setCreatedAt(now);
@@ -230,7 +229,7 @@ public class WrongQuestionService {
         wrong.setOriginalSuggestion(truncate(suggestion, 500));
         wrong.setKnowledgePoints(knowledgePoints);
         wrong.setKpIds(kpIds);
-        wrong.setStatus(STATUS_PENDING);
+        wrong.setStatus(PENDING);
         wrong.setMasteredAt(null);
         wrong.setNextReviewAt(now);
     }
@@ -251,7 +250,7 @@ public class WrongQuestionService {
         int due = 0;
         for (WrongQuestion wrong : all) {
             int value = intValue(wrong.getStatus());
-            if (value == STATUS_MASTERED) {
+            if (value == MASTERED) {
                 mastered++;
             } else {
                 pending++;
@@ -400,7 +399,7 @@ public class WrongQuestionService {
         wrong.setBestScore(Math.max(oldBest, score));
         wrong.setLastRetryAt(now);
         wrong.setStatus(nextStatus);
-        wrong.setMasteredAt(nextStatus == STATUS_MASTERED ? now : null);
+        wrong.setMasteredAt(nextStatus == MASTERED ? now : null);
         wrong.setNextReviewAt(now.plusDays(reviewDays(score)));
     }
 
@@ -451,7 +450,7 @@ public class WrongQuestionService {
     }
 
     static int statusOf(int score) {
-        return score >= MASTERED_SCORE_MIN ? STATUS_MASTERED : STATUS_PENDING;
+        return score >= MASTERED_SCORE_MIN ? MASTERED : PENDING;
     }
 
     static int reviewDays(int score) {
@@ -569,7 +568,7 @@ public class WrongQuestionService {
     }
 
     private static String statusLabel(int status) {
-        return status == STATUS_MASTERED ? "MASTERED" : "PENDING";
+        return status == MASTERED ? "MASTERED" : "PENDING";
     }
 
     private static String format(LocalDateTime time) {

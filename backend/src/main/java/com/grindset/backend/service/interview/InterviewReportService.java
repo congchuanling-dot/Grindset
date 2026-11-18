@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_USER;
-import static com.grindset.backend.service.interview.InterviewConstants.SESSION_FINISHED;
+import static com.grindset.backend.common.constant.InterviewSessionStatus.FINISHED;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_FEEDBACK;
 import static com.grindset.backend.service.interview.InterviewViews.intValue;
 
@@ -88,7 +88,7 @@ public class InterviewReportService {
                 questionMapper.update(patch, new QueryWrapper<InterviewQuestion>()
                         .eq("session_id", id)
                         .in("status", QuestionStatus.ASKING, QuestionStatus.ANSWERED));
-                session.setStatus(SESSION_FINISHED);
+                session.setStatus(FINISHED);
                 sessionMapper.updateById(session);
             });
 

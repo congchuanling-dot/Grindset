@@ -3,6 +3,8 @@ package com.grindset.backend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grindset.backend.common.constant.LlmEnabledStatus;
+import com.grindset.backend.common.constant.LlmKeyStatus;
 import com.grindset.backend.entity.LlmChannel;
 import com.grindset.backend.entity.LlmKey;
 import com.grindset.backend.llm.LlmProperties;
@@ -55,7 +57,7 @@ public class BalanceService {
     @Scheduled(initialDelay = 60_000L, fixedDelay = 5 * 60 * 1000L)
     public void refreshAutoChannels() {
         List<LlmChannel> channels = channelMapper.selectList(new QueryWrapper<LlmChannel>()
-                .eq("enabled", 1)
+                .eq("enabled", LlmEnabledStatus.ENABLED)
                 .eq("balance_source", "AUTO"));
         for (LlmChannel channel : channels) {
             try {
@@ -120,7 +122,7 @@ public class BalanceService {
     private String firstKey(long channelId, String providerId) {
         List<LlmKey> keys = keyMapper.selectList(new QueryWrapper<LlmKey>()
                 .eq("channel_id", channelId)
-                .eq("status", LlmKeyService.STATUS_NORMAL)
+                .eq("status", LlmKeyStatus.NORMAL)
                 .orderByAsc("last_used_at")
                 .last("LIMIT 1"));
         if (!keys.isEmpty()) {

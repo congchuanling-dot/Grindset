@@ -9,6 +9,7 @@ import {
   type ResumeSummary,
 } from '../api/resume'
 import ResumeViewer from '../components/resume/ResumeViewer'
+import { ParseStatus } from '../constants/status'
 
 const ACCEPT = '.pdf,.docx,.md,.txt'
 const MAX_BYTES = 10 * 1024 * 1024
@@ -316,14 +317,14 @@ function ResumeSwitcher({
           </span>
           <span
             className={`rounded-full px-2 py-0.5 text-xs ${
-              status === 1
+              status === ParseStatus.SUCCESS
                 ? 'bg-teal-50 text-teal-700'
-                : status === 2
+                : status === ParseStatus.FAILED
                   ? 'bg-rose-50 text-rose-600'
                   : 'bg-amber-50 text-amber-700'
             }`}
           >
-            {status === 1 ? '解析成功' : status === 2 ? '解析失败' : '解析中'}
+            {status === ParseStatus.SUCCESS ? '解析成功' : status === ParseStatus.FAILED ? '解析失败' : '解析中'}
           </span>
           {detail.model && <span className="text-xs text-slate-400">{detail.model}</span>}
         </>

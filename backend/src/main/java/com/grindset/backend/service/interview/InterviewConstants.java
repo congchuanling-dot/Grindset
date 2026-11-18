@@ -7,12 +7,6 @@ import java.util.Set;
  */
 public final class InterviewConstants {
 
-    /** 会话进行中 */
-    public static final int SESSION_ONGOING = 0;
-
-    /** 会话已结束(已生成复盘或手动结束) */
-    public static final int SESSION_FINISHED = 1;
-
     /** 消息角色:面试官 */
     public static final String ROLE_INTERVIEWER = "INTERVIEWER";
 

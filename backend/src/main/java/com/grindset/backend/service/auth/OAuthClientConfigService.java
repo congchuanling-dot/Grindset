@@ -8,14 +8,14 @@ import com.grindset.backend.llm.SecretCipher;
 import com.grindset.backend.mapper.auth.OAuthClientConfigMapper;
 import org.springframework.stereotype.Service;
 
+import static com.grindset.backend.common.constant.OAuthClientStatus.ENABLED;
+
 /**
  * 从数据库读取第三方登录配置,并将 client_secret 解密。
  * 每次登录请求直接查库,改库即时生效,不做缓存。
  */
 @Service
 public class OAuthClientConfigService {
-
-    private static final int STATUS_ENABLED = 0;
 
     private final OAuthClientConfigMapper mapper;
     private final SecretCipher secretCipher;
@@ -33,7 +33,7 @@ public class OAuthClientConfigService {
         OAuthClientConfigEntity entity = mapper.selectOne(
                 new LambdaQueryWrapper<OAuthClientConfigEntity>()
                         .eq(OAuthClientConfigEntity::getProvider, provider)
-                        .eq(OAuthClientConfigEntity::getStatus, STATUS_ENABLED));
+                        .eq(OAuthClientConfigEntity::getStatus, ENABLED));
         if (entity == null) {
             throw new BizException(ErrorCode.INTERNAL_ERROR, provider + " 登录未配置");
         }

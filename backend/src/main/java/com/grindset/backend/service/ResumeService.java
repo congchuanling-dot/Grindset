@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 import static com.grindset.backend.common.constant.InputLimits.MAX_RESUME_FILE_BYTES;
+import static com.grindset.backend.common.constant.ResumeParseStatus.FAILED;
+import static com.grindset.backend.common.constant.ResumeParseStatus.PARSING;
+import static com.grindset.backend.common.constant.ResumeParseStatus.SUCCESS;
 import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
@@ -92,7 +95,7 @@ public class ResumeService {
         resume.setFileType(extracted.fileType());
         resume.setFileSize(bytes.length);
         resume.setCandidateType(CandidateType.UNKNOWN.name());
-        resume.setParseStatus(0);
+        resume.setParseStatus(PARSING);
         resumeMapper.insert(resume);
 
         ParsedResume parsed;
@@ -125,7 +128,7 @@ public class ResumeService {
         for (Resume row : rows) {
             result.add(new ResumeSummary(String.valueOf(row.getId()), row.getFileName(),
                     row.getCandidateName(), row.getCandidateType(),
-                    row.getParseStatus() == null ? 0 : row.getParseStatus(), format(row)));
+                    row.getParseStatus() == null ? PARSING : row.getParseStatus(), format(row)));
         }
         return result;
     }
@@ -174,7 +177,7 @@ public class ResumeService {
 
         return new ResumeDetail(String.valueOf(resume.getId()), resume.getFileName(), resume.getFileType(),
                 resume.getFileSize() == null ? 0 : resume.getFileSize(),
-                resume.getParseStatus() == null ? 0 : resume.getParseStatus(),
+                resume.getParseStatus() == null ? PARSING : resume.getParseStatus(),
                 resume.getErrorMsg(), resume.getCandidateName(), resume.getCandidateType(),
                 resume.getModel(), format(resume), skillViews, sectionViews);
     }
@@ -243,7 +246,7 @@ public class ResumeService {
         patch.setCandidateName(parsed.getCandidateName());
         patch.setCandidateType(parsed.getCandidateType());
         patch.setModel(model);
-        patch.setParseStatus(1);
+        patch.setParseStatus(SUCCESS);
         patch.setErrorMsg("");
         resumeMapper.updateById(patch);
     }
@@ -256,7 +259,7 @@ public class ResumeService {
         }
         Resume patch = new Resume();
         patch.setId(resumeId);
-        patch.setParseStatus(2);
+        patch.setParseStatus(FAILED);
         patch.setErrorMsg(errorMsg);
         try {
             resumeMapper.updateById(patch);

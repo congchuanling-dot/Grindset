@@ -18,6 +18,8 @@ import java.time.Duration;
 import java.util.Locale;
 import java.util.UUID;
 
+import static com.grindset.backend.common.constant.UserStatus.ACTIVE;
+
 /**
  * 第三方登录的公共编排:state 防 CSRF、一次性 code 暂存、绑定/合并/建号、签发本系统令牌。
  * GitHub / Google 只是获取用户信息的方式不同,登录规则必须保持一致,因此统一收敛到这里。
@@ -138,7 +140,7 @@ public class SocialLoginService {
         user.setNickname(truncate(resolveNickname(socialUser), MAX_NICKNAME_LENGTH));
         user.setEmail(truncate(socialUser.email(), MAX_EMAIL_LENGTH));
         user.setAvatarUrl(truncate(socialUser.avatarUrl(), MAX_AVATAR_LENGTH));
-        user.setStatus(0);
+        user.setStatus(ACTIVE);
         userMapper.insert(user);
         return identityService.bind(user.getId(), identityProvider, socialUser.identifier());
     }

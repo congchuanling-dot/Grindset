@@ -23,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.common.constant.LlmEnabledStatus.ENABLED;
+import static com.grindset.backend.common.constant.LlmKeyStatus.NORMAL;
 import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
@@ -62,16 +64,16 @@ public class ModelCatalogService {
 
     private Catalog load() {
         List<LlmChannel> channels = channelMapper.selectList(new QueryWrapper<LlmChannel>()
-                .eq("enabled", 1)
+                .eq("enabled", ENABLED)
                 .orderByDesc("priority")
                 .orderByAsc("id"));
         List<LlmModel> models = modelMapper.selectList(new QueryWrapper<LlmModel>()
-                .eq("enabled", 1)
+                .eq("enabled", ENABLED)
                 .orderByAsc("sort")
                 .orderByAsc("id"));
         // 按最久未用优先排序,天然实现多 key 轮询
         List<LlmKey> keys = keyMapper.selectList(new QueryWrapper<LlmKey>()
-                .eq("status", 0)
+                .eq("status", NORMAL)
                 .orderByAsc("last_used_at")
                 .orderByAsc("id"));
 

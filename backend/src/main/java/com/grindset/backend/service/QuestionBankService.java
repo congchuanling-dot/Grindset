@@ -38,6 +38,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.grindset.backend.common.constant.DisplayLimits.MAX_PREVIEW_CHARS;
 import static com.grindset.backend.common.constant.InputLimits.MAX_ANSWER_LENGTH;
 import static com.grindset.backend.common.constant.MasteryRules.WRONG_SCORE_MAX;
+import static com.grindset.backend.common.constant.QuestionBankStatus.ONLINE;
+import static com.grindset.backend.common.constant.QuestionProgressStatus.DONE;
+import static com.grindset.backend.common.constant.QuestionProgressStatus.WRONG;
 import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
@@ -50,10 +53,6 @@ import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 public class QuestionBankService {
 
     private static final Logger log = LoggerFactory.getLogger(QuestionBankService.class);
-
-    private static final int STATUS_ON = 1;
-    private static final int PROGRESS_DONE = 1;
-    private static final int PROGRESS_WRONG = 2;
 
     private static final int PAGE_SIZE_DEFAULT = 20;
     private static final int PAGE_SIZE_MAX = 100;
@@ -290,7 +289,7 @@ public class QuestionBankService {
 
     private UserQuestionProgress upsertProgress(long userId, long id, int score, LocalDateTime now) {
         UserQuestionProgress progress = findProgress(userId, id);
-        int status = score <= WRONG_SCORE_MAX ? PROGRESS_WRONG : PROGRESS_DONE;
+        int status = score <= WRONG_SCORE_MAX ? WRONG : DONE;
         if (progress == null) {
             progress = new UserQuestionProgress();
             progress.setId(idGenerator.nextId());
@@ -361,7 +360,7 @@ public class QuestionBankService {
                     : item.source().strip().toUpperCase(Locale.ROOT));
             question.setSourceUrl(blankToNull(item.sourceUrl()));
             question.setContentHash(hash);
-            question.setStatus(STATUS_ON);
+            question.setStatus(ONLINE);
             try {
                 bankMapper.insert(question);
                 imported++;
@@ -376,7 +375,7 @@ public class QuestionBankService {
 
     private List<QuestionBank> allQuestions() {
         return bankMapper.selectList(new QueryWrapper<QuestionBank>()
-                .eq("status", STATUS_ON)
+                .eq("status", ONLINE)
                 .orderByAsc("domain")
                 .orderByAsc("difficulty")
                 .orderByAsc("id"));
@@ -410,7 +409,7 @@ public class QuestionBankService {
                 todo++;
                 continue;
             }
-            if (intValue(item.getStatus()) == PROGRESS_WRONG) {
+            if (intValue(item.getStatus()) == WRONG) {
                 wrong++;
             } else {
                 done++;
@@ -422,7 +421,7 @@ public class QuestionBankService {
 
     private QuestionBank requireOn(long id) {
         QuestionBank question = bankMapper.selectById(id);
-        if (question == null || intValue(question.getStatus()) != STATUS_ON) {
+        if (question == null || intValue(question.getStatus()) != ONLINE) {
             throw new BizException(ErrorCode.NOT_FOUND, "题目不存在或已下架");
         }
         return question;
@@ -471,11 +470,11 @@ public class QuestionBankService {
         if (progress == null || intValue(progress.getAttemptCount()) == 0) {
             return "TODO";
         }
-        return intValue(progress.getStatus()) == PROGRESS_WRONG ? "WRONG" : "DONE";
+        return intValue(progress.getStatus()) == WRONG ? "WRONG" : "DONE";
     }
 
     private static String capabilityStatus(int status) {
-        return status == PROGRESS_WRONG ? "WRONG" : "DONE";
+        return status == WRONG ? "WRONG" : "DONE";
     }
 
     private static String normalizeStatus(String status) {

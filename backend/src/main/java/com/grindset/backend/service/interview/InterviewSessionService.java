@@ -29,7 +29,7 @@ import java.util.Map;
 
 import static com.grindset.backend.service.interview.InterviewConstants.MAX_FOCUS;
 import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_COUNTS;
-import static com.grindset.backend.service.interview.InterviewConstants.SESSION_ONGOING;
+import static com.grindset.backend.common.constant.InterviewSessionStatus.ONGOING;
 import static com.grindset.backend.service.interview.InterviewConstants.STYLES;
 import static com.grindset.backend.service.interview.InterviewViews.format;
 import static com.grindset.backend.service.interview.InterviewViews.intValue;
@@ -119,7 +119,7 @@ public class InterviewSessionService {
         session.setFocus(focus);
         session.setQuestionCount(questionCount);
         session.setCompletedQuestions(0);
-        session.setStatus(SESSION_ONGOING);
+        session.setStatus(ONGOING);
         sessionMapper.insert(session);
 
         return detail(userId, sessionId);

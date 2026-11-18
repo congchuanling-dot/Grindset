@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { QuestionStatus, SessionStatus } from '../constants/status'
 import {
   deleteInterview,
   finishInterview,
@@ -99,7 +100,7 @@ function InterviewSessionPage() {
             const question: InterviewQuestion = {
               id: questionId,
               seq,
-              status: 2,
+              status: QuestionStatus.ANSWERING,
               followUpCount: 0,
               score: null,
               knowledgePoints: [],
@@ -129,13 +130,13 @@ function InterviewSessionPage() {
     }
   }, [sessionId])
 
-  const activeQuestion = detail?.questions.filter((item) => item.status === 2).at(-1) ?? null
+  const activeQuestion = detail?.questions.filter((item) => item.status === QuestionStatus.ANSWERING).at(-1) ?? null
 
   // 只要当前没有待回答的题、且还没答满,就自动出下一题
   useEffect(() => {
-    if (!detail || detail.status !== 0) return
+    if (!detail || detail.status !== SessionStatus.ONGOING) return
     if (askingRef.current) return
-    if (detail.questions.some((item) => item.status === 2)) return
+    if (detail.questions.some((item) => item.status === QuestionStatus.ANSWERING)) return
     if (detail.completedQuestions >= detail.questionCount) return
     void askNext()
   }, [detail, askNext])
@@ -162,12 +163,14 @@ function InterviewSessionPage() {
         prev
           ? {
               ...prev,
-              status: 1,
+              status: SessionStatus.FINISHED,
               report,
               overallScore: report ? report.overallScore : prev.overallScore,
               // 服务端会把未答完的题标记为已放弃，本地状态同步一下
               questions: prev.questions.map((question) =>
-                question.status === 2 ? { ...question, status: 4 } : question,
+                question.status === QuestionStatus.ANSWERING
+                  ? { ...question, status: QuestionStatus.ABANDONED }
+                  : question,
               ),
             }
           : prev,
@@ -251,10 +254,10 @@ function InterviewSessionPage() {
     )
   }
 
-  const finished = detail.status === 1
+  const finished = detail.status === SessionStatus.FINISHED
   const waiting = asking || submitting
   const wrongCount = detail.questions.filter(
-    (question) => question.status === 3 && question.score != null && question.score <= 2,
+    (question) => question.status === QuestionStatus.CLOSED && question.score != null && question.score <= 2,
   ).length
 
   return (
@@ -305,7 +308,7 @@ function InterviewSessionPage() {
               <Sparkles size={14} />
               查看复盘
             </button>
-          ) : detail.status === 0 ? (
+          ) : detail.status === SessionStatus.ONGOING ? (
             <button
               type="button"
               onClick={() => handleFinish(false)}
@@ -501,10 +504,10 @@ function QuestionThread({ question }: { question: InterviewQuestion }) {
         </span>
         <span>第 {question.seq} 题</span>
         {question.followUpCount > 0 && <span>· 已追问 {question.followUpCount} 次</span>}
-        {question.status === 3 && question.score != null && (
+        {question.status === QuestionStatus.CLOSED && question.score != null && (
           <span className="rounded-full bg-teal-50 px-2 py-0.5 text-teal-700">{question.score}/5</span>
         )}
-        {question.status === 4 && (
+        {question.status === QuestionStatus.ABANDONED && (
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">已放弃</span>
         )}
       </div>
@@ -515,7 +518,7 @@ function QuestionThread({ question }: { question: InterviewQuestion }) {
         ))}
       </div>
 
-      {question.status === 3 && question.comment && (
+      {question.status === QuestionStatus.CLOSED && question.comment && (
         <div className="ml-9 rounded-xl border border-teal-100 bg-teal-50/60 px-3 py-2 text-xs leading-5 text-teal-800">
           <p>{question.comment}</p>
           {question.suggestion && <p className="mt-1 text-teal-700">建议：{question.suggestion}</p>}
@@ -531,7 +534,7 @@ function QuestionThread({ question }: { question: InterviewQuestion }) {
         </div>
       )}
 
-      {question.status === 4 && (
+      {question.status === QuestionStatus.ABANDONED && (
         <p className="ml-9 text-[11px] text-slate-400">本题未答完，未计入复盘。</p>
       )}
     </section>

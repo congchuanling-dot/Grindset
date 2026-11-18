@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { deleteInterview, listInterviews, type InterviewSummary } from '../api/interview'
 import { listResumes, type ResumeSummary } from '../api/resume'
+import { SessionStatus } from '../constants/status'
 
 /**
  * 面试记录:左侧按简历筛选(可多选),右侧展示对应的面试会话。
@@ -208,7 +209,7 @@ function InterviewRecordsPage() {
                       {session.position}
                     </span>
                     <div className="flex shrink-0 items-center gap-1">
-                      {session.status === 1 ? (
+                      {session.status === SessionStatus.FINISHED ? (
                         <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
                           {session.overallScore != null ? `${session.overallScore} 分` : '已结束'}
                         </span>
@@ -250,7 +251,7 @@ function InterviewRecordsPage() {
                       {session.createdAt}
                     </span>
                     <span className="ml-auto flex items-center gap-0.5 text-teal-600">
-                      {session.status === 1
+                      {session.status === SessionStatus.FINISHED
                         ? session.overallScore != null
                           ? '查看复盘'
                           : '查看详情'

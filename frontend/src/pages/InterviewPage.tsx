@@ -14,6 +14,7 @@ import {
   type ResumeSummary,
 } from '../api/resume'
 import ResumeViewer from '../components/resume/ResumeViewer'
+import { SessionStatus } from '../constants/status'
 
 const TYPE_LABELS: Record<string, string> = {
   FRESH_GRADUATE: '应届生',
@@ -504,7 +505,7 @@ function HistorySection({ items, loading }: { items: InterviewSummary[]; loading
           >
             <div className="flex items-start justify-between gap-2">
               <span className="line-clamp-1 text-sm font-medium text-slate-800">{item.position}</span>
-              {item.status === 1 ? (
+              {item.status === SessionStatus.FINISHED ? (
                 <span className="shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
                   {item.overallScore != null ? `${item.overallScore} 分` : '已结束'}
                 </span>

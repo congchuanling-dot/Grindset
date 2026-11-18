@@ -28,6 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.common.constant.LlmEnabledStatus.ENABLED;
+import static com.grindset.backend.common.constant.LlmKeyStatus.NORMAL;
 import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
@@ -68,7 +70,7 @@ public class AdminLlmController {
         for (LlmKey key : keys) {
             keysByChannel.computeIfAbsent(key.getChannelId(), id -> new ArrayList<>())
                     .add(new KeyView(key.getId(), key.getKeyMask(),
-                            key.getStatus() == null ? 0 : key.getStatus(),
+                            key.getStatus() == null ? NORMAL : key.getStatus(),
                             key.getFailCount() == null ? 0 : key.getFailCount(),
                             format(key.getCooldownUntil()), format(key.getLastUsedAt())));
         }
@@ -77,7 +79,7 @@ public class AdminLlmController {
         for (LlmChannel channel : channels) {
             views.add(new ChannelView(channel.getId(), channel.getProviderId(), channel.getName(),
                     channel.getBaseUrl(), channel.getPriority() == null ? 0 : channel.getPriority(),
-                    channel.getEnabled() != null && channel.getEnabled() == 1,
+                    channel.getEnabled() != null && channel.getEnabled() == ENABLED,
                     channel.getBalance(), channel.getBalanceCurrency(), channel.getBalanceSource(),
                     format(channel.getBalanceUpdatedAt()),
                     keysByChannel.getOrDefault(channel.getId(), List.of())));
