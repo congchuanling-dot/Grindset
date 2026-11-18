@@ -1,7 +1,7 @@
 import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { githubAuthorize, login, register } from '../api/auth'
+import { githubAuthorize, googleAuthorize, login, register } from '../api/auth'
 import { setSession } from '../auth/authStore'
 import { useToast } from '../components/toast/ToastProvider'
 
@@ -160,7 +160,7 @@ function LoginPage() {
           <span className="h-px flex-1 bg-slate-200" />
         </div>
 
-        {/* 第三方登录:GitHub 已接入,Google 仍为占位 */}
+        {/* 第三方登录:GitHub / Google 均已接入 */}
         <div className="flex flex-col gap-2">
           <button
             type="button"
@@ -174,9 +174,8 @@ function LoginPage() {
           </button>
           <button
             type="button"
-            disabled
-            title="即将支持"
-            className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-600 disabled:opacity-50"
+            onClick={googleAuthorize}
+            className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8Z" />

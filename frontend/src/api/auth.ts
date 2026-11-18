@@ -76,3 +76,13 @@ export function githubAuthorize(): void {
 export function exchangeGithubCode(code: string): Promise<AuthResult> {
   return post<AuthResult>('/api/auth/github/exchange', { code })
 }
+
+/** 跳转 Google 授权页:整页跳转,不经过 fetch */
+export function googleAuthorize(): void {
+  window.location.href = '/api/auth/google/authorize'
+}
+
+/** Google 回调后用一次性 code 换本系统令牌 */
+export function exchangeGoogleCode(code: string): Promise<AuthResult> {
+  return post<AuthResult>('/api/auth/google/exchange', { code })
+}

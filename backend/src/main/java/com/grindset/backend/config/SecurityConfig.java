@@ -56,8 +56,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/health", "/error",
                                 "/api/auth/login", "/api/auth/register",
                                 "/api/auth/refresh", "/api/auth/logout").permitAll()
-                        // GitHub 登录:authorize / callback / exchange 都发生在登录前
-                        .requestMatchers("/api/auth/github/**").permitAll()
+                        // GitHub / Google 登录:authorize / callback / exchange 都发生在登录前
+                        .requestMatchers("/api/auth/github/**", "/api/auth/google/**").permitAll()
                         // 管理接口用 X-Admin-Token 自己校验,避免被 JWT 拦死
                         .requestMatchers("/api/admin/**").permitAll()
                         .anyRequest().authenticated())

@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { exchangeGithubCode } from '../api/auth'
+import { exchangeGithubCode, exchangeGoogleCode } from '../api/auth'
 import { setSession } from '../auth/authStore'
 import { useToast } from '../components/toast/ToastProvider'
 
 /**
- * GitHub 登录回调页。
- * 后端在 /api/auth/github/callback 处理完后带一次性 code 跳到本页,
- * 这里用 code 换 access token 并写入登录态。
+ * 第三方登录回调页。
+ * 后端处理完授权后带 provider 与一次性 code 跳到本页,
+ * 这里按 provider 调对应的 exchange 接口换 access token 并写入登录态。
  */
 function AuthCallbackPage() {
   const navigate = useNavigate()
@@ -20,16 +20,18 @@ function AuthCallbackPage() {
     started.current = true
 
     const params = new URLSearchParams(window.location.search)
+    const provider = params.get('provider') ?? 'github'
     const code = params.get('code')
     const error = params.get('error')
 
     if (error || !code) {
-      toast.error(error || 'GitHub 登录已取消')
+      toast.error(error || '登录已取消')
       navigate('/login', { replace: true })
       return
     }
 
-    exchangeGithubCode(code)
+    const exchange = provider === 'google' ? exchangeGoogleCode : exchangeGithubCode
+    exchange(code)
       .then((result) => {
         setSession({
           userId: result.userId,
@@ -49,7 +51,7 @@ function AuthCallbackPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="flex flex-col items-center gap-3 text-slate-500">
         <span className="h-7 w-7 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
-        <p className="text-sm">正在完成 GitHub 登录…</p>
+        <p className="text-sm">正在完成登录…</p>
       </div>
     </div>
   )

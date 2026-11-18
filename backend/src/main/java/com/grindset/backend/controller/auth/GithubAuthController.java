@@ -7,6 +7,7 @@ import com.grindset.backend.dto.auth.AuthResult;
 import com.grindset.backend.dto.auth.GithubExchangeRequest;
 import com.grindset.backend.security.AuthCookieWriter;
 import com.grindset.backend.service.auth.GithubLoginService;
+import com.grindset.backend.service.auth.SocialLoginService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,8 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/api/auth/github")
 public class GithubAuthController {
+
+    private static final String PROVIDER = "github";
 
     private final GithubLoginService githubLoginService;
     private final GithubOAuthProperties properties;
@@ -56,7 +59,7 @@ public class GithubAuthController {
             return;
         }
         try {
-            GithubLoginService.CallbackResult result = githubLoginService.handleCallback(code, state);
+            SocialLoginService.CallbackResult result = githubLoginService.handleCallback(code, state);
             authCookieWriter.writeRefreshCookie(response, result.refreshToken());
             redirectToFrontend(response, "code", result.oneTimeCode());
         } catch (BizException e) {
@@ -75,6 +78,7 @@ public class GithubAuthController {
     private void redirectToFrontend(HttpServletResponse response, String key, String value)
             throws IOException {
         String url = UriComponentsBuilder.fromUriString(properties.getFrontendCallbackUri())
+                .queryParam("provider", PROVIDER)
                 .queryParam(key, value)
                 .build()
                 .encode()
