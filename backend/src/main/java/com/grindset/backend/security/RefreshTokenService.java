@@ -1,6 +1,7 @@
 package com.grindset.backend.security;
 
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.config.JwtProperties;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -44,7 +45,7 @@ public class RefreshTokenService {
     public Long consume(String token) {
         String value = redis.opsForValue().getAndDelete(key(token));
         if (value == null) {
-            throw new BizException(401, "登录已过期，请重新登录");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录");
         }
         return Long.valueOf(value);
     }

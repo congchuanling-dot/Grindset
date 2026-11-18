@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ChatRequest;
 import com.grindset.backend.llm.ChatMessage;
 import com.grindset.backend.llm.LlmProperties;
@@ -179,10 +180,10 @@ public class AgentService {
     /** 校验历史消息,裁到最近若干条;不注入 app.llm 的通用 system 提示词 */
     private List<ChatMessage> buildHistory(List<ChatRequest.Message> raw) {
         if (raw == null || raw.isEmpty()) {
-            throw new BizException(400, "消息不能为空");
+            throw new BizException(ErrorCode.BAD_REQUEST, "消息不能为空");
         }
         if (raw.size() > CHAT_MAX_REQUEST_MESSAGES) {
-            throw new BizException(400, "消息数量过多");
+            throw new BizException(ErrorCode.BAD_REQUEST, "消息数量过多");
         }
 
         List<ChatMessage> result = new ArrayList<>();
@@ -192,19 +193,19 @@ public class AgentService {
             ChatRequest.Message item = raw.get(i);
             String role = strip(item.getRole());
             if (!ChatMessage.ROLE_USER.equals(role) && !ChatMessage.ROLE_ASSISTANT.equals(role)) {
-                throw new BizException(400, "消息角色不合法");
+                throw new BizException(ErrorCode.BAD_REQUEST, "消息角色不合法");
             }
             String content = item.getContent() == null ? "" : item.getContent();
             if (content.isBlank()) {
-                throw new BizException(400, "消息内容不能为空");
+                throw new BizException(ErrorCode.BAD_REQUEST, "消息内容不能为空");
             }
             if (content.length() > CHAT_MAX_MESSAGE_LENGTH) {
-                throw new BizException(400, "单条消息不能超过 " + CHAT_MAX_MESSAGE_LENGTH + " 字");
+                throw new BizException(ErrorCode.BAD_REQUEST, "单条消息不能超过 " + CHAT_MAX_MESSAGE_LENGTH + " 字");
             }
             result.add(new ChatMessage(role, content));
         }
         if (!ChatMessage.ROLE_USER.equals(result.get(result.size() - 1).role())) {
-            throw new BizException(400, "最后一条消息必须是提问");
+            throw new BizException(ErrorCode.BAD_REQUEST, "最后一条消息必须是提问");
         }
         return result;
     }

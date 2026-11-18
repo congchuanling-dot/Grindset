@@ -2,6 +2,7 @@ package com.grindset.backend.service.auth;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.entity.auth.OAuthClientConfigEntity;
 import com.grindset.backend.llm.SecretCipher;
 import com.grindset.backend.mapper.auth.OAuthClientConfigMapper;
@@ -34,7 +35,7 @@ public class OAuthClientConfigService {
                         .eq(OAuthClientConfigEntity::getProvider, provider)
                         .eq(OAuthClientConfigEntity::getStatus, STATUS_ENABLED));
         if (entity == null) {
-            throw new BizException(500, provider + " 登录未配置");
+            throw new BizException(ErrorCode.INTERNAL_ERROR, provider + " 登录未配置");
         }
         String clientSecret = secretCipher.decrypt(entity.getClientSecret(), entity.getId());
         return new OAuthClientConfig(entity.getProvider(), entity.getClientId(), clientSecret,

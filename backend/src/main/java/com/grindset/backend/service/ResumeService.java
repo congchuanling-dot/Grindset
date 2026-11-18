@@ -2,6 +2,7 @@ package com.grindset.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.CandidateType;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.ParsedResume;
@@ -67,17 +68,17 @@ public class ResumeService {
     /** 上传并同步解析,返回完整详情 */
     public ResumeDetail upload(long userId, MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new BizException(400, "请选择要上传的简历文件");
+            throw new BizException(ErrorCode.BAD_REQUEST, "请选择要上传的简历文件");
         }
         if (file.getSize() > MAX_RESUME_FILE_BYTES) {
-            throw new BizException(413, "文件不能超过 10MB");
+            throw new BizException(ErrorCode.PAYLOAD_TOO_LARGE, "文件不能超过 10MB");
         }
 
         byte[] bytes;
         try {
             bytes = file.getBytes();
         } catch (IOException e) {
-            throw new BizException(422, "文件读取失败,请重新上传");
+            throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "文件读取失败,请重新上传");
         }
 
         // 校验失败直接返回,不产生数据库记录
@@ -269,7 +270,7 @@ public class ResumeService {
                 .eq("id", id)
                 .eq("user_id", userId));
         if (resume == null) {
-            throw new BizException(404, "简历不存在");
+            throw new BizException(ErrorCode.NOT_FOUND, "简历不存在");
         }
         return resume;
     }

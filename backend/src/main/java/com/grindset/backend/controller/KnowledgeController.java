@@ -1,6 +1,7 @@
 package com.grindset.backend.controller;
 
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.dto.KnowledgeProfileView;
 import com.grindset.backend.security.LoginUser;
@@ -36,7 +37,7 @@ public class KnowledgeController {
 
     private static long userId(LoginUser loginUser) {
         if (loginUser == null) {
-            throw new BizException(401, "未登录或登录已过期");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
         }
         return loginUser.userId();
     }

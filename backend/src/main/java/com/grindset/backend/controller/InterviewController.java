@@ -2,6 +2,7 @@ package com.grindset.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.AnswerRequest;
 import com.grindset.backend.dto.AnswerResult;
 import com.grindset.backend.dto.ApiResponse;
@@ -151,7 +152,7 @@ public class InterviewController {
 
     private static long userId(LoginUser loginUser) {
         if (loginUser == null) {
-            throw new BizException(401, "未登录或登录已过期");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
         }
         return loginUser.userId();
     }

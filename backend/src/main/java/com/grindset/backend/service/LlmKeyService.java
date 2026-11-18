@@ -2,6 +2,7 @@ package com.grindset.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.entity.LlmKey;
 import com.grindset.backend.llm.SecretCipher;
@@ -42,7 +43,7 @@ public class LlmKeyService {
     public String addKey(long channelId, String rawKey) {
         String key = rawKey == null ? "" : rawKey.strip();
         if (key.length() < 8) {
-            throw new BizException(400, "API Key 格式不正确");
+            throw new BizException(ErrorCode.BAD_REQUEST, "API Key 格式不正确");
         }
         LlmKey entity = new LlmKey();
         entity.setId(idGenerator.nextId());
@@ -58,7 +59,7 @@ public class LlmKeyService {
     /** 启用(0) / 手动禁用(2);启用时清掉失败次数和冷却 */
     public void updateStatus(long keyId, int status) {
         if (status != STATUS_NORMAL && status != STATUS_DISABLED) {
-            throw new BizException(400, "只支持启用(0)或禁用(2)");
+            throw new BizException(ErrorCode.BAD_REQUEST, "只支持启用(0)或禁用(2)");
         }
         int updated = keyMapper.update(null, new UpdateWrapper<LlmKey>()
                 .eq("id", keyId)
@@ -66,7 +67,7 @@ public class LlmKeyService {
                 .set("fail_count", 0)
                 .set("cooldown_until", null));
         if (updated == 0) {
-            throw new BizException(404, "Key 不存在");
+            throw new BizException(ErrorCode.NOT_FOUND, "Key 不存在");
         }
     }
 

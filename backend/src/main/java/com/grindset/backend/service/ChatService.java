@@ -1,6 +1,7 @@
 package com.grindset.backend.service;
 
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ChatRequest;
 import com.grindset.backend.dto.ProviderInfo;
 import com.grindset.backend.llm.ChatMessage;
@@ -54,7 +55,7 @@ public class ChatService {
     public List<LlmTarget> resolveTargets(String providerId, String model) {
         List<ModelCatalogService.CatalogChannel> channels = catalog.findChannels(providerId);
         if (channels.isEmpty()) {
-            throw new BizException(400, "不支持的模型服务:" + providerId);
+            throw new BizException(ErrorCode.BAD_REQUEST, "不支持的模型服务:" + providerId);
         }
 
         List<LlmTarget> targets = new ArrayList<>();
@@ -68,7 +69,7 @@ public class ChatService {
             }
         }
         if (targets.isEmpty()) {
-            throw new BizException(400, "不支持的模型:" + model);
+            throw new BizException(ErrorCode.BAD_REQUEST, "不支持的模型:" + model);
         }
         return targets;
     }
@@ -76,10 +77,10 @@ public class ChatService {
     /** 校验历史消息,裁到最近若干条,并在最前面注入 system 提示词 */
     private List<ChatMessage> buildMessages(List<ChatRequest.Message> raw) {
         if (raw == null || raw.isEmpty()) {
-            throw new BizException(400, "消息不能为空");
+            throw new BizException(ErrorCode.BAD_REQUEST, "消息不能为空");
         }
         if (raw.size() > CHAT_MAX_REQUEST_MESSAGES) {
-            throw new BizException(400, "消息数量过多");
+            throw new BizException(ErrorCode.BAD_REQUEST, "消息数量过多");
         }
 
         List<ChatMessage> result = new ArrayList<>();
@@ -94,14 +95,14 @@ public class ChatService {
             ChatRequest.Message item = raw.get(i);
             String role = strip(item.getRole());
             if (!ChatMessage.ROLE_USER.equals(role) && !ChatMessage.ROLE_ASSISTANT.equals(role)) {
-                throw new BizException(400, "消息角色不合法");
+                throw new BizException(ErrorCode.BAD_REQUEST, "消息角色不合法");
             }
             String content = item.getContent() == null ? "" : item.getContent();
             if (content.isBlank()) {
-                throw new BizException(400, "消息内容不能为空");
+                throw new BizException(ErrorCode.BAD_REQUEST, "消息内容不能为空");
             }
             if (content.length() > CHAT_MAX_MESSAGE_LENGTH) {
-                throw new BizException(400, "单条消息不能超过 " + CHAT_MAX_MESSAGE_LENGTH + " 字");
+                throw new BizException(ErrorCode.BAD_REQUEST, "单条消息不能超过 " + CHAT_MAX_MESSAGE_LENGTH + " 字");
             }
             result.add(new ChatMessage(role, content));
         }

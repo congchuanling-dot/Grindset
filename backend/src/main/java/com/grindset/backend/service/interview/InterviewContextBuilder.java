@@ -1,6 +1,7 @@
 package com.grindset.backend.service.interview;
 
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ResumeDetail;
 import com.grindset.backend.service.ResumeService;
 import org.springframework.stereotype.Component;
@@ -26,7 +27,7 @@ public class InterviewContextBuilder {
         try {
             resume = resumeService.get(userId, resumeId);
         } catch (BizException e) {
-            throw new BizException(409, "使用的简历已被删除,无法继续面试");
+            throw new BizException(ErrorCode.CONFLICT, "使用的简历已被删除,无法继续面试");
         }
 
         StringBuilder builder = new StringBuilder();

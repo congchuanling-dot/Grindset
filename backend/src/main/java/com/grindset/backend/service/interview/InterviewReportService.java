@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.InterviewDetail;
 import com.grindset.backend.dto.InterviewReport;
@@ -66,7 +67,7 @@ public class InterviewReportService {
     public InterviewDetail.ReportView finish(long userId, long id) {
         ReentrantLock lock = locks.lockOf(id);
         if (!lock.tryLock()) {
-            throw new BizException(409, "当前会话正在处理中,请稍后再试");
+            throw new BizException(ErrorCode.CONFLICT, "当前会话正在处理中,请稍后再试");
         }
         try {
             InterviewSession session = sessionService.requireOwned(userId, id);
@@ -161,7 +162,7 @@ public class InterviewReportService {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
-            throw new BizException(500, "结果序列化失败");
+            throw new BizException(ErrorCode.INTERNAL_ERROR, "结果序列化失败");
         }
     }
 }

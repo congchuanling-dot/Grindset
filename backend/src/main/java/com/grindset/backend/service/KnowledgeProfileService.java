@@ -2,6 +2,7 @@ package com.grindset.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.KnowledgeProfileView;
@@ -345,7 +346,7 @@ public class KnowledgeProfileService {
     public RebuildResult rebuild(long userId) {
         ReentrantLock lock = rebuildLocks.computeIfAbsent(userId, key -> new ReentrantLock());
         if (!lock.tryLock()) {
-            throw new BizException(409, "该用户画像正在重建,请稍后再试");
+            throw new BizException(ErrorCode.CONFLICT, "该用户画像正在重建,请稍后再试");
         }
         try {
             List<Evidence> evidences = new ArrayList<>();

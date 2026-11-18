@@ -3,6 +3,7 @@ package com.grindset.backend.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.config.InterviewProperties;
 import com.grindset.backend.dto.BankEvaluation;
 import com.grindset.backend.dto.InterviewReport;
@@ -181,7 +182,7 @@ public class InterviewLlmService {
                 validateDecision(decision, followUpCount(question));
                 return decision;
             } catch (BizException e) {
-                throw new BizException(502, "AI 点评结果异常,请稍后重试");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 点评结果异常,请稍后重试");
             }
         }
     }
@@ -200,7 +201,7 @@ public class InterviewLlmService {
         try {
             return normalizeEvaluation(parse(raw, InterviewTurnDecision.Evaluation.class));
         } catch (BizException e) {
-            throw new BizException(502, "AI 评分结果异常,请稍后重试");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "AI 评分结果异常,请稍后重试");
         }
     }
 
@@ -223,7 +224,7 @@ public class InterviewLlmService {
             try {
                 return normalizeReport(parse(retryRaw, InterviewReport.class));
             } catch (BizException e) {
-                throw new BizException(502, "AI 复盘结果异常,请稍后重试");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 复盘结果异常,请稍后重试");
             }
         }
     }
@@ -250,7 +251,7 @@ public class InterviewLlmService {
             try {
                 return normalizeRetry(parse(retryRaw, RetryEvaluation.class));
             } catch (BizException e) {
-                throw new BizException(502, "AI 重练评分异常,请稍后重试");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 重练评分异常,请稍后重试");
             }
         }
     }
@@ -277,7 +278,7 @@ public class InterviewLlmService {
             try {
                 return normalizeBank(parse(retryRaw, BankEvaluation.class));
             } catch (BizException e) {
-                throw new BizException(502, "AI 评分异常,请稍后重试");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 评分异常,请稍后重试");
             }
         }
     }
@@ -489,7 +490,7 @@ public class InterviewLlmService {
 
     private InterviewTurnDecision normalizeDecision(InterviewTurnDecision decision) {
         if (decision == null) {
-            throw new BizException(502, "模型输出为空");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出为空");
         }
         decision.setFeedback(truncate(decision.getFeedback(), 200));
         decision.setFollowUpQuestion(truncate(decision.getFollowUpQuestion(), 500));
@@ -501,12 +502,12 @@ public class InterviewLlmService {
 
     private InterviewTurnDecision.Evaluation normalizeEvaluation(InterviewTurnDecision.Evaluation evaluation) {
         if (evaluation == null) {
-            throw new BizException(502, "缺少评分");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "缺少评分");
         }
         InterviewTurnDecision.Evaluation result = evaluation;
         int score = result.getScore() == null ? 0 : result.getScore();
         if (score < 1 || score > 5) {
-            throw new BizException(502, "评分超出 1~5");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "评分超出 1~5");
         }
         result.setKnowledgePoints(normalizePoints(result.getKnowledgePoints()));
         result.setComment(truncate(blankToNull(result.getComment()), 200));
@@ -516,15 +517,15 @@ public class InterviewLlmService {
 
     private RetryEvaluation normalizeRetry(RetryEvaluation raw) {
         if (raw == null) {
-            throw new BizException(502, "模型输出为空");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出为空");
         }
         int score = raw.score() == null ? 0 : raw.score();
         if (score < 1 || score > 5) {
-            throw new BizException(502, "评分超出 1~5");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "评分超出 1~5");
         }
         String reference = truncate(blankToNull(raw.referenceAnswer()), 1000);
         if (reference == null) {
-            throw new BizException(502, "缺少参考要点");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "缺少参考要点");
         }
         return new RetryEvaluation(
                 score,
@@ -535,11 +536,11 @@ public class InterviewLlmService {
 
     private BankEvaluation normalizeBank(BankEvaluation raw) {
         if (raw == null) {
-            throw new BizException(502, "模型输出为空");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出为空");
         }
         int score = raw.score() == null ? 0 : raw.score();
         if (score < 1 || score > 5) {
-            throw new BizException(502, "评分超出 1~5");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "评分超出 1~5");
         }
         return new BankEvaluation(
                 score,
@@ -551,7 +552,7 @@ public class InterviewLlmService {
 
     private InterviewReport normalizeReport(InterviewReport report) {
         if (report == null) {
-            throw new BizException(502, "模型输出为空");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出为空");
         }
         int overall = report.overallScore() == null ? 0 : report.overallScore();
         overall = Math.max(0, Math.min(100, overall));
@@ -570,17 +571,17 @@ public class InterviewLlmService {
     private static void validateDecision(InterviewTurnDecision decision, int followUpCount) {
         boolean followUp = Boolean.TRUE.equals(decision.getShouldFollowUp());
         if (followUpCount >= 3 && followUp) {
-            throw new BizException(502, "已追问 3 次,必须收束");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "已追问 3 次,必须收束");
         }
         if (followUpCount == 0 && !followUp) {
-            throw new BizException(502, "本题至少需要一次追问");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "本题至少需要一次追问");
         }
         if (followUp) {
             if (decision.getFollowUpQuestion() == null || decision.getFollowUpQuestion().isBlank()) {
-                throw new BizException(502, "追问内容为空");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "追问内容为空");
             }
         } else if (decision.getEvaluation() == null) {
-            throw new BizException(502, "收束时缺少评分");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "收束时缺少评分");
         }
     }
 
@@ -598,16 +599,16 @@ public class InterviewLlmService {
         int start = text.indexOf('{');
         int end = text.lastIndexOf('}');
         if (start < 0 || end <= start) {
-            throw new BizException(502, "模型输出不是合法 JSON");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
         }
         try {
             T parsed = objectMapper.readValue(text.substring(start, end + 1), type);
             if (parsed == null) {
-                throw new BizException(502, "模型输出不是合法 JSON");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
             }
             return parsed;
         } catch (JsonProcessingException e) {
-            throw new BizException(502, "模型输出不是合法 JSON");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
         }
     }
 
@@ -618,12 +619,12 @@ public class InterviewLlmService {
         String model = config.getModel() == null ? "" : config.getModel().strip();
 
         if (provider.isEmpty() != model.isEmpty()) {
-            throw new BizException(502, "面试模型配置不完整,请同时配置 provider 与 model");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "面试模型配置不完整,请同时配置 provider 与 model");
         }
         if (!provider.isEmpty()) {
             List<LlmTarget> targets = targetsFor(provider, model);
             if (targets.isEmpty()) {
-                throw new BizException(502, "面试模型不可用,请检查渠道与 API Key");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "面试模型不可用,请检查渠道与 API Key");
             }
             return new Selection(targets, model);
         }
@@ -635,7 +636,7 @@ public class InterviewLlmService {
                 }
             }
         }
-        throw new BizException(502, "未配置可用的模型服务");
+        throw new BizException(ErrorCode.BAD_GATEWAY, "未配置可用的模型服务");
     }
 
     private List<LlmTarget> targetsFor(String providerId, String model) {

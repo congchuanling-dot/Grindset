@@ -2,6 +2,7 @@ package com.grindset.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.constant.JudgeLanguages;
 import com.grindset.backend.common.constant.SubmissionStatus;
@@ -118,10 +119,10 @@ public class CodingService {
 
         List<QuestionTestCase> samples = sampleCases(id);
         if (samples.isEmpty()) {
-            throw new BizException(400, "这道题还没有配置例题用例");
+            throw new BizException(ErrorCode.BAD_REQUEST, "这道题还没有配置例题用例");
         }
         if (!activeUsers.add(userId)) {
-            throw new BizException(429, "上一次运行还没结束，请稍候");
+            throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "上一次运行还没结束，请稍候");
         }
         try {
             JudgeService.JudgeOutcome outcome = judgeService.judge(language, code, samples,
@@ -149,10 +150,10 @@ public class CodingService {
 
         List<QuestionTestCase> cases = allCases(id);
         if (cases.isEmpty()) {
-            throw new BizException(400, "这道题还没有配置测试用例");
+            throw new BizException(ErrorCode.BAD_REQUEST, "这道题还没有配置测试用例");
         }
         if (!activeUsers.add(userId)) {
-            throw new BizException(429, "上一次运行还没结束，请稍候");
+            throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "上一次运行还没结束，请稍候");
         }
 
         QuestionSubmission submission = new QuestionSubmission();
@@ -219,7 +220,7 @@ public class CodingService {
     public CodingSubmissionView submission(long userId, long submissionId) {
         QuestionSubmission submission = submissionMapper.selectById(submissionId);
         if (submission == null || submission.getUserId() == null || submission.getUserId() != userId) {
-            throw new BizException(404, "提交记录不存在");
+            throw new BizException(ErrorCode.NOT_FOUND, "提交记录不存在");
         }
         return toView(submission);
     }
@@ -255,7 +256,7 @@ public class CodingService {
     private static String requireLanguage(CodeRunRequest request) {
         String language = request == null ? null : JudgeService.normalizeLanguage(request.language());
         if (!JudgeLanguages.JAVA.equals(language) && !JudgeLanguages.PYTHON.equals(language)) {
-            throw new BizException(400, "暂时只支持 Java 和 Python");
+            throw new BizException(ErrorCode.BAD_REQUEST, "暂时只支持 Java 和 Python");
         }
         return language;
     }
@@ -263,10 +264,10 @@ public class CodingService {
     private static String requireCode(CodeRunRequest request) {
         String code = request == null || request.code() == null ? "" : request.code();
         if (code.isBlank()) {
-            throw new BizException(400, "请先写代码再运行");
+            throw new BizException(ErrorCode.BAD_REQUEST, "请先写代码再运行");
         }
         if (code.length() > MAX_CODE_LENGTH) {
-            throw new BizException(400, "代码不能超过 " + MAX_CODE_LENGTH + " 字符");
+            throw new BizException(ErrorCode.BAD_REQUEST, "代码不能超过 " + MAX_CODE_LENGTH + " 字符");
         }
         return code;
     }

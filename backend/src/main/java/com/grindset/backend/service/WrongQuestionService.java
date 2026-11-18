@@ -2,6 +2,7 @@ package com.grindset.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.RetryEvaluation;
@@ -325,15 +326,15 @@ public class WrongQuestionService {
     public RetryResult retry(long userId, long id, String answer) {
         String text = answer == null ? "" : answer.strip();
         if (text.length() < MIN_RETRY_LENGTH) {
-            throw new BizException(400, "再想想,至少写 " + MIN_RETRY_LENGTH + " 个字");
+            throw new BizException(ErrorCode.BAD_REQUEST, "再想想,至少写 " + MIN_RETRY_LENGTH + " 个字");
         }
         if (text.length() > MAX_ANSWER_LENGTH) {
-            throw new BizException(400, "回答不能超过 " + MAX_ANSWER_LENGTH + " 字");
+            throw new BizException(ErrorCode.BAD_REQUEST, "回答不能超过 " + MAX_ANSWER_LENGTH + " 字");
         }
 
         ReentrantLock lock = lockOf(id);
         if (!lock.tryLock()) {
-            throw new BizException(409, "这道题正在批改,请稍后再试");
+            throw new BizException(ErrorCode.CONFLICT, "这道题正在批改,请稍后再试");
         }
         try {
             WrongQuestion wrong = requireOwned(userId, id);
@@ -344,7 +345,7 @@ public class WrongQuestionService {
             RetryResult result = transactionTemplate.execute(status -> {
                 WrongQuestion locked = wrongQuestionMapper.selectForUpdate(id);
                 if (locked == null) {
-                    throw new BizException(404, "错题不存在");
+                    throw new BizException(ErrorCode.NOT_FOUND, "错题不存在");
                 }
 
                 LocalDateTime now = LocalDateTime.now();
@@ -463,7 +464,7 @@ public class WrongQuestionService {
     private WrongQuestion requireOwned(long userId, long id) {
         WrongQuestion wrong = wrongQuestionMapper.selectById(id);
         if (wrong == null || !Objects.equals(wrong.getUserId(), userId)) {
-            throw new BizException(404, "错题不存在");
+            throw new BizException(ErrorCode.NOT_FOUND, "错题不存在");
         }
         return wrong;
     }

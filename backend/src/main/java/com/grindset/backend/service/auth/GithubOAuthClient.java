@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -54,11 +55,11 @@ public class GithubOAuthClient {
         JsonNode node = send(request, "获取 GitHub 令牌");
         if (node.hasNonNull("error")) {
             String detail = node.path("error_description").asText(node.path("error").asText());
-            throw new BizException(401, "GitHub 授权失败：" + detail);
+            throw new BizException(ErrorCode.UNAUTHORIZED, "GitHub 授权失败：" + detail);
         }
         String accessToken = text(node, "access_token");
         if (accessToken == null || accessToken.isBlank()) {
-            throw new BizException(401, "GitHub 未返回 access_token");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "GitHub 未返回 access_token");
         }
         return accessToken;
     }
@@ -68,7 +69,7 @@ public class GithubOAuthClient {
         JsonNode node = send(get(USER_URL, accessToken), "获取 GitHub 用户信息");
         String githubId = node.path("id").asText("");
         if (githubId.isBlank()) {
-            throw new BizException(401, "GitHub 未返回用户 id");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "GitHub 未返回用户 id");
         }
         String email = text(node, "email");
         if (email == null || email.isBlank()) {
@@ -116,16 +117,16 @@ public class GithubOAuthClient {
             HttpResponse<String> response = httpClient.send(request,
                     HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() / 100 != 2) {
-                throw new BizException(502, action + "失败（HTTP " + response.statusCode() + "）");
+                throw new BizException(ErrorCode.BAD_GATEWAY, action + "失败（HTTP " + response.statusCode() + "）");
             }
             return objectMapper.readTree(response.body());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new BizException(502, action + "被中断");
+            throw new BizException(ErrorCode.BAD_GATEWAY, action + "被中断");
         } catch (JsonProcessingException e) {
-            throw new BizException(502, action + "返回格式异常");
+            throw new BizException(ErrorCode.BAD_GATEWAY, action + "返回格式异常");
         } catch (IOException e) {
-            throw new BizException(502, "无法连接 GitHub，请稍后重试");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "无法连接 GitHub，请稍后重试");
         }
     }
 

@@ -1,6 +1,7 @@
 package com.grindset.backend.controller.auth;
 
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.dto.auth.AuthResult;
 import com.grindset.backend.dto.auth.LoginRequest;
@@ -58,7 +59,7 @@ public class AuthController {
             @CookieValue(value = AuthCookieWriter.REFRESH_COOKIE, required = false) String refreshToken,
             HttpServletResponse response) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new BizException(401, "登录已过期，请重新登录");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录");
         }
         TokenService.Rotation rotation;
         try {
@@ -85,7 +86,7 @@ public class AuthController {
     @GetMapping("/me")
     public ApiResponse<UserInfo> me(@AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) {
-            throw new BizException(401, "未登录或登录已过期");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
         }
         User user = authService.requireActiveUser(loginUser.userId());
         return ApiResponse.ok(new UserInfo(

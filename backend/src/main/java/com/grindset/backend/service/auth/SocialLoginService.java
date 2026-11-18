@@ -3,6 +3,7 @@ package com.grindset.backend.service.auth;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.auth.AuthResult;
 import com.grindset.backend.entity.auth.User;
@@ -73,7 +74,7 @@ public class SocialLoginService {
     public void verifyState(String provider, String state) {
         if (state == null || state.isBlank()
                 || redis.opsForValue().getAndDelete(stateKey(provider, state)) == null) {
-            throw new BizException(400, "state 已失效，请重新登录");
+            throw new BizException(ErrorCode.BAD_REQUEST, "state 已失效，请重新登录");
         }
     }
 
@@ -85,7 +86,7 @@ public class SocialLoginService {
         String identityProvider = provider.toUpperCase(Locale.ROOT);
         Long userId = transactionTemplate.execute(status -> loginOrRegister(identityProvider, socialUser));
         if (userId == null) {
-            throw new BizException(500, "登录失败，请稍后重试");
+            throw new BizException(ErrorCode.INTERNAL_ERROR, "登录失败，请稍后重试");
         }
 
         User user = authService.requireActiveUser(userId);
@@ -98,18 +99,18 @@ public class SocialLoginService {
     /** 前端用一次性 code 换本系统令牌,code 用过即废 */
     public AuthResult consume(String provider, String oneTimeCode) {
         if (oneTimeCode == null || oneTimeCode.isBlank()) {
-            throw new BizException(400, "缺少登录凭证");
+            throw new BizException(ErrorCode.BAD_REQUEST, "缺少登录凭证");
         }
         String json = redis.opsForValue().getAndDelete(codeKey(provider, oneTimeCode));
         if (json == null) {
-            throw new BizException(401, "登录已过期，请重新登录");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录");
         }
         try {
             StoredLogin stored = objectMapper.readValue(json, StoredLogin.class);
             return new AuthResult(stored.userId(), stored.accessToken(),
                     stored.expiresIn(), stored.nickname());
         } catch (JsonProcessingException e) {
-            throw new BizException(500, "登录结果解析失败");
+            throw new BizException(ErrorCode.INTERNAL_ERROR, "登录结果解析失败");
         }
     }
 
@@ -152,7 +153,7 @@ public class SocialLoginService {
                     Duration.ofSeconds(codeTtlSeconds));
             return oneTimeCode;
         } catch (JsonProcessingException e) {
-            throw new BizException(500, "登录结果暂存失败");
+            throw new BizException(ErrorCode.INTERNAL_ERROR, "登录结果暂存失败");
         }
     }
 

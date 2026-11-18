@@ -3,6 +3,7 @@ package com.grindset.backend.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.CandidateType;
 import com.grindset.backend.common.ResumeSectionType;
 import com.grindset.backend.config.ResumeProperties;
@@ -84,7 +85,7 @@ public class ResumeLlmParser {
             try {
                 return new ParseResult(normalize(parseJson(retryRaw)), selection.model());
             } catch (BizException e) {
-                throw new BizException(502, "AI 解析结果异常,请稍后重试");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 解析结果异常,请稍后重试");
             }
         }
     }
@@ -98,12 +99,12 @@ public class ResumeLlmParser {
         String model = config.getModel() == null ? "" : config.getModel().strip();
 
         if (provider.isEmpty() != model.isEmpty()) {
-            throw new BizException(502, "简历解析模型配置不完整,请同时配置 provider 与 model");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "简历解析模型配置不完整,请同时配置 provider 与 model");
         }
         if (!provider.isEmpty()) {
             List<LlmTarget> targets = targetsFor(provider, model);
             if (targets.isEmpty()) {
-                throw new BizException(502, "简历解析模型不可用,请检查渠道与 API Key");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "简历解析模型不可用,请检查渠道与 API Key");
             }
             return new Selection(targets, model);
         }
@@ -116,7 +117,7 @@ public class ResumeLlmParser {
                 }
             }
         }
-        throw new BizException(502, "未配置可用的模型服务");
+        throw new BizException(ErrorCode.BAD_GATEWAY, "未配置可用的模型服务");
     }
 
     private List<LlmTarget> targetsFor(String providerId, String model) {
@@ -152,16 +153,16 @@ public class ResumeLlmParser {
         int start = text.indexOf('{');
         int end = text.lastIndexOf('}');
         if (start < 0 || end <= start) {
-            throw new BizException(502, "模型输出不是合法 JSON");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
         }
         try {
             ParsedResume parsed = objectMapper.readValue(text.substring(start, end + 1), ParsedResume.class);
             if (parsed == null) {
-                throw new BizException(502, "模型输出不是合法 JSON");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
             }
             return parsed;
         } catch (JsonProcessingException e) {
-            throw new BizException(502, "模型输出不是合法 JSON");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
         }
     }
 
@@ -225,7 +226,7 @@ public class ResumeLlmParser {
         parsed.setSkills(skills);
         parsed.setSections(sections);
         if (skills.isEmpty() && sections.isEmpty()) {
-            throw new BizException(502, "AI 未识别出任何简历内容");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "AI 未识别出任何简历内容");
         }
         return parsed;
     }

@@ -1,6 +1,7 @@
 package com.grindset.backend.service;
 
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
@@ -90,7 +91,7 @@ public class ResumeTextExtractor {
             case "docx" -> "DOCX";
             case "md" -> "MD";
             case "txt" -> "TXT";
-            default -> throw new BizException(400, "仅支持 PDF、DOCX、MD、TXT,.doc 请另存为 .docx");
+            default -> throw new BizException(ErrorCode.BAD_REQUEST, "仅支持 PDF、DOCX、MD、TXT,.doc 请另存为 .docx");
         };
     }
 
@@ -104,7 +105,7 @@ public class ResumeTextExtractor {
             default -> true;
         };
         if (!matched) {
-            throw new BizException(400, "文件内容与扩展名不符,请重新选择");
+            throw new BizException(ErrorCode.BAD_REQUEST, "文件内容与扩展名不符,请重新选择");
         }
     }
 
@@ -126,9 +127,9 @@ public class ResumeTextExtractor {
             stripper.setSortByPosition(true);
             return stripper.getText(document);
         } catch (InvalidPasswordException e) {
-            throw new BizException(400, "PDF 已加密,请先解除密码后重试");
+            throw new BizException(ErrorCode.BAD_REQUEST, "PDF 已加密,请先解除密码后重试");
         } catch (IOException e) {
-            throw new BizException(422, "文件解析失败,请确认文件未损坏");
+            throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "文件解析失败,请确认文件未损坏");
         }
     }
 
@@ -151,7 +152,7 @@ public class ResumeTextExtractor {
             }
             return sb.toString();
         } catch (IOException | RuntimeException e) {
-            throw new BizException(422, "文件解析失败,请确认文件未损坏");
+            throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "文件解析失败,请确认文件未损坏");
         }
     }
 
@@ -194,11 +195,11 @@ public class ResumeTextExtractor {
 
     private static void validate(String text) {
         if (text.length() < MIN_CHARS) {
-            throw new BizException(422, "未提取到有效文字,疑似扫描件或图片版简历");
+            throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "未提取到有效文字,疑似扫描件或图片版简历");
         }
         long garbled = text.chars().filter(c -> c == '\uFFFD').count();
         if (garbled * 10 > text.length()) {
-            throw new BizException(422, "未能正确识别文件内容,请换一份简历重试");
+            throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "未能正确识别文件内容,请换一份简历重试");
         }
     }
 

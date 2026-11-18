@@ -2,6 +2,7 @@ package com.grindset.backend.service.auth;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.entity.auth.UserIdentity;
 import com.grindset.backend.mapper.auth.UserIdentityMapper;
@@ -55,7 +56,7 @@ public class IdentityService {
         try {
             identityMapper.insert(identity);
         } catch (DuplicateKeyException e) {
-            throw new BizException(409, "该邮箱已存在");
+            throw new BizException(ErrorCode.CONFLICT, "该邮箱已存在");
         }
     }
 

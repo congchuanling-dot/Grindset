@@ -1,6 +1,7 @@
 package com.grindset.backend.service.auth;
 
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.entity.auth.User;
 import com.grindset.backend.entity.auth.UserIdentity;
@@ -54,12 +55,13 @@ public class AuthService {
 
         // 先查一次,给出友好提示(唯一索引是并发下的最后防线)
         if (identityService.findLocal(account) != null) {
-            throw new BizException(409, "该邮箱已存在");
+            throw new BizException(ErrorCode.CONFLICT, "该邮箱已存在");
         }
 
         // 建用户
         User user = new User();
         user.setId(idGenerator.nextId());
+        //todo:用户默认昵称是邮箱，后续改成可变类型，加接口
         user.setNickname(account);
         user.setEmail(account);
         user.setStatus(0);
@@ -80,7 +82,7 @@ public class AuthService {
         UserIdentity identity = identityService.findLocal(account);
         // 不区分"账号不存在"和"密码错",统一提示,防账号枚举
         if (identity == null || !passwordEncoder.matches(rawPassword, identity.getCredential())) {
-            throw new BizException(401, "账号或密码错误");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "账号或密码错误");
         }
         return identity.getUserId();
     }
@@ -92,10 +94,10 @@ public class AuthService {
     public User requireActiveUser(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {
-            throw new BizException(401, "用户不存在，请重新登录");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "用户不存在，请重新登录");
         }
         if (user.getStatus() != null && user.getStatus() == 1) {
-            throw new BizException(403, "账号已被禁用");
+            throw new BizException(ErrorCode.FORBIDDEN, "账号已被禁用");
         }
         return user;
     }
@@ -105,20 +107,20 @@ public class AuthService {
      */
     private void validateCredentials(String account, String rawPassword) {
         if (account == null || account.isBlank() || rawPassword == null || rawPassword.isBlank()) {
-            throw new BizException(400, "邮箱和密码不能为空");
+            throw new BizException(ErrorCode.BAD_REQUEST, "邮箱和密码不能为空");
         }
         if (account.length() > MAX_ACCOUNT_LENGTH) {
-            throw new BizException(400, "邮箱长度不能超过 " + MAX_ACCOUNT_LENGTH + " 个字符");
+            throw new BizException(ErrorCode.BAD_REQUEST, "邮箱长度不能超过 " + MAX_ACCOUNT_LENGTH + " 个字符");
         }
         if (!EMAIL_PATTERN.matcher(account).matches()) {
-            throw new BizException(400, "请输入正确的邮箱地址");
+            throw new BizException(ErrorCode.BAD_REQUEST, "请输入正确的邮箱地址");
         }
         if (rawPassword.length() < MIN_PASSWORD_LENGTH || rawPassword.length() > MAX_PASSWORD_LENGTH) {
-            throw new BizException(400,
+            throw new BizException(ErrorCode.BAD_REQUEST,
                     "密码长度需为 " + MIN_PASSWORD_LENGTH + "-" + MAX_PASSWORD_LENGTH + " 位");
         }
         if (!PASSWORD_LETTER.matcher(rawPassword).find() || !PASSWORD_DIGIT.matcher(rawPassword).find()) {
-            throw new BizException(400, "密码必须同时包含字母和数字");
+            throw new BizException(ErrorCode.BAD_REQUEST, "密码必须同时包含字母和数字");
         }
     }
 }

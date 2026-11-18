@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.AnswerRequest;
@@ -96,22 +97,22 @@ public class InterviewTurnService {
     public InterviewDetail.QuestionView nextQuestion(long userId, long id, Consumer<String> onDelta) {
         ReentrantLock lock = locks.lockOf(id);
         if (!lock.tryLock()) {
-            throw new BizException(409, "当前会话正在处理中,请稍后再试");
+            throw new BizException(ErrorCode.CONFLICT, "当前会话正在处理中,请稍后再试");
         }
         try {
             InterviewSession session = sessionService.requireOwned(userId, id);
             if (intValue(session.getStatus()) != SESSION_ONGOING) {
-                throw new BizException(409, "这场面试已经结束");
+                throw new BizException(ErrorCode.CONFLICT, "这场面试已经结束");
             }
 
             InterviewQuestion latest = latestQuestion(id);
             if (latest != null && intValue(latest.getStatus()) != QuestionStatus.DONE) {
-                throw new BizException(409, "请先回答当前题目");
+                throw new BizException(ErrorCode.CONFLICT, "请先回答当前题目");
             }
 
             int seq = intValue(session.getCompletedQuestions()) + 1;
             if (seq > intValue(session.getQuestionCount())) {
-                throw new BizException(400, "题目已全部答完,请生成复盘报告");
+                throw new BizException(ErrorCode.BAD_REQUEST, "题目已全部答完,请生成复盘报告");
             }
 
             String resumeText = contextBuilder.resumeText(userId, session.getResumeId());
@@ -126,7 +127,7 @@ public class InterviewTurnService {
 
             String questionText = buffer.toString().strip();
             if (questionText.isEmpty()) {
-                throw new BizException(502, "AI 没有生成有效题目,请重试");
+                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 没有生成有效题目,请重试");
             }
 
             long questionId = idGenerator.nextId();
@@ -155,25 +156,25 @@ public class InterviewTurnService {
     public AnswerResult answer(long userId, long id, AnswerRequest request) {
         String content = request == null || request.getContent() == null ? "" : request.getContent().strip();
         if (content.isEmpty()) {
-            throw new BizException(400, "回答不能为空");
+            throw new BizException(ErrorCode.BAD_REQUEST, "回答不能为空");
         }
         if (content.length() > MAX_ANSWER_LENGTH) {
-            throw new BizException(400, "回答不能超过 " + MAX_ANSWER_LENGTH + " 字");
+            throw new BizException(ErrorCode.BAD_REQUEST, "回答不能超过 " + MAX_ANSWER_LENGTH + " 字");
         }
 
         ReentrantLock lock = locks.lockOf(id);
         if (!lock.tryLock()) {
-            throw new BizException(409, "当前会话正在处理中,请稍后再试");
+            throw new BizException(ErrorCode.CONFLICT, "当前会话正在处理中,请稍后再试");
         }
         try {
             InterviewSession session = sessionService.requireOwned(userId, id);
             if (intValue(session.getStatus()) != SESSION_ONGOING) {
-                throw new BizException(409, "这场面试已经结束");
+                throw new BizException(ErrorCode.CONFLICT, "这场面试已经结束");
             }
 
             InterviewQuestion question = latestQuestion(id);
             if (question == null || intValue(question.getStatus()) != QuestionStatus.ANSWERED) {
-                throw new BizException(409, "当前没有待回答的问题");
+                throw new BizException(ErrorCode.CONFLICT, "当前没有待回答的问题");
             }
 
             // 本次回答还没落库,但必须带进上下文,否则模型看不到候选人刚说的话
@@ -351,7 +352,7 @@ public class InterviewTurnService {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
-            throw new BizException(500, "结果序列化失败");
+            throw new BizException(ErrorCode.INTERNAL_ERROR, "结果序列化失败");
         }
     }
 }

@@ -2,6 +2,7 @@ package com.grindset.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.BankEvaluation;
 import com.grindset.backend.dto.QuestionAttemptResult;
@@ -185,16 +186,16 @@ public class QuestionBankService {
     public QuestionAttemptResult attempt(long userId, long id, String answer) {
         String text = answer == null ? "" : answer.strip();
         if (text.length() < MIN_ANSWER_LENGTH) {
-            throw new BizException(400, "再想想,至少写 " + MIN_ANSWER_LENGTH + " 个字");
+            throw new BizException(ErrorCode.BAD_REQUEST, "再想想,至少写 " + MIN_ANSWER_LENGTH + " 个字");
         }
         if (text.length() > MAX_ANSWER_LENGTH) {
-            throw new BizException(400, "回答不能超过 " + MAX_ANSWER_LENGTH + " 字");
+            throw new BizException(ErrorCode.BAD_REQUEST, "回答不能超过 " + MAX_ANSWER_LENGTH + " 字");
         }
 
         QuestionBank question = requireOn(id);
         ReentrantLock lock = lockOf(userId, id);
         if (!lock.tryLock()) {
-            throw new BizException(409, "这道题正在批改,请稍后再试");
+            throw new BizException(ErrorCode.CONFLICT, "这道题正在批改,请稍后再试");
         }
         try {
             // 慢调用放在事务外,避免长时间占用数据库连接
@@ -259,7 +260,7 @@ public class QuestionBankService {
     public QuestionBank requireCodingQuestion(long id) {
         QuestionBank question = requireOn(id);
         if (!"CODING".equalsIgnoreCase(question.getJudgeMode())) {
-            throw new BizException(400, "这道题不是编程题");
+            throw new BizException(ErrorCode.BAD_REQUEST, "这道题不是编程题");
         }
         return question;
     }
@@ -422,7 +423,7 @@ public class QuestionBankService {
     private QuestionBank requireOn(long id) {
         QuestionBank question = bankMapper.selectById(id);
         if (question == null || intValue(question.getStatus()) != STATUS_ON) {
-            throw new BizException(404, "题目不存在或已下架");
+            throw new BizException(ErrorCode.NOT_FOUND, "题目不存在或已下架");
         }
         return question;
     }

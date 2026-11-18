@@ -1,5 +1,7 @@
 package com.grindset.backend.security;
 
+import com.grindset.backend.common.ErrorCode;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +30,6 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        objectMapper.writeValue(response.getWriter(), ApiResponse.error(403, "没有权限访问该资源"));
+        objectMapper.writeValue(response.getWriter(), ApiResponse.error(ErrorCode.FORBIDDEN, "没有权限访问该资源"));
     }
 }

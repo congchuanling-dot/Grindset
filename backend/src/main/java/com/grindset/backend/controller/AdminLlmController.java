@@ -3,6 +3,7 @@ package com.grindset.backend.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.AdminGuard;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.entity.LlmChannel;
 import com.grindset.backend.entity.LlmKey;
@@ -101,7 +102,7 @@ public class AdminLlmController {
             @PathVariable long id, @RequestBody UpdateKeyRequest req) {
         guard.check(token);
         if (req.status() == null) {
-            throw new BizException(400, "status 不能为空");
+            throw new BizException(ErrorCode.BAD_REQUEST, "status 不能为空");
         }
         keyService.updateStatus(id, req.status());
         return ApiResponse.ok(null);
@@ -114,7 +115,7 @@ public class AdminLlmController {
             @PathVariable long id, @RequestBody BalanceRequest req) {
         guard.check(token);
         if (req.amount() == null) {
-            throw new BizException(400, "余额不能为空");
+            throw new BizException(ErrorCode.BAD_REQUEST, "余额不能为空");
         }
         requireChannel(id);
 
@@ -138,10 +139,10 @@ public class AdminLlmController {
         guard.check(token);
         LlmChannel channel = requireChannel(id);
         if (!"deepseek".equals(channel.getProviderId())) {
-            throw new BizException(400, "该厂商暂不支持自动查询余额,请手工维护");
+            throw new BizException(ErrorCode.BAD_REQUEST, "该厂商暂不支持自动查询余额,请手工维护");
         }
         if (!balanceService.refresh(channel)) {
-            throw new BizException(502, "查询余额失败,请检查 key 与网络后重试");
+            throw new BizException(ErrorCode.BAD_GATEWAY, "查询余额失败,请检查 key 与网络后重试");
         }
         LlmChannel latest = channelMapper.selectById(id);
         Map<String, Object> data = new LinkedHashMap<>();
@@ -154,7 +155,7 @@ public class AdminLlmController {
     private LlmChannel requireChannel(long id) {
         LlmChannel channel = channelMapper.selectById(id);
         if (channel == null) {
-            throw new BizException(404, "渠道不存在");
+            throw new BizException(ErrorCode.NOT_FOUND, "渠道不存在");
         }
         return channel;
     }

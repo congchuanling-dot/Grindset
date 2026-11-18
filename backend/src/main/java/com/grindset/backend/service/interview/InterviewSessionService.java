@@ -3,6 +3,7 @@ package com.grindset.backend.service.interview;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.CreateInterviewRequest;
 import com.grindset.backend.dto.InterviewDetail;
@@ -70,21 +71,21 @@ public class InterviewSessionService {
     /** 创建会话:校验简历归属与解析状态,不在这里出题 */
     public InterviewDetail create(long userId, CreateInterviewRequest request) {
         if (request == null) {
-            throw new BizException(400, "请求不能为空");
+            throw new BizException(ErrorCode.BAD_REQUEST, "请求不能为空");
         }
         long resumeId = parseId(request.getResumeId(), "简历 ID 不合法");
 
         String position = request.getPosition() == null ? "" : request.getPosition().strip();
         if (position.isEmpty()) {
-            throw new BizException(400, "请选择面试岗位");
+            throw new BizException(ErrorCode.BAD_REQUEST, "请选择面试岗位");
         }
         if (position.length() > 64) {
-            throw new BizException(400, "面试岗位过长");
+            throw new BizException(ErrorCode.BAD_REQUEST, "面试岗位过长");
         }
 
         String style = request.getStyle() == null ? "" : request.getStyle().strip();
         if (!STYLES.contains(style)) {
-            throw new BizException(400, "面试风格不合法");
+            throw new BizException(ErrorCode.BAD_REQUEST, "面试风格不合法");
         }
 
         String round = request.getRound() == null ? null : request.getRound().strip();
@@ -92,19 +93,19 @@ public class InterviewSessionService {
             round = null;
         }
         if (round != null && round.length() > 32) {
-            throw new BizException(400, "面试轮次过长");
+            throw new BizException(ErrorCode.BAD_REQUEST, "面试轮次过长");
         }
 
         List<String> focus = normalizeFocus(request.getFocus());
 
         int questionCount = request.getQuestionCount() == null ? 5 : request.getQuestionCount();
         if (!QUESTION_COUNTS.contains(questionCount)) {
-            throw new BizException(400, "题数只能是 3 / 5 / 8");
+            throw new BizException(ErrorCode.BAD_REQUEST, "题数只能是 3 / 5 / 8");
         }
 
         ResumeDetail resume = resumeService.get(userId, resumeId);
         if (resume.parseStatus() != 1) {
-            throw new BizException(400, "这份简历还没有解析成功,请先在简历管理页重新上传");
+            throw new BizException(ErrorCode.BAD_REQUEST, "这份简历还没有解析成功,请先在简历管理页重新上传");
         }
 
         long sessionId = idGenerator.nextId();
@@ -132,7 +133,7 @@ public class InterviewSessionService {
                 .last("LIMIT 50");
         if (filterResumeIds != null && !filterResumeIds.isEmpty()) {
             if (filterResumeIds.size() > 50) {
-                throw new BizException(400, "简历筛选数量过多");
+                throw new BizException(ErrorCode.BAD_REQUEST, "简历筛选数量过多");
             }
             wrapper.in("resume_id", filterResumeIds);
         }
@@ -183,7 +184,7 @@ public class InterviewSessionService {
     public InterviewSession requireOwned(long userId, long id) {
         InterviewSession session = sessionMapper.selectById(id);
         if (session == null || session.getUserId() == null || session.getUserId() != userId) {
-            throw new BizException(404, "面试会话不存在");
+            throw new BizException(ErrorCode.NOT_FOUND, "面试会话不存在");
         }
         return session;
     }
@@ -242,11 +243,11 @@ public class InterviewSessionService {
                 continue;
             }
             if (result.size() >= MAX_FOCUS) {
-                throw new BizException(400, "侧重方向最多选 " + MAX_FOCUS + " 个");
+                throw new BizException(ErrorCode.BAD_REQUEST, "侧重方向最多选 " + MAX_FOCUS + " 个");
             }
             String value = item.strip();
             if (value.length() > 32) {
-                throw new BizException(400, "侧重方向过长");
+                throw new BizException(ErrorCode.BAD_REQUEST, "侧重方向过长");
             }
             result.add(value);
         }
@@ -257,7 +258,7 @@ public class InterviewSessionService {
         try {
             return Long.parseLong(value == null ? "" : value.strip());
         } catch (NumberFormatException e) {
-            throw new BizException(400, message);
+            throw new BizException(ErrorCode.BAD_REQUEST, message);
         }
     }
 }

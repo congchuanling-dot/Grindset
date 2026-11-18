@@ -34,20 +34,20 @@ public class GlobalExceptionHandler {
     /** 请求体不是合法 JSON:属于客户端问题,返回 400 而不是 500 */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadBody(HttpMessageNotReadableException e) {
-        return ResponseEntity.badRequest().body(ApiResponse.error(400, "请求体格式错误"));
+        return ResponseEntity.badRequest().body(ApiResponse.error(ErrorCode.BAD_REQUEST, "请求体格式错误"));
     }
 
     /** 路径不存在:返回 404,不要被兜底逻辑误报成 500 */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotFound(NoResourceFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404, "接口不存在"));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(ErrorCode.NOT_FOUND, "接口不存在"));
     }
 
     /** 上传超过限制:Spring 在进入 Controller 之前就会抛,统一转成 413 */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleUploadTooLarge(MaxUploadSizeExceededException e) {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(ApiResponse.error(413, "文件不能超过 10MB"));
+                .body(ApiResponse.error(ErrorCode.PAYLOAD_TOO_LARGE, "文件不能超过 10MB"));
     }
 
     /** Redis 不可用:登录/刷新依赖它,给用户明确提示而不是 500 */
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleRedis(RedisConnectionFailureException e) {
         log.error("Redis 连接失败", e);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(ApiResponse.error(503, "会话服务暂不可用，请稍后再试"));
+                .body(ApiResponse.error(ErrorCode.SERVICE_UNAVAILABLE, "会话服务暂不可用，请稍后再试"));
     }
 
     /** 兜底:未预料的异常,日志留全量堆栈便于排查,响应不暴露细节 */
@@ -63,6 +63,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleOther(Exception e) {
         log.error("未处理的异常", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(500, "服务器内部错误"));
+                .body(ApiResponse.error(ErrorCode.INTERNAL_ERROR, "服务器内部错误"));
     }
 }

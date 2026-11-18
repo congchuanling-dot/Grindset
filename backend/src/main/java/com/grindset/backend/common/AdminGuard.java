@@ -21,11 +21,11 @@ public class AdminGuard {
 
     public void check(String provided) {
         if (token.isEmpty()) {
-            throw new BizException(403, "未配置管理令牌,管理接口已停用");
+            throw new BizException(ErrorCode.FORBIDDEN, "未配置管理令牌,管理接口已停用");
         }
         if (provided == null || !MessageDigest.isEqual(
                 token.getBytes(StandardCharsets.UTF_8), provided.getBytes(StandardCharsets.UTF_8))) {
-            throw new BizException(401, "管理令牌无效");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "管理令牌无效");
         }
     }
 }
