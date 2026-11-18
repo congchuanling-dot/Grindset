@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import RequireAuth from './auth/RequireAuth'
 import AppLayout from './layouts/AppLayout'
+import AuthCallbackPage from './pages/AuthCallbackPage'
 import ChatPage from './pages/ChatPage'
 import InterviewPage from './pages/InterviewPage'
 import InterviewRecordsPage from './pages/InterviewRecordsPage'
@@ -17,6 +18,8 @@ function App() {
     <Routes>
       {/* 登录页:谁都能访问 */}
       <Route path="/login" element={<LoginPage />} />
+      {/* 第三方登录回调:用一次性 code 换令牌,不套 RequireAuth */}
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
       {/* 登录后才可见的页面,统一套一层侧边栏外壳 */}
       <Route

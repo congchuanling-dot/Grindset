@@ -1,10 +1,84 @@
 package com.grindset.backend.controller.auth;
 
+import com.grindset.backend.common.BizException;
+import com.grindset.backend.config.GithubOAuthProperties;
+import com.grindset.backend.dto.ApiResponse;
+import com.grindset.backend.dto.auth.AuthResult;
+import com.grindset.backend.dto.auth.GithubExchangeRequest;
+import com.grindset.backend.security.AuthCookieWriter;
+import com.grindset.backend.service.auth.GithubLoginService;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.io.IOException;
+
 /**
- * GitHub 登录接口占位,待实现:
- * GET  /api/auth/github/authorize  跳转 GitHub 授权页
- * GET  /api/auth/github/callback   处理 GitHub 回调
- * POST /api/auth/github/exchange   用一次性 code 换本系统令牌
+ * GitHub 登录接口。
+ * authorize 跳转 GitHub 授权页;callback 处理授权结果并跳回前端;
+ * exchange 让前端用一次性 code 换本系统令牌。
  */
+@RestController
+@RequestMapping("/api/auth/github")
 public class GithubAuthController {
+
+    private final GithubLoginService githubLoginService;
+    private final GithubOAuthProperties properties;
+    private final AuthCookieWriter authCookieWriter;
+
+    public GithubAuthController(GithubLoginService githubLoginService,
+                                GithubOAuthProperties properties,
+                                AuthCookieWriter authCookieWriter) {
+        this.githubLoginService = githubLoginService;
+        this.properties = properties;
+        this.authCookieWriter = authCookieWriter;
+    }
+
+    /** 跳转 GitHub 授权页 */
+    @GetMapping("/authorize")
+    public void authorize(HttpServletResponse response) throws IOException {
+        response.sendRedirect(githubLoginService.authorizeUrl());
+    }
+
+    /** GitHub 授权回调:校验 state、换令牌、写 refresh Cookie,再跳回前端 */
+    @GetMapping("/callback")
+    public void callback(@RequestParam(required = false) String code,
+                         @RequestParam(required = false) String state,
+                         @RequestParam(required = false) String error,
+                         HttpServletResponse response) throws IOException {
+        if (error != null || code == null || state == null) {
+            redirectToFrontend(response, "error", "GitHub 授权已取消");
+            return;
+        }
+        try {
+            GithubLoginService.CallbackResult result = githubLoginService.handleCallback(code, state);
+            authCookieWriter.writeRefreshCookie(response, result.refreshToken());
+            redirectToFrontend(response, "code", result.oneTimeCode());
+        } catch (BizException e) {
+            // 回调是浏览器跳转,失败也要回到前端页面而不是甩一段 JSON
+            redirectToFrontend(response, "error", e.getMessage());
+        }
+    }
+
+    /** 前端用一次性 code 换 access token */
+    @PostMapping("/exchange")
+    public ApiResponse<AuthResult> exchange(@RequestBody GithubExchangeRequest req) {
+        return ApiResponse.ok(githubLoginService.consume(req.getCode()));
+    }
+
+    /** 统一拼前端回调地址,错误信息也走 query 参数带回 */
+    private void redirectToFrontend(HttpServletResponse response, String key, String value)
+            throws IOException {
+        String url = UriComponentsBuilder.fromUriString(properties.getFrontendCallbackUri())
+                .queryParam(key, value)
+                .build()
+                .encode()
+                .toUriString();
+        response.sendRedirect(url);
+    }
 }

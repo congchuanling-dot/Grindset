@@ -66,3 +66,13 @@ export function refresh(): Promise<AuthResult> {
 export function logout(): Promise<void> {
   return post<void>('/api/auth/logout')
 }
+
+/** 跳转 GitHub 授权页:整页跳转,不经过 fetch */
+export function githubAuthorize(): void {
+  window.location.href = '/api/auth/github/authorize'
+}
+
+/** GitHub 回调后用一次性 code 换本系统令牌 */
+export function exchangeGithubCode(code: string): Promise<AuthResult> {
+  return post<AuthResult>('/api/auth/github/exchange', { code })
+}

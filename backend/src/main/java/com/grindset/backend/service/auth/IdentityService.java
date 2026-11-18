@@ -18,6 +18,9 @@ public class IdentityService {
     /** 账号密码登录 */
     public static final String PROVIDER_LOCAL = "LOCAL";
 
+    /** GitHub 登录 */
+    public static final String PROVIDER_GITHUB = "GITHUB";
+
     private final UserIdentityMapper identityMapper;
     private final SnowflakeIdGenerator idGenerator;
 
@@ -53,6 +56,28 @@ public class IdentityService {
             identityMapper.insert(identity);
         } catch (DuplicateKeyException e) {
             throw new BizException(409, "该邮箱已存在");
+        }
+    }
+
+    /**
+     * 给已有用户绑定一种登录身份(如 GitHub)。
+     * 并发下唯一索引冲突时重查已有绑定,直接复用其 userId。
+     */
+    public Long bind(Long userId, String provider, String identifier) {
+        UserIdentity identity = new UserIdentity();
+        identity.setId(idGenerator.nextId());
+        identity.setUserId(userId);
+        identity.setProvider(provider);
+        identity.setIdentifier(identifier);
+        try {
+            identityMapper.insert(identity);
+            return userId;
+        } catch (DuplicateKeyException e) {
+            UserIdentity existing = find(provider, identifier);
+            if (existing == null) {
+                throw e;
+            }
+            return existing.getUserId();
         }
     }
 }
