@@ -48,6 +48,23 @@ app:
     # 同站部署用 Lax;前后端不同站用 None 且必须 cookie-secure=true
     cookie-same-site: ${JWT_COOKIE_SAME_SITE:Lax}
 
+  # GitHub 登录(OAuth)。当前使用 GitHub App 的 OAuth 凭证:
+  # Client ID 在 App 设置页可见,Client Secret 需点"Generate a new client secret"生成。
+  # Secret 只允许走环境变量,不要写进仓库。
+  oauth:
+    github:
+      # 本地开发直接写死;生产环境请改成环境变量注入并轮换 secret
+      client-id: ${GITHUB_CLIENT_ID:Ov23liNSxxMVc5ErzWrR}
+      client-secret: ${GITHUB_CLIENT_SECRET:095d8866b62194b264edb31bd88e5f5d1a964662}
+      # 必须与 GitHub App 后台注册的 Redirect URI 逐字符一致
+      redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8081/api/auth/github/callback}
+      # 后端回调处理完 302 到这里,前端用 ?code= 换 accessToken
+      frontend-callback-uri: ${GITHUB_FRONTEND_CALLBACK:http://localhost:5173/auth/callback}
+      # state 有效期(分钟),防 CSRF,一次即废
+      state-ttl-minutes: 5
+      # 一次性 code 有效期(秒),给前端换 accessToken
+      code-ttl-seconds: 60
+
   # 管理接口令牌:未配置时 /api/admin/** 全部停用(403),避免裸奔
   admin:
     token: ${ADMIN_TOKEN:}
