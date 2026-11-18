@@ -4,6 +4,8 @@ import {
   BookX,
   Brain,
   Check,
+  FileText,
+  Globe,
   ListChecks,
   Loader2,
   MessagesSquare,
@@ -17,6 +19,8 @@ const ICONS = {
   get_question_stats: BarChart3,
   list_questions: ListChecks,
   list_recent_interviews: MessagesSquare,
+  web_search: Globe,
+  fetch_url: FileText,
 } as const
 
 /**
