@@ -1,19 +1,17 @@
-package com.grindset.backend.controller;
+package com.grindset.backend.controller.auth;
 
 import com.grindset.backend.common.BizException;
-import com.grindset.backend.config.JwtProperties;
 import com.grindset.backend.dto.ApiResponse;
-import com.grindset.backend.dto.AuthResult;
-import com.grindset.backend.dto.LoginRequest;
-import com.grindset.backend.dto.RegisterRequest;
-import com.grindset.backend.dto.UserInfo;
-import com.grindset.backend.entity.User;
+import com.grindset.backend.dto.auth.AuthResult;
+import com.grindset.backend.dto.auth.LoginRequest;
+import com.grindset.backend.dto.auth.RegisterRequest;
+import com.grindset.backend.dto.auth.UserInfo;
+import com.grindset.backend.entity.auth.User;
+import com.grindset.backend.security.AuthCookieWriter;
 import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.security.TokenService;
-import com.grindset.backend.service.AuthService;
+import com.grindset.backend.service.auth.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,10 +20,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Duration;
-
 /**
- * 认证接口。
+ * 本地账号认证接口。
  * 登录/注册签发 access token(响应体)+ refresh token(HttpOnly Cookie);
  * /refresh 轮换令牌,/logout 吊销 refresh,/me 返回当前用户资料。
  */
@@ -33,18 +29,15 @@ import java.time.Duration;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private static final String REFRESH_COOKIE = "refresh_token";
-    /** Cookie 只在认证接口上携带,减少暴露面 */
-    private static final String REFRESH_COOKIE_PATH = "/api/auth";
-
     private final AuthService authService;
     private final TokenService tokenService;
-    private final JwtProperties jwtProperties;
+    private final AuthCookieWriter authCookieWriter;
 
-    public AuthController(AuthService authService, TokenService tokenService, JwtProperties jwtProperties) {
+    public AuthController(AuthService authService, TokenService tokenService,
+                          AuthCookieWriter authCookieWriter) {
         this.authService = authService;
         this.tokenService = tokenService;
-        this.jwtProperties = jwtProperties;
+        this.authCookieWriter = authCookieWriter;
     }
 
     @PostMapping("/register")
@@ -62,7 +55,7 @@ public class AuthController {
     /** 用 Cookie 里的 refresh 换新的一对 token;旧 refresh 立即作废 */
     @PostMapping("/refresh")
     public ApiResponse<AuthResult> refresh(
-            @CookieValue(value = REFRESH_COOKIE, required = false) String refreshToken,
+            @CookieValue(value = AuthCookieWriter.REFRESH_COOKIE, required = false) String refreshToken,
             HttpServletResponse response) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new BizException(401, "登录已过期，请重新登录");
@@ -72,7 +65,7 @@ public class AuthController {
             rotation = tokenService.rotate(refreshToken);
         } catch (BizException e) {
             // refresh 已失效,顺手清掉浏览器里的死 Cookie
-            clearRefreshCookie(response);
+            authCookieWriter.clearRefreshCookie(response);
             throw e;
         }
         return issue(rotation.userId(), rotation.tokens(), response);
@@ -80,12 +73,12 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ApiResponse<Void> logout(
-            @CookieValue(value = REFRESH_COOKIE, required = false) String refreshToken,
+            @CookieValue(value = AuthCookieWriter.REFRESH_COOKIE, required = false) String refreshToken,
             HttpServletResponse response) {
         if (refreshToken != null && !refreshToken.isBlank()) {
             tokenService.revoke(refreshToken);
         }
-        clearRefreshCookie(response);
+        authCookieWriter.clearRefreshCookie(response);
         return ApiResponse.ok(null);
     }
 
@@ -103,30 +96,8 @@ public class AuthController {
     private ApiResponse<AuthResult> issue(Long userId, TokenService.TokenPair tokens,
                                           HttpServletResponse response) {
         User user = authService.requireActiveUser(userId);
-        writeRefreshCookie(response, tokens.refreshToken());
+        authCookieWriter.writeRefreshCookie(response, tokens.refreshToken());
         return ApiResponse.ok(new AuthResult(String.valueOf(userId), tokens.accessToken(),
                 tokens.accessExpiresIn(), user.getNickname()));
-    }
-
-    private void writeRefreshCookie(HttpServletResponse response, String token) {
-        ResponseCookie cookie = ResponseCookie.from(REFRESH_COOKIE, token)
-                .httpOnly(true)
-                .secure(jwtProperties.isCookieSecure())
-                .sameSite(jwtProperties.getCookieSameSite())
-                .path(REFRESH_COOKIE_PATH)
-                .maxAge(Duration.ofDays(jwtProperties.getRefreshTtlDays()))
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-    }
-
-    private void clearRefreshCookie(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(REFRESH_COOKIE, "")
-                .httpOnly(true)
-                .secure(jwtProperties.isCookieSecure())
-                .sameSite(jwtProperties.getCookieSameSite())
-                .path(REFRESH_COOKIE_PATH)
-                .maxAge(0)
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }

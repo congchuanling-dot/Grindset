@@ -1,4 +1,4 @@
-package com.grindset.backend.dto;
+package com.grindset.backend.dto.auth;
 
 /**
  * 登录/注册/刷新成功后的令牌响应。

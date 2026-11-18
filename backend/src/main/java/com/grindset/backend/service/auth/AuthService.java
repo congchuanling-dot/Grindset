@@ -1,23 +1,22 @@
-package com.grindset.backend.service;
+package com.grindset.backend.service.auth;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.SnowflakeIdGenerator;
-import com.grindset.backend.entity.User;
-import com.grindset.backend.entity.UserIdentity;
-import com.grindset.backend.mapper.UserIdentityMapper;
-import com.grindset.backend.mapper.UserMapper;
-import org.springframework.dao.DuplicateKeyException;
+import com.grindset.backend.entity.auth.User;
+import com.grindset.backend.entity.auth.UserIdentity;
+import com.grindset.backend.mapper.auth.UserMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.regex.Pattern;
 
+/**
+ * 本地账号业务:注册、密码登录、当前用户查询。
+ * 身份表的读写委托给 IdentityService,这里不再直接操作 user_identities。
+ */
 @Service
 public class AuthService {
-
-    private static final String PROVIDER_LOCAL = "LOCAL";
 
     /** 与 users.nickname VARCHAR(64) 对齐,超长会在写库时被截断报错 */
     private static final int MAX_ACCOUNT_LENGTH = 64;
@@ -33,14 +32,14 @@ public class AuthService {
     private static final Pattern PASSWORD_DIGIT = Pattern.compile("[0-9]");
 
     private final UserMapper userMapper;
-    private final UserIdentityMapper identityMapper;
+    private final IdentityService identityService;
     private final PasswordEncoder passwordEncoder;
     private final SnowflakeIdGenerator idGenerator;
 
-    public AuthService(UserMapper userMapper, UserIdentityMapper identityMapper,
+    public AuthService(UserMapper userMapper, IdentityService identityService,
                        PasswordEncoder passwordEncoder, SnowflakeIdGenerator idGenerator) {
         this.userMapper = userMapper;
-        this.identityMapper = identityMapper;
+        this.identityService = identityService;
         this.passwordEncoder = passwordEncoder;
         this.idGenerator = idGenerator;
     }
@@ -54,7 +53,7 @@ public class AuthService {
         validateCredentials(account, rawPassword);
 
         // 先查一次,给出友好提示(唯一索引是并发下的最后防线)
-        if (findLocalIdentity(account) != null) {
+        if (identityService.findLocal(account) != null) {
             throw new BizException(409, "该邮箱已存在");
         }
 
@@ -67,18 +66,7 @@ public class AuthService {
         userMapper.insert(user);
 
         // 建 LOCAL 登录身份,密码 BCrypt 加密后存
-        UserIdentity identity = new UserIdentity();
-        identity.setId(idGenerator.nextId());
-        identity.setUserId(user.getId());
-        identity.setProvider(PROVIDER_LOCAL);
-        identity.setIdentifier(account);
-        identity.setCredential(passwordEncoder.encode(rawPassword));
-        try {
-            identityMapper.insert(identity);
-        } catch (DuplicateKeyException e) {
-            // 并发下两个请求都通过了上面的查重,唯一索引在此兜底
-            throw new BizException(409, "该邮箱已存在");
-        }
+        identityService.createLocal(user.getId(), account, passwordEncoder.encode(rawPassword));
 
         return user.getId();
     }
@@ -89,7 +77,7 @@ public class AuthService {
     public Long login(String account, String rawPassword) {
         validateCredentials(account, rawPassword);
 
-        UserIdentity identity = findLocalIdentity(account);
+        UserIdentity identity = identityService.findLocal(account);
         // 不区分"账号不存在"和"密码错",统一提示,防账号枚举
         if (identity == null || !passwordEncoder.matches(rawPassword, identity.getCredential())) {
             throw new BizException(401, "账号或密码错误");
@@ -110,13 +98,6 @@ public class AuthService {
             throw new BizException(403, "账号已被禁用");
         }
         return user;
-    }
-
-    /** 按账号名查 LOCAL 身份,查不到返回 null */
-    private UserIdentity findLocalIdentity(String account) {
-        QueryWrapper<UserIdentity> q = new QueryWrapper<>();
-        q.eq("provider", PROVIDER_LOCAL).eq("identifier", account);
-        return identityMapper.selectOne(q);
     }
 
     /**

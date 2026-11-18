@@ -1,4 +1,4 @@
-package com.grindset.backend.dto;
+package com.grindset.backend.dto.auth;
 
 /** 当前登录用户的基本资料。 */
 public class UserInfo {

@@ -1,10 +1,10 @@
 package com.grindset.backend;
 
 import com.grindset.backend.common.SnowflakeIdGenerator;
-import com.grindset.backend.entity.User;
-import com.grindset.backend.entity.UserIdentity;
-import com.grindset.backend.mapper.UserIdentityMapper;
-import com.grindset.backend.mapper.UserMapper;
+import com.grindset.backend.entity.auth.User;
+import com.grindset.backend.entity.auth.UserIdentity;
+import com.grindset.backend.mapper.auth.UserIdentityMapper;
+import com.grindset.backend.mapper.auth.UserMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

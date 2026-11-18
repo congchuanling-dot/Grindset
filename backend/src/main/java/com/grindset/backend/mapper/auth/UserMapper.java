@@ -1,7 +1,7 @@
-package com.grindset.backend.mapper;
+package com.grindset.backend.mapper.auth;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.grindset.backend.entity.User;
+import com.grindset.backend.entity.auth.User;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

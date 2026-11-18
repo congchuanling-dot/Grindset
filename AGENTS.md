@@ -26,13 +26,13 @@ Grindset/
 ├── README.md                  # 快速说明（注意：端口信息已过期，见下文）
 ├── backend/                   # Spring Boot 后端
 │   ├── src/main/java/com/grindset/backend/
-│   │   ├── controller/        # HTTP 入口，只做参数校验和调用 service
-│   │   ├── service/           # 业务逻辑（面试、简历、题库、判题、画像、错题、LLM 编排）
+│   │   ├── controller/        # HTTP 入口，只做参数校验和调用 service（auth/ 为登录子包）
+│   │   ├── service/           # 业务逻辑（auth/ 为登录子包，含本地账号、身份表、GitHub 登录）
 │   │   ├── llm/               # LLM 客户端、路由、密钥加密
-│   │   ├── mapper/            # MyBatis-Plus Mapper
-│   │   ├── entity/            # 数据库实体
-│   │   ├── dto/               # 请求/响应对象
-│   │   ├── security/          # JWT 过滤器、token 签发/刷新、401/403 处理器
+│   │   ├── mapper/            # MyBatis-Plus Mapper（auth/ 为登录子包）
+│   │   ├── entity/            # 数据库实体（auth/ 为登录子包）
+│   │   ├── dto/               # 请求/响应对象（auth/ 为登录子包）
+│   │   ├── security/          # JWT 过滤器、token 签发/刷新、refresh Cookie 写入、401/403 处理器
 │   │   ├── config/            # SecurityConfig、各类 @ConfigurationProperties
 │   │   └── common/            # 统一响应、异常、枚举、雪花 ID
 │   └── src/main/resources/

@@ -1,4 +1,4 @@
-package com.grindset.backend.entity;
+package com.grindset.backend.entity.auth;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;

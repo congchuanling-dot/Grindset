@@ -2,8 +2,8 @@ package com.grindset.backend;
 
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.KnowledgeProfileView;
-import com.grindset.backend.entity.User;
-import com.grindset.backend.mapper.UserMapper;
+import com.grindset.backend.entity.auth.User;
+import com.grindset.backend.mapper.auth.UserMapper;
 import com.grindset.backend.service.KnowledgeProfileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

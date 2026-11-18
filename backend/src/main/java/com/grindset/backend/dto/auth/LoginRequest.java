@@ -1,9 +1,9 @@
-package com.grindset.backend.dto;
+package com.grindset.backend.dto.auth;
 
 /**
- * 注册请求体。account=账号名,password=明文密码(到 Service 里才加密)。
+ * 登录请求体。单独一个类,便于以后登录加字段(验证码/记住我)时不影响注册。
  */
-public class RegisterRequest {
+public class LoginRequest {
 
     private String account;
     private String password;
