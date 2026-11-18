@@ -27,7 +27,7 @@ Grindset/
 ├── backend/                   # Spring Boot 后端
 │   ├── src/main/java/com/grindset/backend/
 │   │   ├── controller/        # HTTP 入口，只做参数校验和调用 service（auth/ 为登录子包）
-│   │   ├── service/           # 业务逻辑（auth/ 为登录子包，含本地账号、身份表、GitHub 登录）
+│   │   ├── service/           # 业务逻辑（auth/ 为登录子包，含本地账号、身份表、GitHub/Google 登录、OAuth 凭证读取）
 │   │   ├── llm/               # LLM 客户端、路由、密钥加密
 │   │   ├── mapper/            # MyBatis-Plus Mapper（auth/ 为登录子包）
 │   │   ├── entity/            # 数据库实体（auth/ 为登录子包）
@@ -71,6 +71,7 @@ mysql -uroot -p123456 < sql/006_question_bank_schema.sql
 mysql -uroot -p123456 < sql/007_question_bank_seed.sql
 mysql -uroot -p123456 < sql/008_coding_schema.sql
 mysql -uroot -p123456 < sql/009_coding_seed.sql
+mysql -uroot -p123456 < sql/010_oauth_client_schema.sql
 ```
 
 大模型渠道/模型/密钥表不在 `sql/` 下，需要额外执行（**必须带 utf8mb4 参数**，否则中文展示名会乱码）：
@@ -107,7 +108,7 @@ npm run dev
 | --- | --- |
 | `JWT_SECRET` | access token 签名密钥 |
 | `ADMIN_TOKEN` | 管理接口 `X-Admin-Token`；未配置时 `/api/admin/**` 全部 403 |
-| `LLM_MASTER_KEY` | 加密数据库里 API Key 的主密钥；换掉会导致已存 key 全部解不开 |
+| `LLM_MASTER_KEY` | 加密数据库里 API Key 与 OAuth client_secret 的主密钥；换掉会导致已存密文全部解不开 |
 | `DEEPSEEK_API_KEY` / `DASHSCOPE_API_KEY` / `ZHIPU_API_KEY` / `MINIMAX_API_KEY` / `ARK_API_KEY` | 各厂商兜底 key（正常应通过管理接口写入数据库 key 池） |
 | `RESUME_LLM_PROVIDER` / `RESUME_LLM_MODEL` | 简历解析固定使用的厂商/模型；两者都不配则自动选第一个可用 |
 | `INTERVIEW_LLM_PROVIDER` / `INTERVIEW_LLM_MODEL` | AI 面试/评分/错题重练/题库评分固定使用；规则同上 |
@@ -138,7 +139,8 @@ npm run dev
 - access token：JWT，默认 30 分钟，放响应体，前端存内存/sessionStorage 并放在 `Authorization: Bearer`
 - refresh token：放 HttpOnly Cookie，路径限定 `/api/auth`，默认 7 天，存 Redis
 - `/api/auth/refresh` 采用**轮换**：旧 refresh 立即作废；`/api/auth/logout` 吊销并清 Cookie
-- 除 `/api/health`、`/api/auth/{login,register,refresh,logout}`、`/api/admin/**` 外，其余接口都必须登录
+- 除 `/api/health`、`/api/auth/{login,register,refresh,logout}`、`/api/auth/{github,google}/**`、`/api/admin/**` 外，其余接口都必须登录
+- 第三方登录凭证存放在 `oauth_client_config` 表（`client_secret` 用 `SecretCipher` 的 AES-GCM 加密，AAD 为行 id），**不放配置文件和环境变量**；换主密钥或改行 id 会导致密文解不开
 - 需要当前用户的接口用 `@AuthenticationPrincipal LoginUser loginUser` 取 `userId`，**不要接受前端传入的 userId**
 - 管理接口不接 JWT，只校验请求头 `X-Admin-Token`（`AdminGuard`）
 - 简历/面试/错题等资源的所有权校验失败统一返回 404，避免泄露资源是否存在
@@ -268,6 +270,12 @@ npm run dev
 | POST | `/refresh` | 公开。用 Cookie 中的 refresh 轮换新 token 对 |
 | POST | `/logout` | 公开。吊销 refresh 并清 Cookie |
 | GET | `/me` | 当前用户资料（id/nickname/email） |
+| GET | `/github/authorize` | 公开。跳转 GitHub 授权页 |
+| GET | `/github/callback` | 公开。GitHub 回调，写 refresh Cookie 后跳前端 |
+| POST | `/github/exchange` | 公开。一次性 code 换本系统令牌 |
+| GET | `/google/authorize` | 公开。跳转 Google 授权页 |
+| GET | `/google/callback` | 公开。Google 回调，写 refresh Cookie 后跳前端 |
+| POST | `/google/exchange` | 公开。一次性 code 换本系统令牌 |
 
 ### AI 助手 `/api/chat`
 
@@ -367,6 +375,7 @@ npm run dev
 | `007_question_bank_seed.sql` | — | 约 60 道多领域种子题 |
 | `008_coding_schema.sql` | `question_test_cases`、`question_submissions` + `question_bank` 扩展列 | 编程题用例与提交 |
 | `009_coding_seed.sql` | — | 编程题种子数据 |
+| `010_oauth_client_schema.sql` | `oauth_client_config` | 第三方登录客户端凭证（secret 加密存储） |
 | `db/llm_catalog.sql` | `llm_channels`、`llm_models`、`llm_keys` | 大模型渠道/模型/密钥池 |
 | `db/llm_keys_balance.sql` | 余额相关扩展列 | 渠道余额维护字段 |
 
@@ -430,6 +439,7 @@ npm run dev
 - **旁路失败**：画像更新、错题收录失败不会让主流程报错，排查时要看日志，并用管理端 rebuild 修复。
 - **JSON 列**：修改实体 JSON 字段时注意 MyBatis-Plus 的类型处理器配置，避免写入变成字符串。
 - **时间**：数据库时区 `Asia/Shanghai`，展示格式统一 `yyyy-MM-dd HH:mm`。
+- **OAuth 凭证在库里**：GitHub / Google 的 client_secret 是 `oauth_client_config` 里的 AES-GCM 密文，AAD 绑定该行 `id`。换 secret 必须用同一主密钥重新加密后 `UPDATE`，不要只改明文；改 `id` 也会解不开。
 
 ## 13. 文档索引（docs/）
 

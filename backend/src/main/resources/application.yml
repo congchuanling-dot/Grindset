@@ -48,33 +48,13 @@ app:
     # 同站部署用 Lax;前后端不同站用 None 且必须 cookie-secure=true
     cookie-same-site: ${JWT_COOKIE_SAME_SITE:Lax}
 
-  # GitHub 登录(OAuth)。当前使用 GitHub App 的 OAuth 凭证:
-  # Client ID 在 App 设置页可见,Client Secret 需点"Generate a new client secret"生成。
-  # Secret 只允许走环境变量,不要写进仓库。
+  # 第三方登录(GitHub / Google)的通用流程参数。
+  # 客户端凭证不在配置文件里,统一存放在 oauth_client_config 表,client_secret 加密存储。
   oauth:
-    github:
-      # 凭证只允许走环境变量,禁止写进仓库
-      client-id: ${GITHUB_CLIENT_ID:}
-      client-secret: ${GITHUB_CLIENT_SECRET:}
-      # 必须与 GitHub App 后台注册的 Redirect URI 逐字符一致
-      redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8081/api/auth/github/callback}
-      # 后端回调处理完 302 到这里,前端用 ?code= 换 accessToken
-      frontend-callback-uri: ${GITHUB_FRONTEND_CALLBACK:http://localhost:5173/auth/callback}
-      # state 有效期(分钟),防 CSRF,一次即废
-      state-ttl-minutes: 5
-      # 一次性 code 有效期(秒),给前端换 accessToken
-      code-ttl-seconds: 60
-
-    # Google 登录(OAuth 2.0),回调地址需在 Google Cloud Console 的
-    # Authorized redirect URIs 中登记,并确保 OAuth consent screen 的 Test users 包含登录账号。
-    google:
-      # 凭证只允许走环境变量,禁止写进仓库
-      client-id: ${GOOGLE_CLIENT_ID:}
-      client-secret: ${GOOGLE_CLIENT_SECRET:}
-      redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8081/api/auth/google/callback}
-      frontend-callback-uri: ${GOOGLE_FRONTEND_CALLBACK:http://localhost:5173/auth/callback}
-      state-ttl-minutes: 5
-      code-ttl-seconds: 60
+    # state 有效期(分钟),防 CSRF,一次即废
+    state-ttl-minutes: 5
+    # 一次性 code 有效期(秒),给前端换 accessToken
+    code-ttl-seconds: 60
 
   # 管理接口令牌:未配置时 /api/admin/** 全部停用(403),避免裸奔
   admin:

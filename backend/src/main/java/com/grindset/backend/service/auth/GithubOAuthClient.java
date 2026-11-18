@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
-import com.grindset.backend.config.GithubOAuthProperties;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -29,23 +28,21 @@ public class GithubOAuthClient {
     private static final String USER_AGENT = "grindset";
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
-    private final GithubOAuthProperties properties;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(TIMEOUT)
             .build();
 
-    public GithubOAuthClient(GithubOAuthProperties properties, ObjectMapper objectMapper) {
-        this.properties = properties;
+    public GithubOAuthClient(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
-    /** 用授权码换 GitHub access token */
-    public String exchangeCode(String code) {
-        String form = "client_id=" + encode(properties.getClientId())
-                + "&client_secret=" + encode(properties.getClientSecret())
+    /** 用授权码换 GitHub access token,凭证来自数据库配置 */
+    public String exchangeCode(String code, OAuthClientConfig config) {
+        String form = "client_id=" + encode(config.clientId())
+                + "&client_secret=" + encode(config.clientSecret())
                 + "&code=" + encode(code)
-                + "&redirect_uri=" + encode(properties.getRedirectUri());
+                + "&redirect_uri=" + encode(config.redirectUri());
         HttpRequest request = HttpRequest.newBuilder(URI.create(TOKEN_URL))
                 .timeout(TIMEOUT)
                 .header("Accept", "application/json")

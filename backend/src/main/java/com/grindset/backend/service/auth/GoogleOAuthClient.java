@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
-import com.grindset.backend.config.GoogleOAuthProperties;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -27,23 +26,21 @@ public class GoogleOAuthClient {
     private static final String USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
-    private final GoogleOAuthProperties properties;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(TIMEOUT)
             .build();
 
-    public GoogleOAuthClient(GoogleOAuthProperties properties, ObjectMapper objectMapper) {
-        this.properties = properties;
+    public GoogleOAuthClient(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
-    /** 用授权码换 Google access token */
-    public String exchangeCode(String code) {
+    /** 用授权码换 Google access token,凭证来自数据库配置 */
+    public String exchangeCode(String code, OAuthClientConfig config) {
         String form = "code=" + encode(code)
-                + "&client_id=" + encode(properties.getClientId())
-                + "&client_secret=" + encode(properties.getClientSecret())
-                + "&redirect_uri=" + encode(properties.getRedirectUri())
+                + "&client_id=" + encode(config.clientId())
+                + "&client_secret=" + encode(config.clientSecret())
+                + "&redirect_uri=" + encode(config.redirectUri())
                 + "&grant_type=authorization_code";
         HttpRequest request = HttpRequest.newBuilder(URI.create(TOKEN_URL))
                 .timeout(TIMEOUT)
