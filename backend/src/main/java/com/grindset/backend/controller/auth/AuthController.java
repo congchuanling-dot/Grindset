@@ -1,6 +1,7 @@
 package com.grindset.backend.controller.auth;
 
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ClientIp;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.dto.auth.AuthResult;
@@ -12,6 +13,7 @@ import com.grindset.backend.security.AuthCookieWriter;
 import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.security.TokenService;
 import com.grindset.backend.service.auth.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -48,8 +50,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ApiResponse<AuthResult> login(@RequestBody LoginRequest req, HttpServletResponse response) {
-        Long userId = authService.login(req.getAccount(), req.getPassword());
+    public ApiResponse<AuthResult> login(@RequestBody LoginRequest req,
+                                         HttpServletRequest request,
+                                         HttpServletResponse response) {
+        String clientIp = ClientIp.of(request);
+        Long userId = authService.login(req.getAccount(), req.getPassword(), clientIp);
         return issue(userId, tokenService.issue(userId), response);
     }
 

@@ -38,13 +38,16 @@ public class AuthService {
     private final IdentityService identityService;
     private final PasswordEncoder passwordEncoder;
     private final SnowflakeIdGenerator idGenerator;
+    private final LoginRateLimiter loginRateLimiter;
 
     public AuthService(UserMapper userMapper, IdentityService identityService,
-                       PasswordEncoder passwordEncoder, SnowflakeIdGenerator idGenerator) {
+                       PasswordEncoder passwordEncoder, SnowflakeIdGenerator idGenerator,
+                       LoginRateLimiter loginRateLimiter) {
         this.userMapper = userMapper;
         this.identityService = identityService;
         this.passwordEncoder = passwordEncoder;
         this.idGenerator = idGenerator;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     /**
@@ -77,13 +80,17 @@ public class AuthService {
 
     /**
      * 账号密码登录。校验通过返回对应 userId。
+     * 限流在 BCrypt 之前检查,避免爆破把 100ms/次的 CPU 消耗放大;
+     * 只有密码错误才计数,账号不存在同样计数,不给账号枚举留后门。
      */
-    public Long login(String account, String rawPassword) {
+    public Long login(String account, String rawPassword, String clientIp) {
         validateCredentials(account, rawPassword);
+        loginRateLimiter.check(account, clientIp);
 
         UserIdentity identity = identityService.findLocal(account);
         // 不区分"账号不存在"和"密码错",统一提示,防账号枚举
         if (identity == null || !passwordEncoder.matches(rawPassword, identity.getCredential())) {
+            loginRateLimiter.recordFailure(account, clientIp);
             throw new BizException(401, "账号或密码错误");
         }
         return identity.getUserId();
