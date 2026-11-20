@@ -73,6 +73,16 @@ public class FetchUrlTool implements AgentTool {
     }
 
     @Override
+    public Map<String, Object> parameters() {
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "url", Map.of("type", "string",
+                                "description", "以 http:// 或 https:// 开头的完整链接")),
+                "required", List.of("url"));
+    }
+
+    @Override
     public AgentToolResult execute(long userId, Map<String, Object> args) {
         String raw = AgentToolArgs.string(args, "url");
         if (raw == null) {

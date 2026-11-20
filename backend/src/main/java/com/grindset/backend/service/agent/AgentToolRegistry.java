@@ -2,7 +2,7 @@ package com.grindset.backend.service.agent;
 
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +25,18 @@ public class AgentToolRegistry {
         }
     }
 
-    public Collection<AgentTool> all() {
-        return tools.values();
+    /** OpenAI function calling 协议的 tools 数组 */
+    public List<Map<String, Object>> toolDefinitions() {
+        List<Map<String, Object>> definitions = new ArrayList<>(tools.size());
+        for (AgentTool tool : tools.values()) {
+            definitions.add(Map.of(
+                    "type", "function",
+                    "function", Map.of(
+                            "name", tool.name(),
+                            "description", tool.description(),
+                            "parameters", tool.parameters())));
+        }
+        return definitions;
     }
 
     /** 找不到返回 null,由调用方决定怎么提示模型 */

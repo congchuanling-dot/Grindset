@@ -7,6 +7,7 @@ import com.grindset.backend.service.agent.AgentToolResult;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -37,6 +38,23 @@ public class QuestionListTool implements AgentTool {
         return "按条件查询题库题目。可选参数:domain(领域)、difficulty(1简单/2中等/3困难)、"
                 + "status(TODO 未做 / DONE 已做 / WRONG 错题)、limit(默认10,最多20)。"
                 + "返回题目 ID、标题、领域、难度、我的做题状态、知识点。";
+    }
+
+    @Override
+    public Map<String, Object> parameters() {
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "domain", Map.of("type", "string", "description", "题目领域"),
+                        "difficulty", Map.of("type", "integer",
+                                "enum", List.of(1, 2, 3),
+                                "description", "1 简单 / 2 中等 / 3 困难"),
+                        "status", Map.of("type", "string",
+                                "enum", List.of("TODO", "DONE", "WRONG"),
+                                "description", "我的做题状态"),
+                        "limit", Map.of("type", "integer",
+                                "description", "返回条数,默认 10,最多 20")),
+                "required", List.of());
     }
 
     @Override

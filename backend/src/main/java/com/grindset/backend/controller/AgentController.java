@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.grindset.backend.common.constant.SseTimeouts.DEFAULT_MS;
+import static com.grindset.backend.common.constant.SseTimeouts.STREAM_TIMEOUT_5_MIN_MS;
 
 /**
  * Agent 对话接口。
@@ -42,7 +42,7 @@ public class AgentController {
 
     @PostMapping("/chat")
     public SseEmitter chat(@AuthenticationPrincipal LoginUser loginUser, @RequestBody ChatRequest request) {
-        SseEmitter emitter = new SseEmitter(DEFAULT_MS);
+        SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
         long userId = loginUser.userId();
         Thread.ofVirtual().name("agent-sse-", 0).start(() -> runChat(userId, request, emitter));
         return emitter;

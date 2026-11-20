@@ -56,7 +56,7 @@ public class OpenAiCompatibleClient implements LlmClient {
     public void streamChat(LlmTarget target, String model, List<ChatMessage> messages,
                            Consumer<String> onDelta) {
         String url = trimTrailingSlash(target.baseUrl()) + "/chat/completions";
-        String body = buildRequestBody(model, messages, true);
+        String body = buildRequestBody(model, messages, true, List.of());
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -114,9 +114,10 @@ public class OpenAiCompatibleClient implements LlmClient {
     }
 
     @Override
-    public String complete(LlmTarget target, String model, List<ChatMessage> messages) {
+    public LlmCompletion completeWithTools(LlmTarget target, String model, List<ChatMessage> messages,
+                                           List<Map<String, Object>> tools) {
         String url = trimTrailingSlash(target.baseUrl()) + "/chat/completions";
-        String body = buildRequestBody(model, messages, false);
+        String body = buildRequestBody(model, messages, false, tools);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -157,11 +158,29 @@ public class OpenAiCompatibleClient implements LlmClient {
             throw new LlmException(502, error.path("message").asText("模型服务返回错误"));
         }
 
-        JsonNode content = root.path("choices").path(0).path("message").path("content");
-        if (!content.isTextual() || content.asText().isBlank()) {
+        JsonNode message = root.path("choices").path(0).path("message");
+        String content = message.path("content").isTextual() ? message.path("content").asText() : "";
+        List<LlmToolCall> calls = new ArrayList<>();
+        JsonNode toolCalls = message.path("tool_calls");
+        if (toolCalls.isArray()) {
+            for (JsonNode node : toolCalls) {
+                String name = node.path("function").path("name").asText("");
+                if (name.isBlank()) {
+                    continue;
+                }
+                String id = node.path("id").asText("");
+                if (id.isBlank()) {
+                    id = "call_" + calls.size();
+                }
+                calls.add(new LlmToolCall(id, name,
+                        node.path("function").path("arguments").asText("{}")));
+            }
+        }
+
+        if (content.isBlank() && calls.isEmpty()) {
             throw new LlmException(502, "模型服务返回内容为空,请稍后再试");
         }
-        return content.asText();
+        return new LlmCompletion(content, calls);
     }
 
     /** 从一条 SSE data 里取出增量文本,取不到就返回空列表 */
@@ -188,12 +207,30 @@ public class OpenAiCompatibleClient implements LlmClient {
         return List.of();
     }
 
-    private String buildRequestBody(String model, List<ChatMessage> messages, boolean stream) {
-        List<Map<String, String>> payloadMessages = new ArrayList<>(messages.size());
+    private String buildRequestBody(String model, List<ChatMessage> messages, boolean stream,
+                                    List<Map<String, Object>> tools) {
+        List<Map<String, Object>> payloadMessages = new ArrayList<>(messages.size());
         for (ChatMessage message : messages) {
-            Map<String, String> item = new LinkedHashMap<>();
+            Map<String, Object> item = new LinkedHashMap<>();
             item.put("role", message.role());
-            item.put("content", message.content());
+            if (ChatMessage.ROLE_TOOL.equals(message.role())) {
+                item.put("tool_call_id", message.toolCallId());
+                item.put("content", message.content() == null ? "" : message.content());
+            } else if (message.toolCalls() != null && !message.toolCalls().isEmpty()) {
+                item.put("content", message.content() == null ? "" : message.content());
+                List<Map<String, Object>> calls = new ArrayList<>(message.toolCalls().size());
+                for (LlmToolCall call : message.toolCalls()) {
+                    calls.add(Map.of(
+                            "id", call.id(),
+                            "type", "function",
+                            "function", Map.of(
+                                    "name", call.name(),
+                                    "arguments", call.arguments() == null ? "{}" : call.arguments())));
+                }
+                item.put("tool_calls", calls);
+            } else {
+                item.put("content", message.content() == null ? "" : message.content());
+            }
             payloadMessages.add(item);
         }
 
@@ -201,6 +238,9 @@ public class OpenAiCompatibleClient implements LlmClient {
         payload.put("model", model);
         payload.put("messages", payloadMessages);
         payload.put("stream", stream);
+        if (tools != null && !tools.isEmpty()) {
+            payload.put("tools", tools);
+        }
         if (!stream) {
             // 结构化解析要求结果稳定,温度降到 0
             payload.put("temperature", 0);

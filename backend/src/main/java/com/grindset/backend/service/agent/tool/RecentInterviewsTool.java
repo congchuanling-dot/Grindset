@@ -39,6 +39,16 @@ public class RecentInterviewsTool implements AgentTool {
     }
 
     @Override
+    public Map<String, Object> parameters() {
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "limit", Map.of("type", "integer",
+                                "description", "返回条数,默认 5,最多 20")),
+                "required", List.of());
+    }
+
+    @Override
     public AgentToolResult execute(long userId, Map<String, Object> args) {
         int limit = AgentToolArgs.integer(args, "limit", 5, 1, 20);
         List<InterviewSummary> all = interviewSessionService.list(userId, null);

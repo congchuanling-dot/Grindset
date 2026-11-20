@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -60,12 +61,19 @@ public class LlmRouter {
      * 非流式没有"已吐字不能重试"的限制,失败可以直接换下一把 key。
      */
     public String complete(List<LlmTarget> targets, String model, List<ChatMessage> messages) {
+        return completeWithTools(targets, model, messages, List.of()).content();
+    }
+
+    /** 带 function calling 工具定义的非流式调用,重试策略同上 */
+    public LlmCompletion completeWithTools(List<LlmTarget> targets, String model,
+                                           List<ChatMessage> messages,
+                                           List<Map<String, Object>> tools) {
         LlmException last = null;
         for (LlmTarget target : targets) {
             try {
-                String text = client.complete(target, model, messages);
+                LlmCompletion result = client.completeWithTools(target, model, messages, tools);
                 keyService.markUsed(target.keyId());
-                return text;
+                return result;
             } catch (LlmException e) {
                 log.warn("模型调用失败,尝试下一个 key provider={} keyId={} reason={}",
                         target.providerId(), target.keyId(), e.getMessage());

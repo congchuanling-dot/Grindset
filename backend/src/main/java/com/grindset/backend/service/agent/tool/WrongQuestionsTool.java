@@ -7,6 +7,7 @@ import com.grindset.backend.service.agent.AgentToolResult;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -36,6 +37,20 @@ public class WrongQuestionsTool implements AgentTool {
     public String description() {
         return "查询当前用户的错题本。可选参数:status(PENDING 待复习 / MASTERED 已掌握)、"
                 + "kp(知识点名称)、limit(默认10,最多20)。返回错题统计,以及题干摘要、知识点、原题得分。";
+    }
+
+    @Override
+    public Map<String, Object> parameters() {
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "status", Map.of("type", "string",
+                                "enum", List.of("PENDING", "MASTERED"),
+                                "description", "复习状态"),
+                        "kp", Map.of("type", "string", "description", "知识点名称"),
+                        "limit", Map.of("type", "integer",
+                                "description", "返回条数,默认 10,最多 20")),
+                "required", List.of());
     }
 
     @Override

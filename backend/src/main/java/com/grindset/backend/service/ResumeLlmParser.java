@@ -1,20 +1,12 @@
 package com.grindset.backend.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
-import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.CandidateType;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.ResumeSectionType;
 import com.grindset.backend.config.ResumeProperties;
-import com.grindset.backend.dto.ModelInfo;
 import com.grindset.backend.dto.ParsedResume;
-import com.grindset.backend.dto.ProviderInfo;
 import com.grindset.backend.llm.ChatMessage;
-import com.grindset.backend.llm.LlmRouter;
-import com.grindset.backend.llm.LlmTarget;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,8 +18,6 @@ import java.util.Objects;
  */
 @Service
 public class ResumeLlmParser {
-
-    private static final Logger log = LoggerFactory.getLogger(ResumeLlmParser.class);
 
     private static final String SYSTEM_PROMPT = """
             你是简历结构化解析器。你的唯一任务是把简历原文转换成固定格式的 JSON。
@@ -47,20 +37,15 @@ public class ResumeLlmParser {
              "sections":[{"type":"PROJECT","title":"","items":[{"title":"","subtitle":"","startDate":"","endDate":"","description":"","tags":[]}]}]}
             """;
 
-    private static final String RETRY_HINT =
-            "上一次输出不是合法 JSON(%s)。请只输出符合要求的 JSON 对象,不要任何解释。";
-
     private final ResumeProperties properties;
     private final ModelCatalogService catalog;
-    private final LlmRouter router;
-    private final ObjectMapper objectMapper;
+    private final LlmJsonService llmJson;
 
     public ResumeLlmParser(ResumeProperties properties, ModelCatalogService catalog,
-                           LlmRouter router, ObjectMapper objectMapper) {
+                           LlmJsonService llmJson) {
         this.properties = properties;
         this.catalog = catalog;
-        this.router = router;
-        this.objectMapper = objectMapper;
+        this.llmJson = llmJson;
     }
 
     /**
@@ -68,102 +53,25 @@ public class ResumeLlmParser {
      * 模型调用失败直接抛出;JSON 不合法时带提示重试一次,仍失败返回 502。
      */
     public ParseResult parse(String text) {
-        Selection selection = selectModel();
+        ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, SYSTEM_PROMPT));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER, userPrompt(text)));
 
-        String raw = router.complete(selection.targets(), selection.model(), messages);
-        try {
-            return new ParseResult(normalize(parseJson(raw)), selection.model());
-        } catch (BizException first) {
-            log.warn("简历 JSON 解析失败,准备重试一次,model={} reason={}", selection.model(), first.getMessage());
-            messages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, raw));
-            messages.add(new ChatMessage(ChatMessage.ROLE_USER,
-                    String.format(RETRY_HINT, first.getMessage())));
-            String retryRaw = router.complete(selection.targets(), selection.model(), messages);
-            try {
-                return new ParseResult(normalize(parseJson(retryRaw)), selection.model());
-            } catch (BizException e) {
-                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 解析结果异常,请稍后重试");
-            }
-        }
+        ParsedResume resume = llmJson.call(selection.targets(), selection.model(), messages,
+                raw -> normalize(llmJson.parse(raw, ParsedResume.class)),
+                "AI 解析结果异常,请稍后重试");
+        return new ParseResult(resume, selection.model());
     }
 
-    /**
-     * 选择解析模型:配置完整就用配置,否则取第一个可用厂商的第一个模型。
-     */
-    private Selection selectModel() {
+    /** 选择解析模型:配置完整就用配置,否则取第一个可用模型 */
+    private ModelCatalogService.SelectedModel selectModel() {
         ResumeProperties.Llm config = properties.getLlm();
-        String provider = config.getProvider() == null ? "" : config.getProvider().strip();
-        String model = config.getModel() == null ? "" : config.getModel().strip();
-
-        if (provider.isEmpty() != model.isEmpty()) {
-            throw new BizException(ErrorCode.BAD_GATEWAY, "简历解析模型配置不完整,请同时配置 provider 与 model");
-        }
-        if (!provider.isEmpty()) {
-            List<LlmTarget> targets = targetsFor(provider, model);
-            if (targets.isEmpty()) {
-                throw new BizException(ErrorCode.BAD_GATEWAY, "简历解析模型不可用,请检查渠道与 API Key");
-            }
-            return new Selection(targets, model);
-        }
-
-        for (ProviderInfo info : catalog.listProviders()) {
-            for (ModelInfo modelInfo : info.models()) {
-                List<LlmTarget> targets = targetsFor(info.id(), modelInfo.id());
-                if (!targets.isEmpty()) {
-                    return new Selection(targets, modelInfo.id());
-                }
-            }
-        }
-        throw new BizException(ErrorCode.BAD_GATEWAY, "未配置可用的模型服务");
-    }
-
-    private List<LlmTarget> targetsFor(String providerId, String model) {
-        List<LlmTarget> targets = new ArrayList<>();
-        for (ModelCatalogService.CatalogChannel channel : catalog.findChannels(providerId)) {
-            if (!channel.supports(model)) {
-                continue;
-            }
-            for (ModelCatalogService.KeyEntry key : channel.keys()) {
-                targets.add(new LlmTarget(providerId, channel.displayName(),
-                        channel.baseUrl(), key.apiKey(), key.id()));
-            }
-        }
-        return targets;
+        return catalog.selectTargets(config.getProvider(), config.getModel(), "简历解析");
     }
 
     private static String userPrompt(String text) {
         return "以下是简历原文,请按要求输出 JSON:\n<<<\n" + text + "\n>>>";
-    }
-
-    /** 去掉代码块包裹,截取第一个 { 到最后一个 } */
-    private ParsedResume parseJson(String raw) {
-        String text = raw == null ? "" : raw.strip();
-        if (text.startsWith("```")) {
-            int newline = text.indexOf('\n');
-            if (newline >= 0) {
-                text = text.substring(newline + 1);
-            }
-            if (text.endsWith("```")) {
-                text = text.substring(0, text.length() - 3);
-            }
-        }
-        int start = text.indexOf('{');
-        int end = text.lastIndexOf('}');
-        if (start < 0 || end <= start) {
-            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
-        }
-        try {
-            ParsedResume parsed = objectMapper.readValue(text.substring(start, end + 1), ParsedResume.class);
-            if (parsed == null) {
-                throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
-            }
-            return parsed;
-        } catch (JsonProcessingException e) {
-            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
-        }
     }
 
     /** 枚举降级、空值兜底、长度截断、熟练度夹取 */
@@ -265,8 +173,5 @@ public class ResumeLlmParser {
      * @param model  实际使用的模型 ID
      */
     public record ParseResult(ParsedResume resume, String model) {
-    }
-
-    private record Selection(List<LlmTarget> targets, String model) {
     }
 }

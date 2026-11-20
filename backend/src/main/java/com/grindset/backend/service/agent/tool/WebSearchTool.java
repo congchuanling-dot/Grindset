@@ -77,6 +77,17 @@ public class WebSearchTool implements AgentTool {
     }
 
     @Override
+    public Map<String, Object> parameters() {
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "query", Map.of("type", "string", "description", "搜索关键词"),
+                        "limit", Map.of("type", "integer",
+                                "description", "返回条数,默认 5,最多 8")),
+                "required", List.of("query"));
+    }
+
+    @Override
     public AgentToolResult execute(long userId, Map<String, Object> args) {
         String query = AgentToolArgs.string(args, "query");
         if (query == null) {

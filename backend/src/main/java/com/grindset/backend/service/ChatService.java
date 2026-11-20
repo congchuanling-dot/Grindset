@@ -44,34 +44,8 @@ public class ChatService {
      */
     public void stream(ChatRequest request, Consumer<String> onDelta) {
         String model = strip(request.getModel());
-        router.stream(resolveTargets(strip(request.getProvider()), model), model,
-                buildMessages(request.getMessages()), onDelta);
-    }
-
-    /**
-     * 解析候选 (渠道, key) 组合,对话和 Agent 共用。
-     * 参数不合法抛 BizException(400)。
-     */
-    public List<LlmTarget> resolveTargets(String providerId, String model) {
-        List<ModelCatalogService.CatalogChannel> channels = catalog.findChannels(providerId);
-        if (channels.isEmpty()) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "不支持的模型服务:" + providerId);
-        }
-
-        List<LlmTarget> targets = new ArrayList<>();
-        for (ModelCatalogService.CatalogChannel channel : channels) {
-            if (!channel.supports(model)) {
-                continue;
-            }
-            for (ModelCatalogService.KeyEntry key : channel.keys()) {
-                targets.add(new LlmTarget(providerId, channel.displayName(),
-                        channel.baseUrl(), key.apiKey(), key.id()));
-            }
-        }
-        if (targets.isEmpty()) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "不支持的模型:" + model);
-        }
-        return targets;
+        List<LlmTarget> targets = catalog.requireTargets(strip(request.getProvider()), model);
+        router.stream(targets, model, buildMessages(request.getMessages()), onDelta);
     }
 
     /** 校验历史消息,裁到最近若干条,并在最前面注入 system 提示词 */

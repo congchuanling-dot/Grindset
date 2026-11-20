@@ -8,14 +8,19 @@ import java.util.Map;
  */
 public interface AgentTool {
 
-    /** 工具名,模型在 JSON 里用它指定要调用哪个 */
+    /** 工具名,模型通过 function calling 指定要调用哪个 */
     String name();
 
     /** 展示给前端卡片的中文名 */
     String label();
 
-    /** 写进系统提示词的说明,含参数约定 */
+    /** 给模型看的说明:做什么、返回什么字段 */
     String description();
+
+    /** 入参的 JSON Schema;无参数的工具用默认值即可 */
+    default Map<String, Object> parameters() {
+        return Map.of("type", "object", "properties", Map.of());
+    }
 
     /**
      * 执行查询。

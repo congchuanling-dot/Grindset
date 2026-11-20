@@ -1,6 +1,8 @@
 package com.grindset.backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.BalanceInfo;
 import com.grindset.backend.dto.ModelInfo;
 import com.grindset.backend.dto.ProviderInfo;
@@ -8,6 +10,7 @@ import com.grindset.backend.entity.LlmChannel;
 import com.grindset.backend.entity.LlmKey;
 import com.grindset.backend.entity.LlmModel;
 import com.grindset.backend.llm.LlmProperties;
+import com.grindset.backend.llm.LlmTarget;
 import com.grindset.backend.llm.SecretCipher;
 import com.grindset.backend.mapper.LlmChannelMapper;
 import com.grindset.backend.mapper.LlmKeyMapper;
@@ -57,9 +60,74 @@ public class ModelCatalogService {
         return load().providers();
     }
 
-    /** 对话时按 provider 取所有候选渠道(按优先级排序),找不到返回空列表 */
-    public List<CatalogChannel> findChannels(String providerId) {
-        return load().channelsByProvider().getOrDefault(providerId, List.of());
+    /**
+     * 前端明确指定厂商和模型时使用(首页对话、Agent)。
+     * 参数不合法抛 400,对话接口可以把文案直接返回给前端。
+     */
+    public List<LlmTarget> requireTargets(String providerId, String model) {
+        Catalog catalog = load();
+        List<CatalogChannel> channels =
+                catalog.channelsByProvider().getOrDefault(providerId, List.of());
+        if (channels.isEmpty()) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "不支持的模型服务:" + providerId);
+        }
+        List<LlmTarget> targets = toTargets(channels, providerId, model);
+        if (targets.isEmpty()) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "不支持的模型:" + model);
+        }
+        return targets;
+    }
+
+    /**
+     * 服务端场景选模型(简历解析、AI 面试):配置优先,否则取第一个可用模型。
+     * 配置不完整或没有可用模型时抛 502,scenario 用于拼错误文案。
+     */
+    public SelectedModel selectTargets(String provider, String model, String scenario) {
+        String providerId = provider == null ? "" : provider.strip();
+        String modelId = model == null ? "" : model.strip();
+        if (providerId.isEmpty() != modelId.isEmpty()) {
+            throw new BizException(ErrorCode.BAD_GATEWAY,
+                    scenario + "模型配置不完整,请同时配置 provider 与 model");
+        }
+
+        Catalog catalog = load();
+        if (!providerId.isEmpty()) {
+            List<LlmTarget> targets = toTargets(
+                    catalog.channelsByProvider().getOrDefault(providerId, List.of()),
+                    providerId, modelId);
+            if (targets.isEmpty()) {
+                throw new BizException(ErrorCode.BAD_GATEWAY,
+                        scenario + "模型不可用,请检查渠道与 API Key");
+            }
+            return new SelectedModel(targets, modelId);
+        }
+
+        for (ProviderInfo info : catalog.providers()) {
+            for (ModelInfo modelInfo : info.models()) {
+                List<LlmTarget> targets = toTargets(
+                        catalog.channelsByProvider().getOrDefault(info.id(), List.of()),
+                        info.id(), modelInfo.id());
+                if (!targets.isEmpty()) {
+                    return new SelectedModel(targets, modelInfo.id());
+                }
+            }
+        }
+        throw new BizException(ErrorCode.BAD_GATEWAY, "未配置可用的模型服务");
+    }
+
+    private static List<LlmTarget> toTargets(List<CatalogChannel> channels,
+                                             String providerId, String model) {
+        List<LlmTarget> targets = new ArrayList<>();
+        for (CatalogChannel channel : channels) {
+            if (!channel.supports(model)) {
+                continue;
+            }
+            for (KeyEntry key : channel.keys()) {
+                targets.add(new LlmTarget(providerId, channel.displayName(),
+                        channel.baseUrl(), key.apiKey(), key.id()));
+            }
+        }
+        return targets;
     }
 
     private Catalog load() {
@@ -189,6 +257,10 @@ public class ModelCatalogService {
 
     /** 一把可用的 key:id 为 null 表示来自环境变量 */
     public record KeyEntry(Long id, String apiKey) {
+    }
+
+    /** 一次场景选型的结果:候选目标和实际模型 ID */
+    public record SelectedModel(List<LlmTarget> targets, String model) {
     }
 
     /** 一个可用渠道:地址 + 模型白名单 + 候选 key */

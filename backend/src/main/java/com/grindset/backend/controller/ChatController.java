@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import static com.grindset.backend.common.constant.SseTimeouts.DEFAULT_MS;
+import static com.grindset.backend.common.constant.SseTimeouts.STREAM_TIMEOUT_5_MIN_MS;
 
 /**
  * 对话接口。
@@ -48,7 +48,7 @@ public class ChatController {
 
     @PostMapping
     public SseEmitter chat(@RequestBody ChatRequest request) {
-        SseEmitter emitter = new SseEmitter(DEFAULT_MS);
+        SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
         // 虚拟线程:一个用户一条对话挂住不占平台线程,几十个人同时用也不怕
         Thread.ofVirtual().name("chat-sse-", 0).start(() -> runChat(request, emitter));
         return emitter;

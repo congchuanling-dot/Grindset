@@ -1,6 +1,7 @@
 package com.grindset.backend.llm;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -20,9 +21,11 @@ public interface LlmClient {
                     Consumer<String> onDelta);
 
     /**
-     * 非流式调用,一次性返回完整文本;供简历结构化解析这类"要完整 JSON"的场景使用。
+     * 非流式调用,附带 function calling 的工具定义。
+     * 返回正文和工具调用,两者至少有一个非空。
      *
-     * @return 模型输出的完整文本
+     * @param tools OpenAI 协议的 tools 数组,为空表示不启用工具
      */
-    String complete(LlmTarget target, String model, List<ChatMessage> messages);
+    LlmCompletion completeWithTools(LlmTarget target, String model, List<ChatMessage> messages,
+                                    List<Map<String, Object>> tools);
 }

@@ -1,15 +1,11 @@
 package com.grindset.backend.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.config.InterviewProperties;
 import com.grindset.backend.dto.BankEvaluation;
 import com.grindset.backend.dto.InterviewReport;
 import com.grindset.backend.dto.InterviewTurnDecision;
-import com.grindset.backend.dto.ModelInfo;
-import com.grindset.backend.dto.ProviderInfo;
 import com.grindset.backend.dto.RetryEvaluation;
 import com.grindset.backend.entity.InterviewMessage;
 import com.grindset.backend.entity.InterviewQuestion;
@@ -18,9 +14,6 @@ import com.grindset.backend.entity.QuestionBank;
 import com.grindset.backend.entity.WrongQuestion;
 import com.grindset.backend.llm.ChatMessage;
 import com.grindset.backend.llm.LlmRouter;
-import com.grindset.backend.llm.LlmTarget;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -35,8 +28,6 @@ import java.util.function.Consumer;
  */
 @Service
 public class InterviewLlmService {
-
-    private static final Logger log = LoggerFactory.getLogger(InterviewLlmService.class);
 
     private static final String QUESTION_SYSTEM = """
             你是一名资深技术面试官,正在进行一场真实的技术面试。
@@ -114,9 +105,6 @@ public class InterviewLlmService {
             {"score":3,"hitPoints":[],"missedPoints":[],"comment":"","suggestion":""}
             """;
 
-    private static final String JSON_RETRY_HINT =
-            "上一次输出不合法(%s)。请只输出符合要求的 JSON 对象,不要任何解释。";
-
     private static final String EVALUATE_SYSTEM = """
             你是技术面试官。请对候选人本题的整段回答给出评分。
             只输出一个 JSON 对象,不要 Markdown 代码块或解释:
@@ -129,14 +117,14 @@ public class InterviewLlmService {
     private final InterviewProperties properties;
     private final ModelCatalogService catalog;
     private final LlmRouter router;
-    private final ObjectMapper objectMapper;
+    private final LlmJsonService llmJson;
 
     public InterviewLlmService(InterviewProperties properties, ModelCatalogService catalog,
-                               LlmRouter router, ObjectMapper objectMapper) {
+                               LlmRouter router, LlmJsonService llmJson) {
         this.properties = properties;
         this.catalog = catalog;
         this.router = router;
-        this.objectMapper = objectMapper;
+        this.llmJson = llmJson;
     }
 
     /** 流式生成第 seq 道主问题,增量回调给上层转发 SSE */
@@ -144,7 +132,7 @@ public class InterviewLlmService {
                                List<String> coveredPoints,
                                List<KnowledgeProfileService.Candidate> candidates,
                                Consumer<String> onDelta) {
-        Selection selection = selectModel();
+        ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, QUESTION_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
@@ -159,32 +147,20 @@ public class InterviewLlmService {
     public InterviewTurnDecision decide(InterviewSession session, String resumeText,
                                         InterviewQuestion question, List<InterviewMessage> thread,
                                         List<String> knownPoints) {
-        Selection selection = selectModel();
+        ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, DECISION_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
                 decisionPrompt(session, resumeText, question, thread, knownPoints)));
 
-        String raw = router.complete(selection.targets(), selection.model(), messages);
-        try {
-            InterviewTurnDecision decision = normalizeDecision(parse(raw, InterviewTurnDecision.class));
-            validateDecision(decision, followUpCount(question));
-            return decision;
-        } catch (BizException first) {
-            log.warn("面试决策 JSON 不合法,准备重试一次,reason={}", first.getMessage());
-            messages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, raw));
-            messages.add(new ChatMessage(ChatMessage.ROLE_USER,
-                    String.format(JSON_RETRY_HINT, first.getMessage())));
-            String retryRaw = router.complete(selection.targets(), selection.model(), messages);
-            try {
-                InterviewTurnDecision decision = normalizeDecision(
-                        parse(retryRaw, InterviewTurnDecision.class));
-                validateDecision(decision, followUpCount(question));
-                return decision;
-            } catch (BizException e) {
-                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 点评结果异常,请稍后重试");
-            }
-        }
+        return llmJson.call(selection.targets(), selection.model(), messages,
+                raw -> {
+                    InterviewTurnDecision decision =
+                            normalizeDecision(llmJson.parse(raw, InterviewTurnDecision.class));
+                    validateDecision(decision, followUpCount(question));
+                    return decision;
+                },
+                "AI 点评结果异常,请稍后重试");
     }
 
     /** 决策里缺评分时的兜底:单独再要一次本题评分 */
@@ -192,41 +168,26 @@ public class InterviewLlmService {
                                                          InterviewQuestion question,
                                                          List<InterviewMessage> thread,
                                                          List<String> knownPoints) {
-        Selection selection = selectModel();
+        ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, EVALUATE_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
                 decisionPrompt(session, resumeText, question, thread, knownPoints)));
-        String raw = router.complete(selection.targets(), selection.model(), messages);
-        try {
-            return normalizeEvaluation(parse(raw, InterviewTurnDecision.Evaluation.class));
-        } catch (BizException e) {
-            throw new BizException(ErrorCode.BAD_GATEWAY, "AI 评分结果异常,请稍后重试");
-        }
+        return llmJson.callOnce(selection.targets(), selection.model(), messages,
+                raw -> normalizeEvaluation(llmJson.parse(raw, InterviewTurnDecision.Evaluation.class)),
+                "AI 评分结果异常,请稍后重试");
     }
 
     /** 生成整场复盘报告,失败重试一次 */
     public InterviewReport report(InterviewSession session, String resumeText, String threadsText) {
-        Selection selection = selectModel();
+        ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, REPORT_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
                 reportPrompt(session, resumeText, threadsText)));
-        String raw = router.complete(selection.targets(), selection.model(), messages);
-        try {
-            return normalizeReport(parse(raw, InterviewReport.class));
-        } catch (BizException first) {
-            log.warn("复盘报告 JSON 不合法,准备重试一次,reason={}", first.getMessage());
-            messages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, raw));
-            messages.add(new ChatMessage(ChatMessage.ROLE_USER,
-                    String.format(JSON_RETRY_HINT, first.getMessage())));
-            String retryRaw = router.complete(selection.targets(), selection.model(), messages);
-            try {
-                return normalizeReport(parse(retryRaw, InterviewReport.class));
-            } catch (BizException e) {
-                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 复盘结果异常,请稍后重试");
-            }
-        }
+        return llmJson.call(selection.targets(), selection.model(), messages,
+                raw -> normalizeReport(llmJson.parse(raw, InterviewReport.class)),
+                "AI 复盘结果异常,请稍后重试");
     }
 
     /**
@@ -234,26 +195,14 @@ public class InterviewLlmService {
      * 非流式调用,JSON 不合法时带提示重试一次,仍失败返回 502。
      */
     public RetryEvaluation retryEvaluate(WrongQuestion wq, String retryAnswer) {
-        Selection selection = selectModel();
+        ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, RETRY_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER, retryPrompt(wq, retryAnswer)));
 
-        String raw = router.complete(selection.targets(), selection.model(), messages);
-        try {
-            return normalizeRetry(parse(raw, RetryEvaluation.class));
-        } catch (BizException first) {
-            log.warn("重练评分 JSON 不合法,准备重试一次,reason={}", first.getMessage());
-            messages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, raw));
-            messages.add(new ChatMessage(ChatMessage.ROLE_USER,
-                    String.format(JSON_RETRY_HINT, first.getMessage())));
-            String retryRaw = router.complete(selection.targets(), selection.model(), messages);
-            try {
-                return normalizeRetry(parse(retryRaw, RetryEvaluation.class));
-            } catch (BizException e) {
-                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 重练评分异常,请稍后重试");
-            }
-        }
+        return llmJson.call(selection.targets(), selection.model(), messages,
+                raw -> normalizeRetry(llmJson.parse(raw, RetryEvaluation.class)),
+                "AI 重练评分异常,请稍后重试");
     }
 
     /**
@@ -261,26 +210,14 @@ public class InterviewLlmService {
      * 非流式调用,JSON 不合法时带提示重试一次,仍失败返回 502。
      */
     public BankEvaluation bankEvaluate(QuestionBank question, String answer) {
-        Selection selection = selectModel();
+        ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, BANK_EVALUATE_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER, bankPrompt(question, answer)));
 
-        String raw = router.complete(selection.targets(), selection.model(), messages);
-        try {
-            return normalizeBank(parse(raw, BankEvaluation.class));
-        } catch (BizException first) {
-            log.warn("题库评分 JSON 不合法,准备重试一次,reason={}", first.getMessage());
-            messages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, raw));
-            messages.add(new ChatMessage(ChatMessage.ROLE_USER,
-                    String.format(JSON_RETRY_HINT, first.getMessage())));
-            String retryRaw = router.complete(selection.targets(), selection.model(), messages);
-            try {
-                return normalizeBank(parse(retryRaw, BankEvaluation.class));
-            } catch (BizException e) {
-                throw new BizException(ErrorCode.BAD_GATEWAY, "AI 评分异常,请稍后重试");
-            }
-        }
+        return llmJson.call(selection.targets(), selection.model(), messages,
+                raw -> normalizeBank(llmJson.parse(raw, BankEvaluation.class)),
+                "AI 评分异常,请稍后重试");
     }
 
     private static String questionPrompt(InterviewSession session, String resumeText,
@@ -585,72 +522,10 @@ public class InterviewLlmService {
         }
     }
 
-    private <T> T parse(String raw, Class<T> type) {
-        String text = raw == null ? "" : raw.strip();
-        if (text.startsWith("```")) {
-            int newline = text.indexOf('\n');
-            if (newline >= 0) {
-                text = text.substring(newline + 1);
-            }
-            if (text.endsWith("```")) {
-                text = text.substring(0, text.length() - 3);
-            }
-        }
-        int start = text.indexOf('{');
-        int end = text.lastIndexOf('}');
-        if (start < 0 || end <= start) {
-            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
-        }
-        try {
-            T parsed = objectMapper.readValue(text.substring(start, end + 1), type);
-            if (parsed == null) {
-                throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
-            }
-            return parsed;
-        } catch (JsonProcessingException e) {
-            throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出不是合法 JSON");
-        }
-    }
-
     /** 选择面试模型:配置完整就用配置,否则取第一个可用模型 */
-    private Selection selectModel() {
+    private ModelCatalogService.SelectedModel selectModel() {
         InterviewProperties.Llm config = properties.getLlm();
-        String provider = config.getProvider() == null ? "" : config.getProvider().strip();
-        String model = config.getModel() == null ? "" : config.getModel().strip();
-
-        if (provider.isEmpty() != model.isEmpty()) {
-            throw new BizException(ErrorCode.BAD_GATEWAY, "面试模型配置不完整,请同时配置 provider 与 model");
-        }
-        if (!provider.isEmpty()) {
-            List<LlmTarget> targets = targetsFor(provider, model);
-            if (targets.isEmpty()) {
-                throw new BizException(ErrorCode.BAD_GATEWAY, "面试模型不可用,请检查渠道与 API Key");
-            }
-            return new Selection(targets, model);
-        }
-        for (ProviderInfo info : catalog.listProviders()) {
-            for (ModelInfo modelInfo : info.models()) {
-                List<LlmTarget> targets = targetsFor(info.id(), modelInfo.id());
-                if (!targets.isEmpty()) {
-                    return new Selection(targets, modelInfo.id());
-                }
-            }
-        }
-        throw new BizException(ErrorCode.BAD_GATEWAY, "未配置可用的模型服务");
-    }
-
-    private List<LlmTarget> targetsFor(String providerId, String model) {
-        List<LlmTarget> targets = new ArrayList<>();
-        for (ModelCatalogService.CatalogChannel channel : catalog.findChannels(providerId)) {
-            if (!channel.supports(model)) {
-                continue;
-            }
-            for (ModelCatalogService.KeyEntry key : channel.keys()) {
-                targets.add(new LlmTarget(providerId, channel.displayName(),
-                        channel.baseUrl(), key.apiKey(), key.id()));
-            }
-        }
-        return targets;
+        return catalog.selectTargets(config.getProvider(), config.getModel(), "面试");
     }
 
     private static int followUpCount(InterviewQuestion question) {
@@ -725,6 +600,4 @@ public class InterviewLlmService {
         return value.length() <= max ? value : value.substring(0, max);
     }
 
-    private record Selection(List<LlmTarget> targets, String model) {
-    }
 }
