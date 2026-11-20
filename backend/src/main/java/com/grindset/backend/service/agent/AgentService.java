@@ -18,16 +18,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.grindset.backend.service.agent.AgentConstants.MAX_CONTEXT_CHARS;
-import static com.grindset.backend.service.agent.AgentConstants.MAX_ROUNDS;
-import static com.grindset.backend.service.agent.AgentConstants.MAX_RUN_MILLIS;
-import static com.grindset.backend.service.agent.AgentConstants.MAX_TOOL_CALLS_PER_ROUND;
-import static com.grindset.backend.service.agent.AgentConstants.MAX_TOTAL_TOOL_CALLS;
 
 /**
  * Agent 主循环:模型通过 function calling 自主决定调工具还是回答,工具结果回填后继续循环。
@@ -77,20 +71,10 @@ public class AgentService {
 
         // 工具 schema 走 function calling 的 tools 参数,不拼进提示词,避免和实际实现漂移
         List<Map<String, Object>> tools = registry.toolDefinitions();
-        Set<String> seenCalls = new HashSet<>();
-        long deadline = System.currentTimeMillis() + MAX_RUN_MILLIS;
-        int totalCalls = 0;
-        int round = 0;
 
-        // 模型可能反复调工具,用轮数 / 总调用数 / 总耗时三道闸兜底;
-        // 任一触发都带着已有结果去回答,不把"查不完"变成报错
+        sink.status("正在分析你的问题…");
+        // 循环只由模型是否还调工具决定:没有 tool_calls 就收敛去生成回答
         while (true) {
-            if (round >= MAX_ROUNDS || System.currentTimeMillis() > deadline) {
-                break;
-            }
-            round++;
-            sink.status(round == 1 ? "正在分析你的问题…" : "正在整理查询结果…");
-
             // 每轮都先裁上下文:工具结果会不断追加,不裁迟早超过模型窗口
             trimContext(messages);
             // 决策轮必须非流式:只有拿到完整的 tool_calls 才能决定执行哪些工具
@@ -106,10 +90,8 @@ public class AgentService {
             // 漏掉任何一个 id,下一轮请求都会被上游判为非法消息序列
             messages.add(ChatMessage.assistantToolCalls(calls));
 
-            int callsThisRound = 0;
-            // 单轮和总次数都要卡:模型一次返回 10 个调用时不能全跑
-            // 注意:下面每个失败分支都必须补一条 tool 消息。
-            // 协议要求每个 tool_call_id 都有结果,不能因为参数坏了 / 工具不存在 / 超限就静默跳过
+            // 每个失败分支都必须补一条 tool 消息:协议要求每个 tool_call_id 都有结果,
+            // 不能因为参数坏了 / 工具不存在就静默跳过
             for (LlmToolCall call : calls) {
                 String argsText = call.arguments() == null || call.arguments().isBlank()
                         ? "{}" : call.arguments().strip();
@@ -123,17 +105,6 @@ public class AgentService {
                     messages.add(ChatMessage.toolResult(call.id(), "工具 " + call.name() + " 不存在"));
                     continue;
                 }
-                // 按 "工具名|原始参数" 去重,防止模型换个说法把同一个查询刷很多次
-                if (!seenCalls.add(call.name() + "|" + argsText)) {
-                    messages.add(ChatMessage.toolResult(call.id(), "相同参数已经查询过,不要重复调用"));
-                    continue;
-                }
-                if (callsThisRound >= MAX_TOOL_CALLS_PER_ROUND || totalCalls >= MAX_TOTAL_TOOL_CALLS) {
-                    messages.add(ChatMessage.toolResult(call.id(), "工具调用次数已达上限,请直接根据已有信息回答"));
-                    continue;
-                }
-                callsThisRound++;
-                totalCalls++;
 
                 log.info("Agent 调用工具 userId={} tool={} args={}", userId, tool.name(), args);
                 sink.toolCall(call.id(), tool.name(), tool.label(), args);
@@ -150,6 +121,7 @@ public class AgentService {
                 sink.toolResult(call.id(), tool.name(), result.ok(), result.summary());
                 messages.add(ChatMessage.toolResult(call.id(), toJson(result.data())));
             }
+            sink.status("正在整理查询结果…");
         }
 
         sink.status("正在生成回答…");
@@ -174,8 +146,7 @@ public class AgentService {
                 5. 需要站外事实(最新版本、官方文档、报错原因、技术方案)时,先 web_search;
                    搜到链接后如需细读,再用 fetch_url 读一两条最相关的页面。
                 """);
-        prompt.append("6. 最多 ").append(MAX_ROUNDS).append(" 轮工具调用。\n");
-
+                // 用户画像暂未接入,为空时整段跳过
         String profile = profileSection();
         if (!profile.isEmpty()) {
             prompt.append('\n').append(profile);
