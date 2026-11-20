@@ -39,24 +39,28 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final SnowflakeIdGenerator idGenerator;
     private final LoginRateLimiter loginRateLimiter;
+    private final RegisterRateLimiter registerRateLimiter;
 
     public AuthService(UserMapper userMapper, IdentityService identityService,
                        PasswordEncoder passwordEncoder, SnowflakeIdGenerator idGenerator,
-                       LoginRateLimiter loginRateLimiter) {
+                       LoginRateLimiter loginRateLimiter, RegisterRateLimiter registerRateLimiter) {
         this.userMapper = userMapper;
         this.identityService = identityService;
         this.passwordEncoder = passwordEncoder;
         this.idGenerator = idGenerator;
         this.loginRateLimiter = loginRateLimiter;
+        this.registerRateLimiter = registerRateLimiter;
     }
 
     /**
      * 账号密码注册。建 user + 一条 LOCAL identity。
+     * 按来源 IP 限流 10 次/小时,入参校验通过后计数(垃圾请求不消耗额度)。
      * @return 新建用户的 id
      */
     @Transactional
-    public Long register(String account, String rawPassword) {
+    public Long register(String account, String rawPassword, String clientIp) {
         validateCredentials(account, rawPassword);
+        registerRateLimiter.check(clientIp);
 
         // 先查一次,给出友好提示(唯一索引是并发下的最后防线)
         if (identityService.findLocal(account) != null) {

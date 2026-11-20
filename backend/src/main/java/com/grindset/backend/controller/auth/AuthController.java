@@ -44,8 +44,11 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ApiResponse<AuthResult> register(@RequestBody RegisterRequest req, HttpServletResponse response) {
-        Long userId = authService.register(req.getAccount(), req.getPassword());
+    public ApiResponse<AuthResult> register(@RequestBody RegisterRequest req,
+                                            HttpServletRequest request,
+                                            HttpServletResponse response) {
+        String clientIp = ClientIp.of(request);
+        Long userId = authService.register(req.getAccount(), req.getPassword(), clientIp);
         return issue(userId, tokenService.issue(userId), response);
     }
 
