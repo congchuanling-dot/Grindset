@@ -173,7 +173,7 @@ seq 5  ASSISTANT  "先给结论：……"                       (最终回答)
 
 点停止、关页面、刷新都会断开 SSE：
 
-- `AgentService` 捕获 `AgentStreamAbortedException`，带着已累积的正文正常返回
+- `AgentService` 捕获内嵌的 `StreamAbortedException`，带着已累积的正文正常返回
 - 落库为 `status=3`，已生成的部分保留
 - 如果刚好在工具执行中断，**只保留到最后一个完整工具组**；残缺的 `assistant(tool_calls)` 半组直接丢弃，否则下次重放会被上游判为非法消息序列
 - 一个字都没生成时，落一条空的 `status=3` 消息，前端显示"生成已中断"
@@ -252,13 +252,13 @@ seq 5  ASSISTANT  "先给结论：……"                       (最终回答)
 
 ### 8.1 会话级锁
 
-[AgentConversationLocks](../backend/src/main/java/com/grindset/backend/service/agent/AgentConversationLocks.java)：
+[AgentConversationService](../backend/src/main/java/com/grindset/backend/service/agent/AgentConversationService.java) 内部维护：
 
 ```java
 ConcurrentHashMap<Long, ReentrantLock>
 ```
 
-与面试模块的 `InterviewSessionLocks` 同一套思路，一个会话一把锁：
+与面试模块的 `InterviewSessionLocks` 同一套思路，一个会话一把锁；只有会话服务自己使用，所以直接内联，不再单独建类：
 
 - `chat`：`tryLock()` 失败 → "该会话正在生成回答，请稍候"
 - `rename` / `delete`：`tryLock()` 失败 → `409`
@@ -343,29 +343,25 @@ ConcurrentHashMap<Long, ReentrantLock>
 | 文件 | 职责 |
 |---|---|
 | `sql/011_agent_chat_schema.sql` | 两张表 DDL |
-| `entity/AgentConversation.java`、`entity/AgentMessage.java` | 实体 |
-| `mapper/AgentConversationMapper.java`、`mapper/AgentMessageMapper.java` | Mapper |
-| `dto/AgentChatRequest.java` | 对话请求 |
-| `dto/AgentChatResult.java` | 一轮结束结果 |
-| `dto/AgentConversationSummary.java`、`dto/AgentConversationDetail.java`、`dto/AgentMessageView.java` | 列表/详情/展示消息 |
-| `dto/AgentRenameRequest.java` | 重命名请求 |
-| `service/agent/AgentConversationService.java` | 会话 CRUD、落库、重放、展示聚合 |
-| `service/agent/AgentConversationLocks.java` | 会话级锁 |
-| `service/agent/AgentTitleService.java` | LLM 标题生成 |
-| `service/agent/AgentTurn.java`、`AgentStreamAbortedException.java` | 一轮消息结果、中断异常 |
-| `controller/AgentConversationController.java` | 会话管理接口 |
+| `entity/AgentConversation.java`、`entity/AgentMessage.java` | 实体（MyBatis-Plus 要求一实体一文件） |
+| `mapper/AgentConversationMapper.java`、`mapper/AgentMessageMapper.java` | Mapper（`BaseMapper` 泛型约束，必须分开） |
+| `dto/AgentDtos.java` | 请求/响应统一容器：`ChatRequest`、`ChatResult`、`ConversationSummary`、`ConversationDetail`、`MessageView`、`ToolStep`、`RenameRequest` 均为嵌套类型 |
+| `service/agent/AgentConversationService.java` | 会话 CRUD、落库、重放、展示聚合，内含会话级锁 `ConcurrentHashMap<Long, ReentrantLock>` |
+| `service/agent/AgentTitleService.java` | LLM 标题生成（独立 LLM 逻辑，保留单独文件） |
 
 ### 12.2 修改
 
 | 文件 | 改动 |
 |---|---|
-| [AgentService.java](../backend/src/main/java/com/grindset/backend/service/agent/AgentService.java) | 不再自己拼历史；返回本轮完整消息流；中断时保留半成品 |
-| [AgentController.java](../backend/src/main/java/com/grindset/backend/controller/AgentController.java) | 改用 `AgentChatRequest`；SSE 增加 `conversation` 事件；`done` 带标题 |
+| [AgentService.java](../backend/src/main/java/com/grindset/backend/service/agent/AgentService.java) | 不再自己拼历史；返回本轮完整消息流；中断时保留半成品；内嵌 `Turn` 与 `StreamAbortedException` |
+| [AgentController.java](../backend/src/main/java/com/grindset/backend/controller/AgentController.java) | 合并会话管理接口（列表/详情/重命名/删除）；SSE 增加 `conversation` 事件；`done` 带标题 |
 | [AgentStreamSink.java](../backend/src/main/java/com/grindset/backend/service/agent/AgentStreamSink.java) | 增加 `conversation()` 默认方法 |
 | [GlobalExceptionHandler.java](../backend/src/main/java/com/grindset/backend/common/GlobalExceptionHandler.java) | 客户端断连的 `IOException` 安静处理，避免向 SSE 响应写 JSON |
 | [agent.ts](../frontend/src/api/agent.ts) | 会话 CRUD + 新 SSE 事件 |
 | [ChatPage.tsx](../frontend/src/pages/ChatPage.tsx) | 会话侧边栏、URL 恢复、`activeIdRef` 修复 |
 | [AGENTS.md](../AGENTS.md) | 初始化脚本、SSE 事件、接口清单、表清单、文档索引 |
+
+> 文件组织说明：本次刻意收敛了小文件数量。DTO 统一收进 `AgentDtos`，会话级锁内联到 `AgentConversationService`，中断异常和一轮结果作为 `AgentService` 的嵌套类型，会话管理接口并入 `AgentController`。实体和 Mapper 受 MyBatis-Plus 泛型约束保持一实体一文件。
 
 ---
 

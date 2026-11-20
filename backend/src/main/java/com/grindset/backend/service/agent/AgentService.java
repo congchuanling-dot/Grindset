@@ -53,8 +53,8 @@ public class AgentService {
      * @param targets 已按渠道优先级 + key 最久未用排序的候选
      * @param history 不含 system 的历史消息,最后一条是本次用户提问
      */
-    public AgentTurn stream(long userId, List<LlmTarget> targets, String model,
-                            List<ChatMessage> history, AgentStreamSink sink) {
+    public Turn stream(long userId, List<LlmTarget> targets, String model,
+                       List<ChatMessage> history, AgentStreamSink sink) {
         // 用 Agent 自己的提示词,不注入首页对话的 app.llm.system-prompt
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, decisionPrompt()));
@@ -137,14 +137,14 @@ public class AgentService {
                 answer.append(text);
                 sink.delta(text);
             });
-        } catch (AgentStreamAbortedException e) {
+        } catch (StreamAbortedException e) {
             // 客户端断开:已经生成的正文和已执行的工具都要带给调用方落库
             turnMessages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, answer.toString()));
-            return new AgentTurn(turnMessages, true);
+            return new Turn(turnMessages, true);
         }
 
         turnMessages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, answer.toString()));
-        return new AgentTurn(turnMessages, false);
+        return new Turn(turnMessages, false);
     }
 
     /** 决策轮提示词:人设 + 使用规则 + 画像。工具 schema 不写在这里,由 tools 参数提供 */
@@ -282,5 +282,16 @@ public class AgentService {
         } catch (JsonProcessingException e) {
             return String.valueOf(data);
         }
+    }
+
+    /**
+     * 一轮 Agent 交互产出的消息流(不含 system,可直接落库)。
+     * aborted=true 表示客户端中途断开,消息流可能只到工具调用、最终回答也可能是半截。
+     */
+    public record Turn(List<ChatMessage> messages, boolean aborted) {
+    }
+
+    /** 客户端主动断开(点停止、关页面、切换会话)时抛出,和业务失败区分开 */
+    public static class StreamAbortedException extends RuntimeException {
     }
 }

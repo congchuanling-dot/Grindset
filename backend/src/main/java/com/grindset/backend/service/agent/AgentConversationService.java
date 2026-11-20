@@ -8,11 +8,7 @@ import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.Texts;
-import com.grindset.backend.dto.AgentChatRequest;
-import com.grindset.backend.dto.AgentChatResult;
-import com.grindset.backend.dto.AgentConversationDetail;
-import com.grindset.backend.dto.AgentConversationSummary;
-import com.grindset.backend.dto.AgentMessageView;
+import com.grindset.backend.dto.AgentDtos;
 import com.grindset.backend.entity.AgentConversation;
 import com.grindset.backend.entity.AgentMessage;
 import com.grindset.backend.llm.ChatMessage;
@@ -33,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -81,17 +78,18 @@ public class AgentConversationService {
     private final AgentService agentService;
     private final AgentTitleService titleService;
     private final ModelCatalogService catalog;
-    private final AgentConversationLocks locks;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
+
+    /** 一个会话一把锁:同一会话的生成、重命名、删除必须互斥 */
+    private final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
 
     public AgentConversationService(AgentConversationMapper conversationMapper,
                                     AgentMessageMapper messageMapper,
                                     AgentService agentService,
                                     AgentTitleService titleService,
                                     ModelCatalogService catalog,
-                                    AgentConversationLocks locks,
                                     SnowflakeIdGenerator idGenerator,
                                     TransactionTemplate transactionTemplate,
                                     ObjectMapper objectMapper) {
@@ -100,10 +98,14 @@ public class AgentConversationService {
         this.agentService = agentService;
         this.titleService = titleService;
         this.catalog = catalog;
-        this.locks = locks;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
+    }
+
+    /** 同一会话共用一把锁,按需创建 */
+    private ReentrantLock lockOf(long conversationId) {
+        return locks.computeIfAbsent(conversationId, key -> new ReentrantLock());
     }
 
     // ------------------------------------------------------------------
@@ -116,7 +118,7 @@ public class AgentConversationService {
      * <p>有 conversationId 时历史从库里重放;没有则先建会话。
      * 用户提问先落库,回答在流结束后批量写入,客户端中断也会保留已生成的部分。</p>
      */
-    public AgentChatResult chat(long userId, AgentChatRequest request, AgentStreamSink sink) {
+    public AgentDtos.ChatResult chat(long userId, AgentDtos.ChatRequest request, AgentStreamSink sink) {
         if (request == null) {
             throw new BizException(ErrorCode.BAD_REQUEST, "请求不能为空");
         }
@@ -136,7 +138,7 @@ public class AgentConversationService {
         AgentConversation conversation = resolveConversation(
                 userId, Texts.strip(request.getConversationId()), question);
 
-        ReentrantLock lock = locks.lockOf(conversation.getId());
+        ReentrantLock lock = lockOf(conversation.getId());
         if (!lock.tryLock()) {
             throw new BizException(ErrorCode.CONFLICT, "该会话正在生成回答，请稍候");
         }
@@ -163,7 +165,7 @@ public class AgentConversationService {
                     : CompletableFuture.completedFuture(conversation.getTitle());
 
             RecordingSink recorder = new RecordingSink(sink);
-            AgentTurn turn;
+            AgentService.Turn turn;
             try {
                 turn = agentService.stream(userId, targets, model, history, recorder);
             } catch (RuntimeException e) {
@@ -174,7 +176,7 @@ public class AgentConversationService {
 
             String title = awaitTitle(titleFuture, conversation.getTitle());
             persistTurn(conversation, turn, recorder, title);
-            return new AgentChatResult(String.valueOf(conversation.getId()), title);
+            return new AgentDtos.ChatResult(String.valueOf(conversation.getId()), title);
         } finally {
             lock.unlock();
         }
@@ -185,16 +187,16 @@ public class AgentConversationService {
     // ------------------------------------------------------------------
 
     /** 会话列表,按最后消息时间倒序 */
-    public List<AgentConversationSummary> list(long userId) {
+    public List<AgentDtos.ConversationSummary> list(long userId) {
         List<AgentConversation> conversations = conversationMapper.selectList(
                 new QueryWrapper<AgentConversation>()
                         .eq("user_id", userId)
                         .orderByDesc("last_message_at")
                         .orderByDesc("id")
                         .last("LIMIT " + LIST_LIMIT));
-        List<AgentConversationSummary> result = new ArrayList<>(conversations.size());
+        List<AgentDtos.ConversationSummary> result = new ArrayList<>(conversations.size());
         for (AgentConversation conversation : conversations) {
-            result.add(new AgentConversationSummary(
+            result.add(new AgentDtos.ConversationSummary(
                     String.valueOf(conversation.getId()),
                     conversation.getTitle(),
                     intValue(conversation.getMessageCount()),
@@ -205,12 +207,12 @@ public class AgentConversationService {
     }
 
     /** 会话详情,消息已按一轮工具调用合并成展示结构 */
-    public AgentConversationDetail detail(long userId, long id) {
+    public AgentDtos.ConversationDetail detail(long userId, long id) {
         AgentConversation conversation = requireOwned(userId, id);
         List<AgentMessage> rows = messageMapper.selectList(new QueryWrapper<AgentMessage>()
                 .eq("conversation_id", id)
                 .orderByAsc("seq"));
-        return new AgentConversationDetail(
+        return new AgentDtos.ConversationDetail(
                 String.valueOf(conversation.getId()),
                 conversation.getTitle(),
                 intValue(conversation.getMessageCount()),
@@ -230,7 +232,7 @@ public class AgentConversationService {
         }
         requireOwned(userId, id);
 
-        ReentrantLock lock = locks.lockOf(id);
+        ReentrantLock lock = lockOf(id);
         if (!lock.tryLock()) {
             throw new BizException(ErrorCode.CONFLICT, "该会话正在生成回答，请稍候");
         }
@@ -248,7 +250,7 @@ public class AgentConversationService {
     public void delete(long userId, long id) {
         requireOwned(userId, id);
 
-        ReentrantLock lock = locks.lockOf(id);
+        ReentrantLock lock = lockOf(id);
         if (!lock.tryLock()) {
             throw new BizException(ErrorCode.CONFLICT, "该会话正在生成回答，请稍候");
         }
@@ -343,7 +345,7 @@ public class AgentConversationService {
      * 这种半组留在库里,下次重放会被上游判为非法消息序列,所以直接丢掉;
      * 如果整轮没有正常结尾,再补一条空的中断回复,让前端能显示"生成已中断"。</p>
      */
-    private static List<ChatMessage> normalizeTurn(AgentTurn turn) {
+    private static List<ChatMessage> normalizeTurn(AgentService.Turn turn) {
         List<ChatMessage> messages = new ArrayList<>(turn.messages());
 
         // 找到最后一条工具调用,检查它的每个 tool_call_id 是否都有结果
@@ -388,7 +390,7 @@ public class AgentConversationService {
     }
 
     /** 把本轮工具调用和最终回答按顺序批量写入 */
-    private void persistTurn(AgentConversation conversation, AgentTurn turn,
+    private void persistTurn(AgentConversation conversation, AgentService.Turn turn,
                              RecordingSink recorder, String title) {
         List<ChatMessage> messages = normalizeTurn(turn);
         int startSeq = intValue(conversation.getMessageCount());
@@ -510,9 +512,9 @@ public class AgentConversationService {
      * <p>一轮工具调用在库里是多行(assistant tool_calls + 若干 tool),展示时要合并成一个助手气泡:
      * 工具卡片进 steps,最终回答进 content。</p>
      */
-    private List<AgentMessageView> toViews(List<AgentMessage> rows) {
-        List<AgentMessageView> views = new ArrayList<>();
-        List<AgentMessageView.AgentToolStepView> steps = null;
+    private List<AgentDtos.MessageView> toViews(List<AgentMessage> rows) {
+        List<AgentDtos.MessageView> views = new ArrayList<>();
+        List<AgentDtos.ToolStep> steps = null;
         String turnId = null;
         String lastCreatedAt = "";
 
@@ -521,9 +523,9 @@ public class AgentConversationService {
             if (ChatMessage.ROLE_USER.equalsIgnoreCase(role)) {
                 steps = null;
                 turnId = null;
-                views.add(new AgentMessageView(
+                views.add(new AgentDtos.MessageView(
                         String.valueOf(row.getId()),
-                        AgentMessageView.ROLE_USER,
+                        AgentDtos.MessageView.ROLE_USER,
                         nullToEmpty(row.getContent()),
                         intValue(row.getStatus()),
                         format(row.getCreatedAt()),
@@ -546,9 +548,9 @@ public class AgentConversationService {
                 continue;
             }
             if (ChatMessage.ROLE_ASSISTANT.equalsIgnoreCase(role)) {
-                views.add(new AgentMessageView(
+                views.add(new AgentDtos.MessageView(
                         turnId == null ? String.valueOf(row.getId()) : turnId,
-                        AgentMessageView.ROLE_ASSISTANT,
+                        AgentDtos.MessageView.ROLE_ASSISTANT,
                         nullToEmpty(row.getContent()),
                         intValue(row.getStatus()),
                         format(row.getCreatedAt()),
@@ -560,15 +562,15 @@ public class AgentConversationService {
 
         // 工具执行后没有最终回答(中断):也要把工具卡片展示出来
         if (steps != null) {
-            views.add(new AgentMessageView(turnId, AgentMessageView.ROLE_ASSISTANT,
+            views.add(new AgentDtos.MessageView(turnId, AgentDtos.MessageView.ROLE_ASSISTANT,
                     "", STATUS_INTERRUPTED, lastCreatedAt, List.copyOf(steps)));
         }
         return views;
     }
 
-    private AgentMessageView.AgentToolStepView toStep(AgentMessage row) {
+    private AgentDtos.ToolStep toStep(AgentMessage row) {
         Map<String, Object> meta = readMap(row.getToolMetaJson());
-        return new AgentMessageView.AgentToolStepView(
+        return new AgentDtos.ToolStep(
                 row.getToolCallId(),
                 stringValue(meta.get("name")),
                 stringValue(meta.get("label")),
