@@ -72,6 +72,7 @@ mysql -uroot -p123456 < sql/007_question_bank_seed.sql
 mysql -uroot -p123456 < sql/008_coding_schema.sql
 mysql -uroot -p123456 < sql/009_coding_seed.sql
 mysql -uroot -p123456 < sql/010_oauth_client_schema.sql
+mysql -uroot -p123456 < sql/011_agent_chat_schema.sql
 ```
 
 大模型渠道/模型/密钥表不在 `sql/` 下，需要额外执行（**必须带 utf8mb4 参数**，否则中文展示名会乱码）：
@@ -150,6 +151,7 @@ npm run dev
 对话和 AI 出题使用 Spring `SseEmitter`，跑在虚拟线程上（`spring.threads.virtual.enabled=true`）：
 
 - `POST /api/chat`：事件 `delta`（`{"text":"..."}`）→ `done` → 结束；失败发 `error`（`{"message":"..."}`）
+- `POST /api/agent/chat`：首帧 `conversation`（`{"conversationId":"...","title":"..."}`），随后 `status` / `tool_call` / `tool_result` / `delta`，结束 `done` 带会话 ID 与最新标题
 - `POST /api/interviews/{id}/questions`：同上，`done` 额外带 `{"questionId":"...","seq":"..."}`
 
 前端不用 `EventSource`，而是 `fetch` + `ReadableStream` 解析（见 `frontend/src/api/chat.ts`），因为需要带 `Authorization` 头。
@@ -284,6 +286,16 @@ npm run dev
 | GET | `/models` | 可用厂商 + 模型 + 余额 + 可用 key 数（只含已配置 key 的渠道） |
 | POST | `/` | 请求体 `{provider, model, messages:[{role,content}]}`；SSE 流式对话，system 提示词由服务端注入 |
 
+### 首页 Agent `/api/agent`
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/chat` | 请求体 `{conversationId?, provider, model, message}`；SSE 流式对话。无 `conversationId` 时懒建会话，有则从库里重放历史 |
+| GET | `/conversations` | 当前用户会话列表（最多 100 条，按最后消息时间倒序） |
+| GET | `/conversations/{id}` | 会话详情，消息已按一轮工具调用合并成展示结构 |
+| PATCH | `/conversations/{id}` | 重命名，请求体 `{title}` |
+| DELETE | `/conversations/{id}` | 删除会话及其全部消息 |
+
 ### 简历 `/api/resumes`
 
 | 方法 | 路径 | 说明 |
@@ -376,6 +388,7 @@ npm run dev
 | `008_coding_schema.sql` | `question_test_cases`、`question_submissions` + `question_bank` 扩展列 | 编程题用例与提交 |
 | `009_coding_seed.sql` | — | 编程题种子数据 |
 | `010_oauth_client_schema.sql` | `oauth_client_config` | 第三方登录客户端凭证（secret 加密存储） |
+| `011_agent_chat_schema.sql` | `agent_conversations`、`agent_messages` | 首页 Agent 会话与完整消息流（可重放、可恢复） |
 | `db/llm_catalog.sql` | `llm_channels`、`llm_models`、`llm_keys` | 大模型渠道/模型/密钥池 |
 | `db/llm_keys_balance.sql` | 余额相关扩展列 | 渠道余额维护字段 |
 
@@ -455,5 +468,6 @@ npm run dev
 | `面试复习闭环-PRD.md` | 整体产品闭环 |
 | `编程题判题-技术设计.md` | Docker 沙箱、判题流程、异步提交与轮询 |
 | `JWT鉴权-技术设计.md` | 鉴权细节补充 |
+| `首页Agent会话持久化-技术设计.md` | 会话/消息表、落库与重放、LLM 标题、并发锁、会话侧边栏 |
 
 修改任何模块前，先读对应设计文档；实现与文档冲突时，以代码现状为准并同步更新文档。

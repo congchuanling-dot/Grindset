@@ -2,10 +2,13 @@ package com.grindset.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
-import com.grindset.backend.dto.ChatRequest;
+import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.dto.AgentChatRequest;
+import com.grindset.backend.dto.AgentChatResult;
 import com.grindset.backend.llm.LlmException;
 import com.grindset.backend.security.LoginUser;
-import com.grindset.backend.service.agent.AgentService;
+import com.grindset.backend.service.agent.AgentConversationService;
+import com.grindset.backend.service.agent.AgentStreamAbortedException;
 import com.grindset.backend.service.agent.AgentStreamSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +27,7 @@ import static com.grindset.backend.common.constant.SseTimeouts.STREAM_TIMEOUT_5_
 
 /**
  * Agent 对话接口。
- * POST /api/agent/chat  SSE 事件:status / tool_call / tool_result / delta / done / error。
+ * POST /api/agent/chat  SSE 事件:conversation / status / tool_call / tool_result / delta / done / error。
  */
 @RestController
 @RequestMapping("/api/agent")
@@ -32,30 +35,36 @@ public class AgentController {
 
     private static final Logger log = LoggerFactory.getLogger(AgentController.class);
 
-    private final AgentService agentService;
+    private final AgentConversationService conversationService;
     private final ObjectMapper objectMapper;
 
-    public AgentController(AgentService agentService, ObjectMapper objectMapper) {
-        this.agentService = agentService;
+    public AgentController(AgentConversationService conversationService, ObjectMapper objectMapper) {
+        this.conversationService = conversationService;
         this.objectMapper = objectMapper;
     }
 
     @PostMapping("/chat")
-    public SseEmitter chat(@AuthenticationPrincipal LoginUser loginUser, @RequestBody ChatRequest request) {
+    public SseEmitter chat(@AuthenticationPrincipal LoginUser loginUser,
+                           @RequestBody AgentChatRequest request) {
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
-        long userId = loginUser.userId();
+        long userId = userId(loginUser);
         // SSE 会挂住整个请求周期,用虚拟线程,别占满 Tomcat 的工作线程
         Thread.ofVirtual().name("agent-sse-", 0).start(() -> runChat(userId, request, emitter));
         return emitter;
     }
 
-    private void runChat(long userId, ChatRequest request, SseEmitter emitter) {
+    private void runChat(long userId, AgentChatRequest request, SseEmitter emitter) {
+        SseSink sink = new SseSink(emitter);
         try {
-            agentService.stream(userId, request, new SseSink(emitter));
-            send(emitter, "done", Map.of());
+            AgentChatResult result = conversationService.chat(userId, request, sink);
+            // done 带会话 ID 和最新标题,前端据此更新侧边栏并结束"生成中"状态
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("conversationId", result.conversationId());
+            data.put("title", result.title() == null ? "" : result.title());
+            send(emitter, "done", data);
             emitter.complete();
-        } catch (ClientGoneException e) {
-            // 前端点了停止或关掉页面,静默收尾
+        } catch (AgentStreamAbortedException e) {
+            // 前端点了停止或关掉页面,内容已经由 Service 落库,静默收尾
             log.debug("客户端已断开 Agent 流");
             emitter.complete();
         } catch (BizException e) {
@@ -72,7 +81,7 @@ public class AgentController {
         try {
             send(emitter, "error", Map.of("message", message));
             emitter.complete();
-        } catch (ClientGoneException e) {
+        } catch (AgentStreamAbortedException e) {
             emitter.complete();
         }
     }
@@ -82,8 +91,15 @@ public class AgentController {
             emitter.send(SseEmitter.event().name(event).data(objectMapper.writeValueAsString(data)));
         } catch (IOException | IllegalStateException e) {
             // 响应头已经发出,连接断了也改不了状态码,只能当作客户端已离开
-            throw new ClientGoneException();
+            throw new AgentStreamAbortedException();
         }
+    }
+
+    private static long userId(LoginUser loginUser) {
+        if (loginUser == null) {
+            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
+        }
+        return loginUser.userId();
     }
 
     /** 把 Service 的事件回调翻译成 SSE 帧 */
@@ -93,6 +109,14 @@ public class AgentController {
 
         private SseSink(SseEmitter emitter) {
             this.emitter = emitter;
+        }
+
+        @Override
+        public void conversation(String conversationId, String title) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("conversationId", conversationId);
+            data.put("title", title);
+            send(emitter, "conversation", data);
         }
 
         @Override
@@ -124,9 +148,5 @@ public class AgentController {
         public void delta(String text) {
             send(emitter, "delta", Map.of("text", text));
         }
-    }
-
-    /** 客户端已断开,不是业务错误 */
-    private static class ClientGoneException extends RuntimeException {
     }
 }

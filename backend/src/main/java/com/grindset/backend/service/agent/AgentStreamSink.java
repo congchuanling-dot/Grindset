@@ -7,6 +7,10 @@ import java.util.Map;
  */
 public interface AgentStreamSink {
 
+    /** 本轮对话所属会话。新建会话时,Controller 会先把它发给前端,前端据此更新侧边栏 */
+    default void conversation(String conversationId, String title) {
+    }
+
     /** 阶段性提示,如"正在查询画像…" */
     void status(String text);
 

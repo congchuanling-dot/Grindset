@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.io.IOException;
+
 /**
  * 全局异常处理:把抛出的异常统一转成 ApiResponse,前端永远收到规整的 {code,message,data}。
  * HTTP 状态码与业务 code 保持一致(400/401/409/500),前端既可按 HTTP status 也可按 code 判断。
@@ -56,6 +58,12 @@ public class GlobalExceptionHandler {
         log.error("Redis 连接失败", e);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(ApiResponse.error(ErrorCode.SERVICE_UNAVAILABLE, "会话服务暂不可用，请稍后再试"));
+    }
+
+    /** 客户端中途断开(关页面/停止生成):响应通常已提交,不能再写 JSON,安静收尾即可 */
+    @ExceptionHandler(IOException.class)
+    public void handleClientAbort(IOException e) {
+        log.debug("客户端连接已断开:{}", e.getMessage());
     }
 
     /** 兜底:未预料的异常,日志留全量堆栈便于排查,响应不暴露细节 */
