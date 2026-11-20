@@ -1,3 +1,4 @@
+import { errMessage } from '../utils/error'
 import {
   AlertCircle,
   BookX,
@@ -675,8 +676,5 @@ function toTime(value: string): number {
   return Number.isNaN(time) ? 0 : time
 }
 
-function errMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '操作失败，请稍后重试'
-}
 
 export default WrongQuestionsPage

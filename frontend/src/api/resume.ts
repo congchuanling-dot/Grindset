@@ -1,5 +1,5 @@
 // 简历接口封装:上传走 multipart,其余走普通 JSON。
-import { authFetch } from './http'
+import { authFetch, unwrapJson } from './http'
 
 export interface ResumeSkill {
   id: string
@@ -50,26 +50,6 @@ export interface ResumeSummary {
   createdAt: string
 }
 
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
-
-/** 统一处理非流式响应:非 2xx 或业务 code 非 0 都抛出可读错误 */
-async function unwrap<T>(res: Response, fallback: string): Promise<T> {
-  let payload: ApiResponse<T> | null = null
-  try {
-    payload = (await res.json()) as ApiResponse<T>
-  } catch {
-    // 响应体不是 JSON,用兜底文案
-  }
-  if (!res.ok || !payload || payload.code !== 0) {
-    throw new Error(payload?.message || `${fallback}（HTTP ${res.status}）`)
-  }
-  return payload.data
-}
-
 /** 上传并同步解析。FormData 由浏览器自动带 boundary,不要手动设 Content-Type */
 export async function uploadResume(file: File): Promise<ResumeDetail> {
   const form = new FormData()
@@ -80,7 +60,7 @@ export async function uploadResume(file: File): Promise<ResumeDetail> {
   } catch {
     throw new Error('无法连接服务器，请确认后端已启动')
   }
-  return unwrap<ResumeDetail>(res, '简历解析失败')
+  return unwrapJson<ResumeDetail>(res, '简历解析失败')
 }
 
 export async function listResumes(): Promise<ResumeSummary[]> {
@@ -90,7 +70,7 @@ export async function listResumes(): Promise<ResumeSummary[]> {
   } catch {
     throw new Error('无法连接服务器，请确认后端已启动')
   }
-  return unwrap<ResumeSummary[]>(res, '加载简历列表失败')
+  return unwrapJson<ResumeSummary[]>(res, '加载简历列表失败')
 }
 
 export async function getResume(id: string): Promise<ResumeDetail> {
@@ -100,7 +80,7 @@ export async function getResume(id: string): Promise<ResumeDetail> {
   } catch {
     throw new Error('无法连接服务器，请确认后端已启动')
   }
-  return unwrap<ResumeDetail>(res, '加载简历详情失败')
+  return unwrapJson<ResumeDetail>(res, '加载简历详情失败')
 }
 
 export async function deleteResume(id: string): Promise<void> {
@@ -110,5 +90,5 @@ export async function deleteResume(id: string): Promise<void> {
   } catch {
     throw new Error('无法连接服务器，请确认后端已启动')
   }
-  await unwrap<null>(res, '删除简历失败')
+  await unwrapJson<null>(res, '删除简历失败')
 }

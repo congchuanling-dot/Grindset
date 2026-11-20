@@ -58,3 +58,34 @@ export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}
   }
   return send(input, init)
 }
+
+/** 后端统一响应体 */
+export interface ApiResponse<T> {
+  code: number
+  message: string
+  data: T
+}
+
+/** 解析非流式响应:非 2xx 或业务 code 非 0 都抛出可读错误 */
+export async function unwrapJson<T>(res: Response, fallback: string): Promise<T> {
+  let payload: ApiResponse<T> | null = null
+  try {
+    payload = (await res.json()) as ApiResponse<T>
+  } catch {
+    // 响应体不是 JSON,用兜底文案
+  }
+  if (!res.ok || !payload || payload.code !== 0) {
+    throw new Error(payload?.message || `${fallback}（HTTP ${res.status}）`)
+  }
+  return payload.data
+}
+
+/** 从失败响应里取业务错误文案,取不到就用兜底 */
+export async function readApiError(res: Response, fallback: string): Promise<string> {
+  try {
+    const payload = (await res.json()) as ApiResponse<unknown>
+    return payload?.message || `${fallback}（HTTP ${res.status}）`
+  } catch {
+    return `${fallback}（HTTP ${res.status}）`
+  }
+}

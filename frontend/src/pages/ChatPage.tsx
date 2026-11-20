@@ -1,3 +1,4 @@
+import { isAbortError } from '../api/sse'
 import { ArrowUp, Plus, Sparkles, Square, Wallet } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { streamAgentChat, type AgentToolStep } from '../api/agent'
@@ -399,9 +400,6 @@ function ChatPage() {
   )
 }
 
-function isAbortError(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { name?: string }).name === 'AbortError'
-}
 
 /** 余额展示:CNY 用 ¥、USD 用 $,其余币种跟在数字后面 */
 function formatBalance(balance: BalanceInfo): string {

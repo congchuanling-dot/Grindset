@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.Texts;
 import com.grindset.backend.common.constant.JudgeLanguages;
 import com.grindset.backend.common.constant.SubmissionStatus;
 import com.grindset.backend.dto.CodeRunRequest;
@@ -191,7 +192,7 @@ public class CodingService {
             finished.setPassed(outcome.passed());
             finished.setTotal(outcome.total());
             finished.setRuntimeMs(outcome.runtimeMs());
-            finished.setErrorMessage(truncate(outcome.errorMessage(), MAX_FEEDBACK_LENGTH));
+            finished.setErrorMessage(Texts.truncate(outcome.errorMessage(), MAX_FEEDBACK_LENGTH));
             finished.setFinishedAt(LocalDateTime.now());
             submissionMapper.updateById(finished);
 
@@ -207,7 +208,7 @@ public class CodingService {
             QuestionSubmission failed = new QuestionSubmission();
             failed.setId(submissionId);
             failed.setStatus(SubmissionStatus.SYSTEM_ERROR);
-            failed.setErrorMessage(truncate("判题服务异常：" + e.getMessage(), MAX_FEEDBACK_LENGTH));
+            failed.setErrorMessage(Texts.truncate("判题服务异常：" + e.getMessage(), MAX_FEEDBACK_LENGTH));
             failed.setFinishedAt(LocalDateTime.now());
             submissionMapper.updateById(failed);
         } finally {
@@ -277,7 +278,7 @@ public class CodingService {
                 String.valueOf(submission.getId()),
                 String.valueOf(submission.getQuestionId()),
                 submission.getLanguage(),
-                truncate(submission.getCode(), MAX_CODE_LENGTH),
+                Texts.truncate(submission.getCode(), MAX_CODE_LENGTH),
                 submission.getStatus(),
                 submission.getPassed() == null ? 0 : submission.getPassed(),
                 submission.getTotal() == null ? 0 : submission.getTotal(),
@@ -293,13 +294,6 @@ public class CodingService {
 
     private static String nullToEmpty(String value) {
         return value == null ? "" : value;
-    }
-
-    private static String truncate(String text, int max) {
-        if (text == null) {
-            return null;
-        }
-        return text.length() <= max ? text : text.substring(0, max);
     }
 
     private static String format(LocalDateTime time) {

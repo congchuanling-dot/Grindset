@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.Texts;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.RetryEvaluation;
 import com.grindset.backend.dto.RetryResult;
@@ -139,11 +140,11 @@ public class WrongQuestionService {
         wrong.setRound(session == null ? null : session.getRound());
         wrong.setQuestionContent(questionContent);
         wrong.setQuestionContext(joinMessages(messages, "FOLLOW_UP", "\n"));
-        wrong.setOriginalAnswer(truncate(joinMessages(messages, "ANSWER", "\n\n"), SNAPSHOT_ANSWER_MAX));
+        wrong.setOriginalAnswer(Texts.truncate(joinMessages(messages, "ANSWER", "\n\n"), SNAPSHOT_ANSWER_MAX));
         wrong.setOriginalScore(question.getScore());
         wrong.setOriginalComment(question.getComment());
         wrong.setOriginalSuggestion(question.getSuggestion());
-        wrong.setOriginalFeedback(truncate(joinMessages(messages, "FEEDBACK", "\n"), 1000));
+        wrong.setOriginalFeedback(Texts.truncate(joinMessages(messages, "FEEDBACK", "\n"), 1000));
         wrong.setKnowledgePoints(question.getKnowledgePoints());
         wrong.setKpIds(knowledgeProfileService.resolvePointIds(question.getKnowledgePoints()));
         wrong.setStatus(PENDING);
@@ -189,10 +190,10 @@ public class WrongQuestionService {
             wrong.setQuestionId(bankQuestionId);
             wrong.setSource("BANK");
             wrong.setQuestionContent(questionContent);
-            wrong.setOriginalAnswer(truncate(answer, SNAPSHOT_ANSWER_MAX));
+            wrong.setOriginalAnswer(Texts.truncate(answer, SNAPSHOT_ANSWER_MAX));
             wrong.setOriginalScore(score);
-            wrong.setOriginalComment(truncate(comment, 500));
-            wrong.setOriginalSuggestion(truncate(suggestion, 500));
+            wrong.setOriginalComment(Texts.truncate(comment, 500));
+            wrong.setOriginalSuggestion(Texts.truncate(suggestion, 500));
             wrong.setKnowledgePoints(knowledgePoints);
             wrong.setKpIds(kpIds);
             wrong.setStatus(PENDING);
@@ -223,10 +224,10 @@ public class WrongQuestionService {
                                           String suggestion, LocalDateTime now) {
         wrong.setSource("BANK");
         wrong.setQuestionContent(questionContent);
-        wrong.setOriginalAnswer(truncate(answer, SNAPSHOT_ANSWER_MAX));
+        wrong.setOriginalAnswer(Texts.truncate(answer, SNAPSHOT_ANSWER_MAX));
         wrong.setOriginalScore(score);
-        wrong.setOriginalComment(truncate(comment, 500));
-        wrong.setOriginalSuggestion(truncate(suggestion, 500));
+        wrong.setOriginalComment(Texts.truncate(comment, 500));
+        wrong.setOriginalSuggestion(Texts.truncate(suggestion, 500));
         wrong.setKnowledgePoints(knowledgePoints);
         wrong.setKpIds(kpIds);
         wrong.setStatus(PENDING);
@@ -556,7 +557,7 @@ public class WrongQuestionService {
             return "";
         }
         String text = content.replaceAll("\\s+", " ").strip();
-        return truncate(text, MAX_PREVIEW_CHARS);
+        return Texts.truncate(text, MAX_PREVIEW_CHARS);
     }
 
     private static String normalizeStatus(String status) {
@@ -573,13 +574,6 @@ public class WrongQuestionService {
 
     private static String format(LocalDateTime time) {
         return time == null ? null : time.format(STANDARD);
-    }
-
-    private static String truncate(String value, int max) {
-        if (value == null) {
-            return null;
-        }
-        return value.length() <= max ? value : value.substring(0, max);
     }
 
     private static int intValue(Integer value) {

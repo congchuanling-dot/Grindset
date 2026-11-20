@@ -1,3 +1,4 @@
+import { errMessage } from '../utils/error'
 import Editor, { loader } from '@monaco-editor/react'
 import {
   AlertCircle,
@@ -454,8 +455,5 @@ function Field({ label, value }: { label: string; value: string }) {
   )
 }
 
-function errMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '操作失败，请稍后重试'
-}
 
 export default CodingWorkspace

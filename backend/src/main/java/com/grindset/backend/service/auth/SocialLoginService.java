@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.Texts;
 import com.grindset.backend.dto.auth.AuthResult;
 import com.grindset.backend.entity.auth.User;
 import com.grindset.backend.entity.auth.UserIdentity;
@@ -137,9 +138,9 @@ public class SocialLoginService {
 
         User user = new User();
         user.setId(idGenerator.nextId());
-        user.setNickname(truncate(resolveNickname(socialUser), MAX_NICKNAME_LENGTH));
-        user.setEmail(truncate(socialUser.email(), MAX_EMAIL_LENGTH));
-        user.setAvatarUrl(truncate(socialUser.avatarUrl(), MAX_AVATAR_LENGTH));
+        user.setNickname(Texts.truncate(resolveNickname(socialUser), MAX_NICKNAME_LENGTH));
+        user.setEmail(Texts.truncate(socialUser.email(), MAX_EMAIL_LENGTH));
+        user.setAvatarUrl(Texts.truncate(socialUser.avatarUrl(), MAX_AVATAR_LENGTH));
         user.setStatus(ACTIVE);
         userMapper.insert(user);
         return identityService.bind(user.getId(), identityProvider, socialUser.identifier());
@@ -167,13 +168,6 @@ public class SocialLoginService {
             return socialUser.email().substring(0, socialUser.email().indexOf('@'));
         }
         return "新用户";
-    }
-
-    private static String truncate(String value, int max) {
-        if (value == null) {
-            return null;
-        }
-        return value.length() <= max ? value : value.substring(0, max);
     }
 
     private static String stateKey(String provider, String state) {

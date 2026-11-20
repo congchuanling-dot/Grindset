@@ -1,3 +1,4 @@
+import { errMessage } from '../utils/error'
 import {
   AlertCircle,
   BrainCircuit,
@@ -287,8 +288,5 @@ function scoreClass(level: KnowledgeLevel): string {
   return 'text-teal-600'
 }
 
-function errMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '操作失败，请稍后重试'
-}
 
 export default KnowledgePage

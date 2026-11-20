@@ -1,3 +1,4 @@
+import { errMessage } from '../utils/error'
 import {
   AlertCircle,
   ArrowLeft,
@@ -444,8 +445,5 @@ function scoreClass(score: number): string {
   return 'text-rose-600'
 }
 
-function errMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '操作失败，请稍后重试'
-}
 
 export default QuestionDetailPage

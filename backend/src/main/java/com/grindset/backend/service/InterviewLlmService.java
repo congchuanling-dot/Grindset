@@ -2,6 +2,7 @@ package com.grindset.backend.service;
 
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.common.Texts;
 import com.grindset.backend.config.InterviewProperties;
 import com.grindset.backend.dto.BankEvaluation;
 import com.grindset.backend.dto.InterviewReport;
@@ -286,7 +287,7 @@ public class InterviewLlmService {
                 builder.append('\n');
             }
             KnowledgeProfileService.Candidate candidate = candidates.get(i);
-            builder.append(i + 1).append(". ").append(truncate(candidate.name(), 64))
+            builder.append(i + 1).append(". ").append(Texts.truncate(candidate.name(), 64))
                     .append('(').append(candidate.level()).append(')');
         }
         return builder.toString();
@@ -306,7 +307,7 @@ public class InterviewLlmService {
             if (count > 0) {
                 builder.append('、');
             }
-            builder.append(truncate(name.strip(), 64));
+            builder.append(Texts.truncate(name.strip(), 64));
             count++;
             if (count >= 30) {
                 break;
@@ -429,8 +430,8 @@ public class InterviewLlmService {
         if (decision == null) {
             throw new BizException(ErrorCode.BAD_GATEWAY, "模型输出为空");
         }
-        decision.setFeedback(truncate(decision.getFeedback(), 200));
-        decision.setFollowUpQuestion(truncate(decision.getFollowUpQuestion(), 500));
+        decision.setFeedback(Texts.truncate(decision.getFeedback(), 200));
+        decision.setFollowUpQuestion(Texts.truncate(decision.getFollowUpQuestion(), 500));
         if (decision.getEvaluation() != null) {
             decision.setEvaluation(normalizeEvaluation(decision.getEvaluation()));
         }
@@ -447,8 +448,8 @@ public class InterviewLlmService {
             throw new BizException(ErrorCode.BAD_GATEWAY, "评分超出 1~5");
         }
         result.setKnowledgePoints(normalizePoints(result.getKnowledgePoints()));
-        result.setComment(truncate(blankToNull(result.getComment()), 200));
-        result.setSuggestion(truncate(blankToNull(result.getSuggestion()), 200));
+        result.setComment(Texts.truncate(Texts.blankToNull(result.getComment()), 200));
+        result.setSuggestion(Texts.truncate(Texts.blankToNull(result.getSuggestion()), 200));
         return result;
     }
 
@@ -460,14 +461,14 @@ public class InterviewLlmService {
         if (score < 1 || score > 5) {
             throw new BizException(ErrorCode.BAD_GATEWAY, "评分超出 1~5");
         }
-        String reference = truncate(blankToNull(raw.referenceAnswer()), 1000);
+        String reference = Texts.truncate(Texts.blankToNull(raw.referenceAnswer()), 1000);
         if (reference == null) {
             throw new BizException(ErrorCode.BAD_GATEWAY, "缺少参考要点");
         }
         return new RetryEvaluation(
                 score,
-                truncate(blankToNull(raw.comment()), 200),
-                truncate(blankToNull(raw.suggestion()), 200),
+                Texts.truncate(Texts.blankToNull(raw.comment()), 200),
+                Texts.truncate(Texts.blankToNull(raw.suggestion()), 200),
                 reference);
     }
 
@@ -483,8 +484,8 @@ public class InterviewLlmService {
                 score,
                 limit(raw.hitPoints(), 4),
                 limit(raw.missedPoints(), 4),
-                truncate(blankToNull(raw.comment()), 200),
-                truncate(blankToNull(raw.suggestion()), 200));
+                Texts.truncate(Texts.blankToNull(raw.comment()), 200),
+                Texts.truncate(Texts.blankToNull(raw.suggestion()), 200));
     }
 
     private InterviewReport normalizeReport(InterviewReport report) {
@@ -538,9 +539,9 @@ public class InterviewLlmService {
             return result;
         }
         for (String point : points) {
-            String value = blankToNull(point);
+            String value = Texts.blankToNull(point);
             if (value != null && result.size() < 3) {
-                result.add(truncate(value, 64));
+                result.add(Texts.truncate(value, 64));
             }
         }
         return result;
@@ -552,9 +553,9 @@ public class InterviewLlmService {
             return result;
         }
         for (String value : values) {
-            String text = blankToNull(value);
+            String text = Texts.blankToNull(value);
             if (text != null && result.size() < max) {
-                result.add(truncate(text, 200));
+                result.add(Texts.truncate(text, 200));
             }
         }
         return result;
@@ -588,16 +589,4 @@ public class InterviewLlmService {
     private static String blankToDash(String value) {
         return value == null || value.isBlank() ? "未指定" : value;
     }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
-    }
-
-    private static String truncate(String value, int max) {
-        if (value == null) {
-            return null;
-        }
-        return value.length() <= max ? value : value.substring(0, max);
-    }
-
 }

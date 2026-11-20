@@ -1,5 +1,5 @@
 // 错题本接口封装:列表、详情、单题重练。
-import { authFetch } from './http'
+import { authFetch, unwrapJson } from './http'
 
 export type WrongStatus = 'PENDING' | 'MASTERED'
 
@@ -75,25 +75,6 @@ export interface RetryResult {
   nextReviewAt: string | null
 }
 
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
-
-async function unwrap<T>(res: Response, fallback: string): Promise<T> {
-  let payload: ApiResponse<T> | null = null
-  try {
-    payload = (await res.json()) as ApiResponse<T>
-  } catch {
-    // 响应体不是 JSON,用兜底文案
-  }
-  if (!res.ok || !payload || payload.code !== 0) {
-    throw new Error(payload?.message || `${fallback}（HTTP ${res.status}）`)
-  }
-  return payload.data
-}
-
 async function request(path: string, init?: RequestInit): Promise<Response> {
   try {
     return await authFetch(path, init)
@@ -119,12 +100,12 @@ export async function getWrongQuestions(params: {
   const query = search.toString()
 
   const res = await request(`/api/wrong-questions${query ? `?${query}` : ''}`)
-  return unwrap<WrongQuestionList>(res, '加载错题本失败')
+  return unwrapJson<WrongQuestionList>(res, '加载错题本失败')
 }
 
 export async function getWrongQuestionDetail(id: string): Promise<WrongQuestionDetail> {
   const res = await request(`/api/wrong-questions/${id}`)
-  return unwrap<WrongQuestionDetail>(res, '加载错题详情失败')
+  return unwrapJson<WrongQuestionDetail>(res, '加载错题详情失败')
 }
 
 export async function retryWrongQuestion(id: string, answer: string): Promise<RetryResult> {
@@ -133,5 +114,5 @@ export async function retryWrongQuestion(id: string, answer: string): Promise<Re
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ answer }),
   })
-  return unwrap<RetryResult>(res, '提交重练失败')
+  return unwrapJson<RetryResult>(res, '提交重练失败')
 }

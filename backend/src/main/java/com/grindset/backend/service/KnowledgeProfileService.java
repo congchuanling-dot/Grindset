@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.Texts;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.KnowledgeProfileView;
 import com.grindset.backend.entity.InterviewQuestion;
@@ -170,7 +171,7 @@ public class KnowledgeProfileService {
 
         KnowledgePoint point = new KnowledgePoint();
         point.setId(idGenerator.nextId());
-        point.setName(truncate(name, 128));
+        point.setName(Texts.truncate(name, 128));
         point.setNormalizedName(normalized);
         point.setDomain(domainOf(name));
         try {
@@ -532,10 +533,6 @@ public class KnowledgeProfileService {
         }
         String value = level.strip().toUpperCase(Locale.ROOT);
         return LEVELS.contains(value) ? value : null;
-    }
-
-    private static String truncate(String value, int max) {
-        return value.length() <= max ? value : value.substring(0, max);
     }
 
     private static int intValue(Integer value) {

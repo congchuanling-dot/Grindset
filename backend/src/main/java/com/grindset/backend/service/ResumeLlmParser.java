@@ -4,6 +4,7 @@ import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.CandidateType;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.ResumeSectionType;
+import com.grindset.backend.common.Texts;
 import com.grindset.backend.config.ResumeProperties;
 import com.grindset.backend.dto.ParsedResume;
 import com.grindset.backend.llm.ChatMessage;
@@ -77,7 +78,7 @@ public class ResumeLlmParser {
     /** 枚举降级、空值兜底、长度截断、熟练度夹取 */
     private ParsedResume normalize(ParsedResume parsed) {
         parsed.setCandidateType(CandidateType.from(parsed.getCandidateType()).name());
-        parsed.setCandidateName(truncate(blankToNull(parsed.getCandidateName()), 128));
+        parsed.setCandidateName(Texts.truncate(Texts.blankToNull(parsed.getCandidateName()), 128));
 
         List<ParsedResume.Skill> skills = new ArrayList<>();
         if (parsed.getSkills() != null) {
@@ -85,9 +86,9 @@ public class ResumeLlmParser {
                 if (skill == null || skill.getName() == null || skill.getName().isBlank()) {
                     continue;
                 }
-                skill.setName(truncate(skill.getName().strip(), 64));
-                skill.setCategory(truncate(blankToNull(skill.getCategory()), 32));
-                skill.setEvidence(truncate(blankToNull(skill.getEvidence()), 500));
+                skill.setName(Texts.truncate(skill.getName().strip(), 64));
+                skill.setCategory(Texts.truncate(Texts.blankToNull(skill.getCategory()), 32));
+                skill.setEvidence(Texts.truncate(Texts.blankToNull(skill.getEvidence()), 500));
                 Integer proficiency = skill.getProficiency();
                 if (proficiency != null) {
                     skill.setProficiency(Math.max(1, Math.min(5, proficiency)));
@@ -105,7 +106,7 @@ public class ResumeLlmParser {
                 String originalTitle = section.getTitle() == null ? "" : section.getTitle().strip();
                 ResumeSectionType type = ResumeSectionType.from(section.getType());
                 section.setType(type.name());
-                section.setTitle(truncate(originalTitle.isEmpty() ? type.defaultTitle() : originalTitle, 128));
+                section.setTitle(Texts.truncate(originalTitle.isEmpty() ? type.defaultTitle() : originalTitle, 128));
 
                 List<ParsedResume.Item> items = new ArrayList<>();
                 if (section.getItems() != null) {
@@ -113,10 +114,10 @@ public class ResumeLlmParser {
                         if (item == null) {
                             continue;
                         }
-                        item.setTitle(truncate(blankToNull(item.getTitle()), 255));
-                        item.setSubtitle(truncate(blankToNull(item.getSubtitle()), 255));
-                        item.setStartDate(truncate(blankToNull(item.getStartDate()), 32));
-                        item.setEndDate(truncate(blankToNull(item.getEndDate()), 32));
+                        item.setTitle(Texts.truncate(Texts.blankToNull(item.getTitle()), 255));
+                        item.setSubtitle(Texts.truncate(Texts.blankToNull(item.getSubtitle()), 255));
+                        item.setStartDate(Texts.truncate(Texts.blankToNull(item.getStartDate()), 32));
+                        item.setEndDate(Texts.truncate(Texts.blankToNull(item.getEndDate()), 32));
                         item.setTags(normalizeTags(item.getTags()));
                         items.add(item);
                     }
@@ -147,24 +148,11 @@ public class ResumeLlmParser {
                 .filter(Objects::nonNull)
                 .map(String::strip)
                 .filter(tag -> !tag.isEmpty())
-                .map(tag -> truncate(tag, 64))
+                .map(tag -> Texts.truncate(tag, 64))
                 .limit(20)
                 .toList();
     }
 
-    private static String blankToNull(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.strip();
-    }
-
-    private static String truncate(String value, int max) {
-        if (value == null) {
-            return null;
-        }
-        return value.length() > max ? value.substring(0, max) : value;
-    }
 
     /**
      * 解析结果。

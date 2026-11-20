@@ -1,3 +1,4 @@
+import { errMessage } from '../utils/error'
 import {
   AlertCircle,
   CheckCircle2,
@@ -431,8 +432,5 @@ function statusTextClass(status: QuestionStatus): string {
   return 'text-slate-400'
 }
 
-function errMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '操作失败，请稍后重试'
-}
 
 export default QuestionBankPage

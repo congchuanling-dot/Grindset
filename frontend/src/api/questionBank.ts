@@ -1,5 +1,5 @@
 // 题库接口封装:列表筛选、题目详情、提交作答与作答历史。
-import { authFetch } from './http'
+import { authFetch, unwrapJson } from './http'
 
 export type QuestionStatus = 'TODO' | 'DONE' | 'WRONG'
 export type QuestionType = 'BASICS' | 'SCENARIO' | 'PROJECT' | 'CODE'
@@ -92,25 +92,6 @@ export interface QuestionAttemptResult {
   createdAt: string | null
 }
 
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
-
-async function unwrap<T>(res: Response, fallback: string): Promise<T> {
-  let payload: ApiResponse<T> | null = null
-  try {
-    payload = (await res.json()) as ApiResponse<T>
-  } catch {
-    // 响应体不是 JSON,用兜底文案
-  }
-  if (!res.ok || !payload || payload.code !== 0) {
-    throw new Error(payload?.message || `${fallback}（HTTP ${res.status}）`)
-  }
-  return payload.data
-}
-
 async function request(path: string, init?: RequestInit): Promise<Response> {
   try {
     return await authFetch(path, init)
@@ -138,12 +119,12 @@ export async function getQuestions(params: {
   const query = search.toString()
 
   const res = await request(`/api/questions${query ? `?${query}` : ''}`)
-  return unwrap<QuestionBankList>(res, '加载题库失败')
+  return unwrapJson<QuestionBankList>(res, '加载题库失败')
 }
 
 export async function getQuestionDetail(id: string): Promise<QuestionBankDetail> {
   const res = await request(`/api/questions/${id}`)
-  return unwrap<QuestionBankDetail>(res, '加载题目失败')
+  return unwrapJson<QuestionBankDetail>(res, '加载题目失败')
 }
 
 export async function submitQuestionAnswer(id: string, answer: string): Promise<QuestionAttemptResult> {
@@ -152,7 +133,7 @@ export async function submitQuestionAnswer(id: string, answer: string): Promise<
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ answer }),
   })
-  return unwrap<QuestionAttemptResult>(res, '提交作答失败')
+  return unwrapJson<QuestionAttemptResult>(res, '提交作答失败')
 }
 
 // ---------- 编程题 ----------
@@ -214,7 +195,7 @@ export interface CodingSubmission {
 
 export async function getCodingDetail(id: string): Promise<CodingDetail> {
   const res = await request(`/api/questions/${id}/coding`)
-  return unwrap<CodingDetail>(res, '加载编程题失败')
+  return unwrapJson<CodingDetail>(res, '加载编程题失败')
 }
 
 export async function runCode(id: string, language: CodeLanguage, code: string): Promise<CodeRunResult> {
@@ -223,7 +204,7 @@ export async function runCode(id: string, language: CodeLanguage, code: string):
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ language, code }),
   })
-  return unwrap<CodeRunResult>(res, '运行失败')
+  return unwrapJson<CodeRunResult>(res, '运行失败')
 }
 
 export async function submitCode(id: string, language: CodeLanguage, code: string): Promise<CodingSubmission> {
@@ -232,15 +213,15 @@ export async function submitCode(id: string, language: CodeLanguage, code: strin
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ language, code }),
   })
-  return unwrap<CodingSubmission>(res, '提交失败')
+  return unwrapJson<CodingSubmission>(res, '提交失败')
 }
 
 export async function getSubmission(submissionId: string): Promise<CodingSubmission> {
   const res = await request(`/api/questions/submissions/${submissionId}`)
-  return unwrap<CodingSubmission>(res, '查询判题结果失败')
+  return unwrapJson<CodingSubmission>(res, '查询判题结果失败')
 }
 
 export async function getCodingSubmissions(id: string): Promise<CodingSubmission[]> {
   const res = await request(`/api/questions/${id}/submissions`)
-  return unwrap<CodingSubmission[]>(res, '加载提交历史失败')
+  return unwrapJson<CodingSubmission[]>(res, '加载提交历史失败')
 }

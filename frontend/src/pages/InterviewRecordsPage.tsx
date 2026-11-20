@@ -1,3 +1,4 @@
+import { errMessage } from '../utils/error'
 import { AlertCircle, ChevronRight, Clock3, FileText, History, Loader2, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -27,7 +28,7 @@ function InterviewRecordsPage() {
         if (!cancelled) setResumes(list)
       })
       .catch((e: unknown) => {
-        if (!cancelled) setError(errMessage(e))
+        if (!cancelled) setError(errMessage(e, '加载失败，请稍后重试'))
       })
       .finally(() => {
         if (!cancelled) setLoadingResumes(false)
@@ -46,7 +47,7 @@ function InterviewRecordsPage() {
         if (!cancelled) setSessions(list)
       })
       .catch((e: unknown) => {
-        if (!cancelled) setError(errMessage(e))
+        if (!cancelled) setError(errMessage(e, '加载失败，请稍后重试'))
       })
       .finally(() => {
         if (!cancelled) setLoadingSessions(false)
@@ -71,7 +72,7 @@ function InterviewRecordsPage() {
       await deleteInterview(id)
       setSessions((prev) => prev.filter((item) => item.id !== id))
     } catch (e) {
-      setError(errMessage(e))
+      setError(errMessage(e, '加载失败，请稍后重试'))
     } finally {
       setDeletingId(null)
     }
@@ -293,8 +294,5 @@ function EmptyState({ filtered }: { filtered: boolean }) {
   )
 }
 
-function errMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '加载失败，请稍后重试'
-}
 
 export default InterviewRecordsPage

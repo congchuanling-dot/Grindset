@@ -3,8 +3,7 @@ package com.grindset.backend.service.agent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grindset.backend.common.BizException;
-import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.common.Texts;
 import com.grindset.backend.dto.ChatRequest;
 import com.grindset.backend.llm.ChatMessage;
 import com.grindset.backend.llm.LlmCompletion;
@@ -12,6 +11,7 @@ import com.grindset.backend.llm.LlmProperties;
 import com.grindset.backend.llm.LlmRouter;
 import com.grindset.backend.llm.LlmTarget;
 import com.grindset.backend.llm.LlmToolCall;
+import com.grindset.backend.service.ChatHistoryBuilder;
 import com.grindset.backend.service.ModelCatalogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.grindset.backend.common.constant.InputLimits.CHAT_MAX_MESSAGE_LENGTH;
-import static com.grindset.backend.common.constant.InputLimits.CHAT_MAX_REQUEST_MESSAGES;
 import static com.grindset.backend.service.agent.AgentConstants.MAX_CONTEXT_CHARS;
 import static com.grindset.backend.service.agent.AgentConstants.MAX_ROUNDS;
 import static com.grindset.backend.service.agent.AgentConstants.MAX_RUN_MILLIS;
@@ -60,13 +58,14 @@ public class AgentService {
      * 参数问题抛 BizException(400);上游模型问题抛 LlmException,由 Controller 转成 error 事件。
      */
     public void stream(long userId, ChatRequest request, AgentStreamSink sink) {
-        String providerId = strip(request.getProvider());
-        String model = strip(request.getModel());
+        String providerId = Texts.strip(request.getProvider());
+        String model = Texts.strip(request.getModel());
         List<LlmTarget> targets = catalog.requireTargets(providerId, model);
 
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, decisionPrompt()));
-        messages.addAll(buildHistory(request.getMessages()));
+        messages.addAll(ChatHistoryBuilder.build(request.getMessages(),
+                properties.getMaxHistoryMessages(), null, true));
 
         List<Map<String, Object>> tools = registry.toolDefinitions();
         Set<String> seenCalls = new HashSet<>();
@@ -181,39 +180,6 @@ public class AgentService {
                 """;
     }
 
-    /** 校验历史消息,裁到最近若干条;不注入 app.llm 的通用 system 提示词 */
-    private List<ChatMessage> buildHistory(List<ChatRequest.Message> raw) {
-        if (raw == null || raw.isEmpty()) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "消息不能为空");
-        }
-        if (raw.size() > CHAT_MAX_REQUEST_MESSAGES) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "消息数量过多");
-        }
-
-        List<ChatMessage> result = new ArrayList<>();
-        int maxHistory = Math.max(1, properties.getMaxHistoryMessages());
-        int from = Math.max(0, raw.size() - maxHistory);
-        for (int i = from; i < raw.size(); i++) {
-            ChatRequest.Message item = raw.get(i);
-            String role = strip(item.getRole());
-            if (!ChatMessage.ROLE_USER.equals(role) && !ChatMessage.ROLE_ASSISTANT.equals(role)) {
-                throw new BizException(ErrorCode.BAD_REQUEST, "消息角色不合法");
-            }
-            String content = item.getContent() == null ? "" : item.getContent();
-            if (content.isBlank()) {
-                throw new BizException(ErrorCode.BAD_REQUEST, "消息内容不能为空");
-            }
-            if (content.length() > CHAT_MAX_MESSAGE_LENGTH) {
-                throw new BizException(ErrorCode.BAD_REQUEST, "单条消息不能超过 " + CHAT_MAX_MESSAGE_LENGTH + " 字");
-            }
-            result.add(new ChatMessage(role, content));
-        }
-        if (!ChatMessage.ROLE_USER.equals(result.get(result.size() - 1).role())) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "最后一条消息必须是提问");
-        }
-        return result;
-    }
-
     /**
      * 上下文超长时按完整 turn 整组丢弃:助手工具调用 + 后续工具结果算一组,
      * 普通消息每条算一组。保留最后 3 组和最后一条用户消息。
@@ -297,9 +263,5 @@ public class AgentService {
         } catch (JsonProcessingException e) {
             return String.valueOf(data);
         }
-    }
-
-    private static String strip(String value) {
-        return value == null ? "" : value.strip();
     }
 }

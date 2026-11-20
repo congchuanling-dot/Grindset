@@ -1,11 +1,6 @@
 // 认证接口封装。后端统一返回 {code, message, data},code=0 才算成功。
 // access token 在响应体,refresh token 由后端写入 HttpOnly Cookie,前端无需处理。
-
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
+import type { ApiResponse } from './http'
 
 export interface AuthResult {
   /** 雪花 ID,后端按字符串下发 */

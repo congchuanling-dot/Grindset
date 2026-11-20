@@ -1,3 +1,4 @@
+import { errMessage } from '../utils/error'
 import { AlertCircle, Briefcase, Clock3, FileText, Loader2, Sparkles, Target } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -532,8 +533,5 @@ function HistorySection({ items, loading }: { items: InterviewSummary[]; loading
   )
 }
 
-function errMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '操作失败，请稍后重试'
-}
 
 export default InterviewPage

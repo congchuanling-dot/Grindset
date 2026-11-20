@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.Texts;
 import com.grindset.backend.dto.BankEvaluation;
 import com.grindset.backend.dto.QuestionAttemptResult;
 import com.grindset.backend.dto.QuestionBankDetail;
@@ -102,10 +103,10 @@ public class QuestionBankService {
         Map<Long, UserQuestionProgress> progress = loadProgress(userId);
         QuestionBankView.Summary summary = summarize(all, progress);
 
-        String domainFilter = blankToNull(domain);
+        String domainFilter = Texts.blankToNull(domain);
         Integer difficultyFilter = difficulty == null ? null : clamp(difficulty, 1, 3);
         String statusFilter = normalizeStatus(status);
-        String keywordFilter = blankToNull(keyword);
+        String keywordFilter = Texts.blankToNull(keyword);
 
         List<QuestionBank> matched = all.stream()
                 .filter(q -> domainFilter == null || domainFilter.equals(q.getDomain()))
@@ -330,7 +331,7 @@ public class QuestionBankService {
         int imported = 0;
         int skipped = 0;
         for (QuestionBankImportRequest.Item item : items) {
-            if (item == null || blankToNull(item.content()) == null) {
+            if (item == null || Texts.blankToNull(item.content()) == null) {
                 skipped++;
                 continue;
             }
@@ -345,20 +346,20 @@ public class QuestionBankService {
 
             QuestionBank question = new QuestionBank();
             question.setId(idGenerator.nextId());
-            question.setTitle(clampTitle(blankToNull(item.title()) == null
+            question.setTitle(clampTitle(Texts.blankToNull(item.title()) == null
                     ? preview(content, TITLE_MAX) : item.title().strip()));
             question.setContent(content);
             question.setType(normalizeType(item.type()));
             question.setDifficulty(item.difficulty() == null ? 2 : clamp(item.difficulty(), 1, 3));
-            question.setDomain(blankToNull(item.domain()) == null ? "其他" : item.domain().strip());
-            question.setReferenceAnswer(blankToNull(item.referenceAnswer()));
+            question.setDomain(Texts.blankToNull(item.domain()) == null ? "其他" : item.domain().strip());
+            question.setReferenceAnswer(Texts.blankToNull(item.referenceAnswer()));
             question.setKeyPoints(limited(item.keyPoints(), 8, 200));
             List<String> kpNames = limited(item.kpNames(), 6, 64);
             question.setKpNames(kpNames.isEmpty() ? question.getKeyPoints() : kpNames);
             question.setKpIds(List.of());
-            question.setSource(blankToNull(item.source()) == null ? "MANUAL"
+            question.setSource(Texts.blankToNull(item.source()) == null ? "MANUAL"
                     : item.source().strip().toUpperCase(Locale.ROOT));
-            question.setSourceUrl(blankToNull(item.sourceUrl()));
+            question.setSourceUrl(Texts.blankToNull(item.sourceUrl()));
             question.setContentHash(hash);
             question.setStatus(ONLINE);
             try {
@@ -478,7 +479,7 @@ public class QuestionBankService {
     }
 
     private static String normalizeStatus(String status) {
-        String value = blankToNull(status);
+        String value = Texts.blankToNull(status);
         if (value == null) {
             return null;
         }
@@ -487,7 +488,7 @@ public class QuestionBankService {
     }
 
     private static String normalizeType(String type) {
-        String value = blankToNull(type);
+        String value = Texts.blankToNull(type);
         if (value == null) {
             return "BASICS";
         }
@@ -505,7 +506,7 @@ public class QuestionBankService {
             return result;
         }
         for (String value : values) {
-            String text = blankToNull(value);
+            String text = Texts.blankToNull(value);
             if (text != null && result.size() < max) {
                 result.add(text.length() <= maxLength ? text : text.substring(0, maxLength));
             }
@@ -527,10 +528,6 @@ public class QuestionBankService {
 
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
     }
 
     private static String format(LocalDateTime time) {

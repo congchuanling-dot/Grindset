@@ -1,5 +1,5 @@
 // 掌握度画像接口封装
-import { authFetch } from './http'
+import { authFetch, unwrapJson } from './http'
 
 export interface KnowledgeSummary {
   total: number
@@ -31,25 +31,6 @@ export interface KnowledgeProfile {
   items: KnowledgeState[]
 }
 
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
-
-async function unwrap<T>(res: Response, fallback: string): Promise<T> {
-  let payload: ApiResponse<T> | null = null
-  try {
-    payload = (await res.json()) as ApiResponse<T>
-  } catch {
-    // 响应体不是 JSON,用兜底文案
-  }
-  if (!res.ok || !payload || payload.code !== 0) {
-    throw new Error(payload?.message || `${fallback}（HTTP ${res.status}）`)
-  }
-  return payload.data
-}
-
 /** 查询掌握度画像;level 可选 WEAK/LEARNING/MASTERED,domain 为领域名称 */
 export async function getKnowledgeProfile(params: {
   level?: string
@@ -68,5 +49,5 @@ export async function getKnowledgeProfile(params: {
   } catch {
     throw new Error('无法连接服务器，请确认后端已启动')
   }
-  return unwrap<KnowledgeProfile>(res, '加载掌握度画像失败')
+  return unwrapJson<KnowledgeProfile>(res, '加载掌握度画像失败')
 }

@@ -1,3 +1,4 @@
+import { errMessage } from '../utils/error'
 import { AlertCircle, FileText, Loader2, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
@@ -378,8 +379,5 @@ function toSummary(detail: ResumeDetail): ResumeSummary {
   }
 }
 
-function errMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '操作失败，请稍后重试'
-}
 
 export default ResumePage
