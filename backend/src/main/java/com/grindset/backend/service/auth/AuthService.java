@@ -7,7 +7,7 @@ import com.grindset.backend.entity.auth.UserIdentity;
 import com.grindset.backend.mapper.auth.UserMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.regex.Pattern;
 
@@ -40,46 +40,55 @@ public class AuthService {
     private final SnowflakeIdGenerator idGenerator;
     private final LoginRateLimiter loginRateLimiter;
     private final RegisterRateLimiter registerRateLimiter;
+    private final TransactionTemplate transactionTemplate;
 
     public AuthService(UserMapper userMapper, IdentityService identityService,
                        PasswordEncoder passwordEncoder, SnowflakeIdGenerator idGenerator,
-                       LoginRateLimiter loginRateLimiter, RegisterRateLimiter registerRateLimiter) {
+                       LoginRateLimiter loginRateLimiter, RegisterRateLimiter registerRateLimiter,
+                       TransactionTemplate transactionTemplate) {
         this.userMapper = userMapper;
         this.identityService = identityService;
         this.passwordEncoder = passwordEncoder;
         this.idGenerator = idGenerator;
         this.loginRateLimiter = loginRateLimiter;
         this.registerRateLimiter = registerRateLimiter;
+        this.transactionTemplate = transactionTemplate;
     }
 
     /**
      * 账号密码注册。建 user + 一条 LOCAL identity。
      * 按来源 IP 限流 10 次/小时,入参校验通过后计数(垃圾请求不消耗额度)。
+     * 限流和 BCrypt(约 100ms)都在事务外执行,避免 CPU/Redis 操作占着数据库连接;
+     * 事务只覆盖两次 insert。
      * @return 新建用户的 id
      */
-    @Transactional
     public Long register(String account, String rawPassword, String clientIp) {
         validateCredentials(account, rawPassword);
         registerRateLimiter.check(clientIp);
 
-        // 先查一次,给出友好提示(唯一索引是并发下的最后防线)
+        // 先查一次,重复账号直接失败,不白烧一次 BCrypt(唯一索引仍是并发下的最后防线)
         if (identityService.findLocal(account) != null) {
             throw new BizException(409, "该邮箱已存在");
         }
 
-        // 建用户
-        User user = new User();
-        user.setId(idGenerator.nextId());
-        //todo:用户默认昵称是邮箱,后续加接口昵称可变
-        user.setNickname(account);
-        user.setEmail(account);
-        user.setStatus(ACTIVE);
-        userMapper.insert(user);
+        // BCrypt 是纯 CPU 计算,放在事务外完成
+        String passwordHash = passwordEncoder.encode(rawPassword);
 
-        // 建 LOCAL 登录身份,密码 BCrypt 加密后存
-        identityService.createLocal(user.getId(), account, passwordEncoder.encode(rawPassword));
+        return transactionTemplate.execute(status -> {
+            // 建用户
+            User user = new User();
+            user.setId(idGenerator.nextId());
+            //todo:用户默认昵称是邮箱,后续加接口昵称可变
+            user.setNickname(account);
+            user.setEmail(account);
+            user.setStatus(ACTIVE);
+            userMapper.insert(user);
 
-        return user.getId();
+            // 建 LOCAL 登录身份,密码用事务外算好的 BCrypt 密文
+            identityService.createLocal(user.getId(), account, passwordHash);
+
+            return user.getId();
+        });
     }
 
     /**
