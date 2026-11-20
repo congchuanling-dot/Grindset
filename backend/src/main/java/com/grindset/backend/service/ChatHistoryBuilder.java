@@ -21,8 +21,17 @@ public final class ChatHistoryBuilder {
     private ChatHistoryBuilder() {
     }
 
+    /**
+     * 校验并裁剪历史消息。
+     *
+     * <p>首页对话允许任意结尾(用户可能只发了半段历史);Agent 必须保证最后一条是用户提问,
+     * 否则模型会接着助手的话继续往下说,所以需要 requireLastUser 这个开关。</p>
+     *
+     * <p>systemPrompt 传 null 表示不注入:Agent 用自己的决策提示词,首页对话用 app.llm.system-prompt。</p>
+     */
     public static List<ChatMessage> build(List<ChatRequest.Message> raw, int maxHistory,
                                           String systemPrompt, boolean requireLastUser) {
+        // 先卡请求规模,避免超大请求直接转发给模型
         if (raw == null || raw.isEmpty()) {
             throw new BizException(ErrorCode.BAD_REQUEST, "消息不能为空");
         }
@@ -31,14 +40,17 @@ public final class ChatHistoryBuilder {
         }
 
         List<ChatMessage> result = new ArrayList<>();
+        // system 只放一条,且必须在最前面
         if (systemPrompt != null && !systemPrompt.isBlank()) {
             result.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, systemPrompt));
         }
 
+        // 只保留最近 maxHistory 条,更早的历史直接丢
         int from = Math.max(0, raw.size() - Math.max(1, maxHistory));
         for (int i = from; i < raw.size(); i++) {
             ChatRequest.Message item = raw.get(i);
             String role = Texts.strip(item.getRole());
+            // 逐条校验角色和内容,任何一条不合法整单拒绝,不把脏数据发给模型
             if (!ChatMessage.ROLE_USER.equals(role) && !ChatMessage.ROLE_ASSISTANT.equals(role)) {
                 throw new BizException(ErrorCode.BAD_REQUEST, "消息角色不合法");
             }
@@ -52,6 +64,7 @@ public final class ChatHistoryBuilder {
             result.add(new ChatMessage(role, content));
         }
 
+        // Agent 要求最后一条是提问,否则模型会接着助手的话往下说
         if (requireLastUser
                 && !ChatMessage.ROLE_USER.equals(result.get(result.size() - 1).role())) {
             throw new BizException(ErrorCode.BAD_REQUEST, "最后一条消息必须是提问");

@@ -162,6 +162,7 @@ export async function streamNextQuestion(
     throw new Error('无法连接服务器，请确认后端已启动')
   }
 
+  // 参数/权限错误是普通 JSON,只有正常出题才是 200 + SSE
   if (!res.ok) {
     throw new Error(await readApiError(res, '生成题目失败'))
   }
@@ -174,6 +175,7 @@ export async function streamNextQuestion(
       handlers.onError(readField(data, 'message') || '生成题目失败，请重试')
       return true
     } else if (event === 'done') {
+      // done 带 questionId / seq,前端拿到就能直接渲染,不用再查一次详情
       const questionId = readField(data, 'questionId')
       const seq = Number(readField(data, 'seq'))
       if (questionId) handlers.onDone?.({ questionId, seq: Number.isFinite(seq) ? seq : 0 })

@@ -6,6 +6,9 @@ import java.util.List;
  * 对话中的一条消息。
  * 普通文本消息只有 role/content;助手发起工具调用时带 toolCalls,
  * 工具执行结果用 ROLE_TOOL + toolCallId。
+ *
+ * <p>toolCalls 和 toolCallId 互斥:前者只在 assistant 消息上,后者只在 tool 消息上。
+ * 合成一个 record 是为了让"调用"和"结果"在同一条消息链里按 id 配对,序列化时不容易漏。</p>
  */
 public record ChatMessage(String role, String content,
                           List<LlmToolCall> toolCalls, String toolCallId) {

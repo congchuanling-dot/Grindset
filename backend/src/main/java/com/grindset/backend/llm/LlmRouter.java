@@ -34,6 +34,8 @@ public class LlmRouter {
                        Consumer<String> onDelta) {
         LlmException last = null;
         for (LlmTarget target : targets) {
+            // started 一旦为 true,说明已经给前端吐过字;此后失败不能换 key,
+            // 否则新 key 会从头再生成一遍,用户会看到重复内容
             boolean[] started = {false};
             try {
                 client.streamChat(target, model, messages, text -> {
@@ -50,6 +52,7 @@ public class LlmRouter {
                 log.warn("模型调用失败,尝试下一个 key provider={} keyId={} reason={}",
                         target.providerId(), target.keyId(), e.getMessage());
                 last = e;
+                // 失败累计,连续失败会进入冷却;鉴权失败会被自动停用
                 keyService.markFailed(target.keyId(), e.getUpstreamStatus());
             }
         }
@@ -72,12 +75,14 @@ public class LlmRouter {
         for (LlmTarget target : targets) {
             try {
                 LlmCompletion result = client.completeWithTools(target, model, messages, tools);
+                // 记录使用时间,多 key 轮询靠它把"最久未用"排到前面
                 keyService.markUsed(target.keyId());
                 return result;
             } catch (LlmException e) {
                 log.warn("模型调用失败,尝试下一个 key provider={} keyId={} reason={}",
                         target.providerId(), target.keyId(), e.getMessage());
                 last = e;
+                // 非流式没有"已经输出一半"的问题,失败可以直接换下一把 key
                 keyService.markFailed(target.keyId(), e.getUpstreamStatus());
             }
         }

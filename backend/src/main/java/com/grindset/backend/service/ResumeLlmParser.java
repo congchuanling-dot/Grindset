@@ -51,21 +51,24 @@ public class ResumeLlmParser {
 
     /**
      * 同步解析一份简历文本。
-     * 模型调用失败直接抛出;JSON 不合法时带提示重试一次,仍失败返回 502。
+     * 模型调用失败直接抛出;JSON 不合法由 LlmJsonService 带提示重试一次,仍失败返回 502。
+     * 这里只负责 prompt 和 normalize,不再自己维护重试逻辑。
      */
     public ParseResult parse(String text) {
         ModelCatalogService.SelectedModel selection = selectModel();
+        // prompt 只负责"告诉模型输出什么结构 + 塞原文";解析、重试、错误文案都交给 LlmJsonService
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, SYSTEM_PROMPT));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER, userPrompt(text)));
 
+        // normalize 会降级未知章节、夹取熟练度、丢掉空章节;模型输出不能直接落库
         ParsedResume resume = llmJson.call(selection.targets(), selection.model(), messages,
                 raw -> normalize(llmJson.parse(raw, ParsedResume.class)),
                 "AI 解析结果异常,请稍后重试");
         return new ParseResult(resume, selection.model());
     }
 
-    /** 选择解析模型:配置完整就用配置,否则取第一个可用模型 */
+    /** 配置优先,不配就取第一个可用模型;配置只填一半直接报 502,避免悄悄跑错模型 */
     private ModelCatalogService.SelectedModel selectModel() {
         ResumeProperties.Llm config = properties.getLlm();
         return catalog.selectTargets(config.getProvider(), config.getModel(), "简历解析");

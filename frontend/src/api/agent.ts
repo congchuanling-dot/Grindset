@@ -53,6 +53,7 @@ export async function streamAgentChat(
   }
 
   await readSse(res, ({ event, data }) => {
+    // status 只是阶段性提示,不参与结构化数据处理
     if (event === 'status') {
       const text = readField(data, 'text')
       if (text) handlers.onStatus(text)
@@ -63,6 +64,7 @@ export async function streamAgentChat(
     if (!payload) return
 
     if (event === 'tool_call') {
+      // 先插一张"运行中"的卡片,等 tool_result 再按 id 改成完成/失败
       handlers.onToolCall({
         id: readString(payload, 'id'),
         name: readString(payload, 'name'),
@@ -71,10 +73,12 @@ export async function streamAgentChat(
         status: 'running',
       })
     } else if (event === 'tool_result') {
+      // 按 id 更新对应卡片,不依赖事件到达顺序
       const id = readString(payload, 'id')
       if (!id) return
       handlers.onToolResult(id, payload.ok === true, readString(payload, 'summary'))
     } else if (event === 'delta') {
+      // 最终回答的增量文本
       const text = readString(payload, 'text')
       if (text) handlers.onDelta(text)
     } else if (event === 'error') {

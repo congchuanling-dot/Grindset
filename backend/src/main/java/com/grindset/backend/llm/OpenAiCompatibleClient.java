@@ -52,10 +52,15 @@ public class OpenAiCompatibleClient implements LlmClient {
                 .build();
     }
 
+    /**
+     * 流式只说人话,不处理 tools:工具调用必须一次性拿到完整的 tool_calls,
+     * 流式边吐字边调工具做不到,所以工具场景统一走 completeWithTools。
+     */
     @Override
     public void streamChat(LlmTarget target, String model, List<ChatMessage> messages,
                            Consumer<String> onDelta) {
         String url = trimTrailingSlash(target.baseUrl()) + "/chat/completions";
+        // 流式请求不带 tools:工具调用必须一次性拿完整 tool_calls,见类注释
         String body = buildRequestBody(model, messages, true, List.of());
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -83,6 +88,7 @@ public class OpenAiCompatibleClient implements LlmClient {
              BufferedReader reader = new BufferedReader(
                      new InputStreamReader(in, StandardCharsets.UTF_8))) {
 
+            // 4xx/5xx 时上游返回的是普通 JSON,先读完再映射成中文错误,避免连接泄漏
             if (response.statusCode() >= 400) {
                 String errBody = readAll(reader);
                 log.warn("模型服务返回错误 provider={} status={} body={}",
@@ -100,9 +106,11 @@ public class OpenAiCompatibleClient implements LlmClient {
                 if (data.isEmpty()) {
                     continue;
                 }
+                // [DONE] 是协议约定的正常结束标记,不是业务数据
                 if ("[DONE]".equals(data)) {
                     break;
                 }
+                // 一条 data 可能只有 role / finish_reason,没有文本;解析结果为空就跳过
                 for (String text : parseDelta(data, target.providerId())) {
                     onDelta.accept(text);
                 }
@@ -113,6 +121,10 @@ public class OpenAiCompatibleClient implements LlmClient {
         }
     }
 
+    /**
+     * 唯一的非流式入口:普通文本场景(简历/面试)和 Agent 决策都走这里。
+     * 没有工具时 tools 传空,返回的 toolCalls 也为空。
+     */
     @Override
     public LlmCompletion completeWithTools(LlmTarget target, String model, List<ChatMessage> messages,
                                            List<Map<String, Object>> tools) {
@@ -145,6 +157,7 @@ public class OpenAiCompatibleClient implements LlmClient {
             throw mapUpstreamError(target, response.statusCode(), response.body());
         }
 
+        // 上游 HTTP 200 也可能返回非 JSON(网关错误页等),先统一转成 JSON 树
         JsonNode root;
         try {
             root = objectMapper.readTree(response.body());
@@ -159,6 +172,8 @@ public class OpenAiCompatibleClient implements LlmClient {
         }
 
         JsonNode message = root.path("choices").path(0).path("message");
+        // 模型调工具时 content 可能是 null,不能按普通文本响应处理;
+        // tool_calls 里的 arguments 是 JSON 字符串,这里原样带回,解析交给上层
         String content = message.path("content").isTextual() ? message.path("content").asText() : "";
         List<LlmToolCall> calls = new ArrayList<>();
         JsonNode toolCalls = message.path("tool_calls");
@@ -169,6 +184,7 @@ public class OpenAiCompatibleClient implements LlmClient {
                     continue;
                 }
                 String id = node.path("id").asText("");
+                // 少数渠道不返回 id,补一个稳定的本地 id,保证 assistant/tool 两边能对上
                 if (id.isBlank()) {
                     id = "call_" + calls.size();
                 }
@@ -177,6 +193,7 @@ public class OpenAiCompatibleClient implements LlmClient {
             }
         }
 
+        // 正文和工具调用都空,说明上游返回了空壳,不能让上层拿到空结果
         if (content.isBlank() && calls.isEmpty()) {
             throw new LlmException(502, "模型服务返回内容为空,请稍后再试");
         }
@@ -194,12 +211,14 @@ public class OpenAiCompatibleClient implements LlmClient {
             return List.of();
         }
 
+        // 流里也可能夹错误帧;遇到要立刻中断,不能当成空 delta 吞掉
         JsonNode error = root.path("error");
         if (!error.isMissingNode() && !error.isNull()) {
             String message = error.path("message").asText("模型服务返回错误");
             throw new LlmException(502, message);
         }
 
+        // 只取 delta.content;reasoning_content / role 这些不需要下发给前端
         JsonNode content = root.path("choices").path(0).path("delta").path("content");
         if (content.isTextual() && !content.asText().isEmpty()) {
             return List.of(content.asText());
@@ -207,16 +226,25 @@ public class OpenAiCompatibleClient implements LlmClient {
         return List.of();
     }
 
+    /**
+     * 按 OpenAI 协议拼请求体。消息有三种形态:
+     * 1. 普通消息:role + content;
+     * 2. 助手工具调用:content 用空串(部分国产厂商不接受 null)+ tool_calls;
+     * 3. 工具结果:role=tool + tool_call_id + content,id 必须和上面的调用一一对应。
+     */
     private String buildRequestBody(String model, List<ChatMessage> messages, boolean stream,
                                     List<Map<String, Object>> tools) {
         List<Map<String, Object>> payloadMessages = new ArrayList<>(messages.size());
         for (ChatMessage message : messages) {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("role", message.role());
+            // 顺序不能乱:先判 tool 消息,再判 assistant 的 tool_calls,最后才是普通消息
             if (ChatMessage.ROLE_TOOL.equals(message.role())) {
+                // 工具结果必须带 id,上游靠它把结果和上一轮的调用对上
                 item.put("tool_call_id", message.toolCallId());
                 item.put("content", message.content() == null ? "" : message.content());
             } else if (message.toolCalls() != null && !message.toolCalls().isEmpty()) {
+                // assistant 要把上一轮调用清单原样带回,content 置空即可
                 item.put("content", message.content() == null ? "" : message.content());
                 List<Map<String, Object>> calls = new ArrayList<>(message.toolCalls().size());
                 for (LlmToolCall call : message.toolCalls()) {
@@ -238,6 +266,7 @@ public class OpenAiCompatibleClient implements LlmClient {
         payload.put("model", model);
         payload.put("messages", payloadMessages);
         payload.put("stream", stream);
+        // 只有 Agent 决策轮会传 tools;普通对话不传,避免模型突然想调工具
         if (tools != null && !tools.isEmpty()) {
             payload.put("tools", tools);
         }

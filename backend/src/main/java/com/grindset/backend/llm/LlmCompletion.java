@@ -8,6 +8,7 @@ import java.util.List;
  */
 public record LlmCompletion(String content, List<LlmToolCall> toolCalls) {
 
+    /** 这一轮是否要执行工具;false 表示模型已经给出最终回答 */
     public boolean hasToolCalls() {
         return toolCalls != null && !toolCalls.isEmpty();
     }

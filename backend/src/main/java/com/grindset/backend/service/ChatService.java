@@ -37,6 +37,13 @@ public class ChatService {
      * 校验并开始流式对话,每个增量片段回调 onDelta。
      * 参数问题抛 BizException(400),上游问题由 LlmRouter 抛 LlmException。
      */
+    /**
+     * 校验并开始流式对话,每个增量片段回调 onDelta。
+     * 参数问题抛 BizException(400),上游问题由 LlmRouter 抛 LlmException。
+     *
+     * <p>选模型/渠道统一走 ModelCatalogService,历史消息统一走 ChatHistoryBuilder,
+     * 不再和 Agent 各维护一套校验。</p>
+     */
     public void stream(ChatRequest request, Consumer<String> onDelta) {
         String model = Texts.strip(request.getModel());
         List<LlmTarget> targets = catalog.requireTargets(Texts.strip(request.getProvider()), model);

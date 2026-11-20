@@ -18,6 +18,7 @@ public class AgentToolRegistry {
 
     public AgentToolRegistry(List<AgentTool> agentTools) {
         for (AgentTool tool : agentTools) {
+            // 启动时就去重:工具名冲突直接让应用起不来,比运行到一半才发现好
             AgentTool previous = tools.put(tool.name(), tool);
             if (previous != null) {
                 throw new IllegalStateException("Agent 工具名重复:" + tool.name());
@@ -25,7 +26,10 @@ public class AgentToolRegistry {
         }
     }
 
-    /** OpenAI function calling 协议的 tools 数组 */
+    /**
+     * 由注册表统一生成 tools 载荷:工具名、说明、schema 只有实现类一个来源,
+     * 不需要再在提示词里手抄一遍,新增工具也不会漏。
+     */
     public List<Map<String, Object>> toolDefinitions() {
         List<Map<String, Object>> definitions = new ArrayList<>(tools.size());
         for (AgentTool tool : tools.values()) {

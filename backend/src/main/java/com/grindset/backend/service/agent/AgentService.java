@@ -30,8 +30,12 @@ import static com.grindset.backend.service.agent.AgentConstants.MAX_TOOL_CALLS_P
 import static com.grindset.backend.service.agent.AgentConstants.MAX_TOTAL_TOOL_CALLS;
 
 /**
- * Agent 主循环:模型通过 function calling 自主决定调工具还是回答,
- * 工具结果回填后继续循环;模型不再调用工具时,再用一次流式调用生成正文。
+ * Agent 主循环:模型通过 function calling 自主决定调工具还是回答,工具结果回填后继续循环。
+ *
+ * <p>为什么是两段调用:决策轮必须非流式,因为只有拿到完整的 tool_calls 才能执行工具,
+ * 而流式一旦开始吐字就不能回头调工具;模型不再调工具时,再用一次流式调用生成正文。</p>
+ *
+ * <p>硬性约束:每个 tool_call_id 都必须有一条对应的 tool 消息,否则下一轮请求会被上游拒绝。</p>
  */
 @Service
 public class AgentService {
@@ -56,23 +60,30 @@ public class AgentService {
     /**
      * 跑一整轮 Agent 交互,过程中通过 sink 下发事件。
      * 参数问题抛 BizException(400);上游模型问题抛 LlmException,由 Controller 转成 error 事件。
+     *
+     * <p>工具执行失败不会中断循环:失败结果同样作为 tool 消息回填,由模型自己决定换参数还是收尾。</p>
      */
     public void stream(long userId, ChatRequest request, AgentStreamSink sink) {
         String providerId = Texts.strip(request.getProvider());
         String model = Texts.strip(request.getModel());
         List<LlmTarget> targets = catalog.requireTargets(providerId, model);
 
+        // 用 Agent 自己的提示词,不注入首页对话的 app.llm.system-prompt;
+        // 历史消息只做校验和裁剪,并要求最后一条是用户提问
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, decisionPrompt()));
         messages.addAll(ChatHistoryBuilder.build(request.getMessages(),
                 properties.getMaxHistoryMessages(), null, true));
 
+        // 工具 schema 走 function calling 的 tools 参数,不拼进提示词,避免和实际实现漂移
         List<Map<String, Object>> tools = registry.toolDefinitions();
         Set<String> seenCalls = new HashSet<>();
         long deadline = System.currentTimeMillis() + MAX_RUN_MILLIS;
         int totalCalls = 0;
         int round = 0;
 
+        // 模型可能反复调工具,用轮数 / 总调用数 / 总耗时三道闸兜底;
+        // 任一触发都带着已有结果去回答,不把"查不完"变成报错
         while (true) {
             if (round >= MAX_ROUNDS || System.currentTimeMillis() > deadline) {
                 break;
@@ -80,17 +91,25 @@ public class AgentService {
             round++;
             sink.status(round == 1 ? "正在分析你的问题…" : "正在整理查询结果…");
 
+            // 每轮都先裁上下文:工具结果会不断追加,不裁迟早超过模型窗口
             trimContext(messages);
+            // 决策轮必须非流式:只有拿到完整的 tool_calls 才能决定执行哪些工具
             LlmCompletion completion = router.completeWithTools(targets, model, messages, tools);
             if (!completion.hasToolCalls()) {
-                // 决策轮的正文直接丢弃,统一交给下面的流式回答
+                // 没有工具调用 = 模型认为信息够了。决策轮的正文不完整、也不该带回答格式,
+                // 直接丢弃,统一交给下面的流式回答
                 break;
             }
 
             List<LlmToolCall> calls = completion.toolCalls();
+            // 必须原样保留模型这一轮的 tool_calls(含 id),下面的 tool 消息才能按 id 对上;
+            // 漏掉任何一个 id,下一轮请求都会被上游判为非法消息序列
             messages.add(ChatMessage.assistantToolCalls(calls));
 
             int callsThisRound = 0;
+            // 单轮和总次数都要卡:模型一次返回 10 个调用时不能全跑
+            // 注意:下面每个失败分支都必须补一条 tool 消息。
+            // 协议要求每个 tool_call_id 都有结果,不能因为参数坏了 / 工具不存在 / 超限就静默跳过
             for (LlmToolCall call : calls) {
                 String argsText = call.arguments() == null || call.arguments().isBlank()
                         ? "{}" : call.arguments().strip();
@@ -104,6 +123,7 @@ public class AgentService {
                     messages.add(ChatMessage.toolResult(call.id(), "工具 " + call.name() + " 不存在"));
                     continue;
                 }
+                // 按 "工具名|原始参数" 去重,防止模型换个说法把同一个查询刷很多次
                 if (!seenCalls.add(call.name() + "|" + argsText)) {
                     messages.add(ChatMessage.toolResult(call.id(), "相同参数已经查询过,不要重复调用"));
                     continue;
@@ -118,6 +138,7 @@ public class AgentService {
                 log.info("Agent 调用工具 userId={} tool={} args={}", userId, tool.name(), args);
                 sink.toolCall(call.id(), tool.name(), tool.label(), args);
 
+                // 工具异常不往外抛:转成失败结果回填,让模型自己决定换参数、换工具还是直接收尾
                 AgentToolResult result;
                 try {
                     result = tool.execute(userId, args);
@@ -132,12 +153,14 @@ public class AgentService {
         }
 
         sink.status("正在生成回答…");
+        // 复用同一份消息(含真实工具结果),只把最前面的 system 换成回答提示词;
+        // 这样模型能看到查询结果,又不会被"继续调工具"的规则干扰
         messages.set(0, new ChatMessage(ChatMessage.ROLE_SYSTEM, answerPrompt()));
         trimContext(messages);
         router.stream(targets, model, messages, sink::delta);
     }
 
-    /** 决策轮提示词:人设 + 使用规则 + 用户画像(暂未接入) */
+    /** 决策轮提示词:人设 + 使用规则 + 画像。工具 schema 不写在这里,由 tools 参数提供 */
     private String decisionPrompt() {
         StringBuilder prompt = new StringBuilder("""
                 你是 Grindset 的面试复习助手,可以调用工具查询当前用户的真实学习数据。
@@ -181,14 +204,18 @@ public class AgentService {
     }
 
     /**
-     * 上下文超长时按完整 turn 整组丢弃:助手工具调用 + 后续工具结果算一组,
-     * 普通消息每条算一组。保留最后 3 组和最后一条用户消息。
+     * 上下文超长时按完整 turn 整组丢弃。
+     *
+     * <p>一个 turn = assistant(tool_calls) + 紧随其后的所有 tool 消息。必须整组丢:
+     * 只丢半组会留下没有结果的 tool_call_id,上游直接 400。
+     * 普通 user / assistant 每条算一组;保留最近 3 组,且永远不丢最后一条用户提问。</p>
      */
     private void trimContext(List<ChatMessage> messages) {
         if (messages.size() <= 4 || totalChars(messages) <= MAX_CONTEXT_CHARS) {
             return;
         }
 
+        // 从 system 之后开始切组,[start, end) 记录原始下标,后面按组删除
         List<int[]> groups = new ArrayList<>();
         int index = 1;
         while (index < messages.size()) {
@@ -197,6 +224,7 @@ public class AgentService {
             index++;
             if (ChatMessage.ROLE_ASSISTANT.equals(message.role())
                     && message.toolCalls() != null && !message.toolCalls().isEmpty()) {
+                // assistant 带 tool_calls 时,把后面连续的 tool 消息一起并进这一组
                 while (index < messages.size() && ChatMessage.ROLE_TOOL.equals(messages.get(index).role())) {
                     index++;
                 }
@@ -207,6 +235,7 @@ public class AgentService {
             return;
         }
 
+        // 最后一条用户消息就是本次提问,任何情况下都要留着,否则模型不知道在回答什么
         int lastUser = -1;
         for (int i = messages.size() - 1; i >= 1; i--) {
             if (ChatMessage.ROLE_USER.equals(messages.get(i).role())) {
@@ -215,6 +244,7 @@ public class AgentService {
             }
         }
 
+        // 从最老的组开始丢,字符数降到阈值以下就停;最后 3 组永远不参与丢弃
         List<int[]> removed = new ArrayList<>();
         int chars = totalChars(messages);
         for (int g = 0; g < groups.size() - 3 && chars > MAX_CONTEXT_CHARS; g++) {
@@ -236,6 +266,7 @@ public class AgentService {
         }
     }
 
+    /** 粗略按字符数估算上下文长度,不引 tokenizer,够用且零依赖 */
     private static int totalChars(List<ChatMessage> messages) {
         int total = 0;
         for (ChatMessage message : messages) {
@@ -244,6 +275,7 @@ public class AgentService {
         return total;
     }
 
+    /** 模型给的 arguments 是 JSON 字符串,可能带脏数据;解析失败返回 null,由调用方回错误 tool 消息 */
     private Map<String, Object> parseArgs(String text) {
         try {
             return objectMapper.readValue(text, new TypeReference<Map<String, Object>>() {
@@ -254,6 +286,7 @@ public class AgentService {
         }
     }
 
+    /** 工具数据序列化成 tool 消息内容;序列化失败也要给个字符串,不能让整轮对话挂掉 */
     private String toJson(Object data) {
         if (data == null) {
             return "{}";

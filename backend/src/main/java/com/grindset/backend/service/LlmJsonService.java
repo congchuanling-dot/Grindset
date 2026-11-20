@@ -34,9 +34,13 @@ public class LlmJsonService {
         this.objectMapper = objectMapper;
     }
 
-    /** 解析模型输出:去掉代码块围栏,截取第一个 { 到最后一个 },失败抛 502 */
+    /**
+     * 解析模型输出:去掉代码块围栏,截取第一个 { 到最后一个 }。
+     * 不要求模型输出纯 JSON:很多模型会带 ```json 或前后解释,这里统一兜住。
+     */
     public <T> T parse(String raw, Class<T> type) {
         String text = raw == null ? "" : raw.strip();
+        // 模型经常套 ```json ... ```,先剥围栏
         if (text.startsWith("```")) {
             int newline = text.indexOf('\n');
             if (newline >= 0) {
@@ -46,6 +50,7 @@ public class LlmJsonService {
                 text = text.substring(0, text.length() - 3);
             }
         }
+        // 有的模型会先说"结果如下:"再给 JSON,取最外层大括号之间的内容
         int start = text.indexOf('{');
         int end = text.lastIndexOf('}');
         if (start < 0 || end <= start) {
@@ -65,14 +70,19 @@ public class LlmJsonService {
     /**
      * 非流式调用 + 解析,失败时带提示重试一次;仍失败抛 failureMessage。
      * parser 里可以继续做规范化与业务校验,抛 BizException 即视为失败。
+     *
+     * <p>重试时保留模型上一次的原文,再补一条用户提示:必须维持 user/assistant 交替,
+     * 也要让模型看到自己写错了什么,只丢一句"再来一次"没有用。</p>
      */
     public <T> T call(List<LlmTarget> targets, String model, List<ChatMessage> messages,
                       Function<String, T> parser, String failureMessage) {
+        // 第一次调用
         String raw = router.complete(targets, model, messages);
         try {
             return parser.apply(raw);
         } catch (BizException first) {
             log.warn("{} 结果不合法,准备重试一次,reason={}", failureMessage, first.getMessage());
+            // 把模型上次原文和失败原因一起回填再试;仍失败只报业务文案,不把解析细节抛给前端
             messages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, raw));
             messages.add(new ChatMessage(ChatMessage.ROLE_USER,
                     String.format(RETRY_HINT, first.getMessage())));
@@ -85,9 +95,10 @@ public class LlmJsonService {
         }
     }
 
-    /** 不重试的单次调用 */
+    /** 不重试的单次调用:用于失败可以直接报错、或重试没有意义的场景 */
     public <T> T callOnce(List<LlmTarget> targets, String model, List<ChatMessage> messages,
                           Function<String, T> parser, String failureMessage) {
+        // 不重试:失败直接把底层异常换成业务文案
         try {
             return parser.apply(router.complete(targets, model, messages));
         } catch (BizException e) {

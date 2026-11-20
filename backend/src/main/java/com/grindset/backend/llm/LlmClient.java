@@ -24,6 +24,9 @@ public interface LlmClient {
      * 非流式调用,附带 function calling 的工具定义。
      * 返回正文和工具调用,两者至少有一个非空。
      *
+     * <p>工具调用不走 streamChat:决策轮必须拿到完整的 tool_calls 才能执行,
+     * 而流式一旦开始吐字就不能回头调工具,所以这里只提供非流式版本。</p>
+     *
      * @param tools OpenAI 协议的 tools 数组,为空表示不启用工具
      */
     LlmCompletion completeWithTools(LlmTarget target, String model, List<ChatMessage> messages,

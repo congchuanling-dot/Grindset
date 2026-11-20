@@ -82,12 +82,16 @@ public class InterviewController {
         return ApiResponse.ok(sessionService.detail(userId(loginUser), id));
     }
 
-    /** 出题走 SSE,和对话页保持一致的 delta / done / error 事件 */
+    /**
+     * 出题走 SSE,和对话页保持一致的 delta / done / error 事件。
+     * done 里额外带 questionId / seq,前端拿到就能直接渲染,不用再查一次详情。
+     */
     @PostMapping("/{id}/questions")
     public SseEmitter nextQuestion(@AuthenticationPrincipal LoginUser loginUser,
                                    @PathVariable long id) {
         long ownerId = userId(loginUser);
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
+        // 出题可能跑几十秒,用虚拟线程挂住,不占 Tomcat 平台线程
         Thread.ofVirtual().name("interview-sse-", 0).start(() -> runQuestion(ownerId, id, emitter));
         return emitter;
     }

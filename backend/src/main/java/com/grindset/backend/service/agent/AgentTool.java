@@ -5,6 +5,9 @@ import java.util.Map;
 /**
  * Agent 可调用的只读工具。实现类只负责查询,不接收前端传入的 userId,
  * 统一由 AgentService 从 JWT 里取,避免越权。
+ *
+ * <p>parameters() 是给模型看的 JSON Schema,description() 是人能读的说明;
+ * 两者都不写死在提示词里,由 AgentToolRegistry 统一生成 tools 载荷,新增工具不会漏。</p>
  */
 public interface AgentTool {
 
@@ -17,7 +20,7 @@ public interface AgentTool {
     /** 给模型看的说明:做什么、返回什么字段 */
     String description();
 
-    /** 入参的 JSON Schema;无参数的工具用默认值即可 */
+    /** 入参 JSON Schema;无参数返回空 properties,不要返回 null */
     default Map<String, Object> parameters() {
         return Map.of("type", "object", "properties", Map.of());
     }

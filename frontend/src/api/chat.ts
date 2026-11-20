@@ -82,6 +82,7 @@ export async function streamChat(
     throw new Error(await readApiError(res, '请求失败'))
   }
 
+  // SSE 里只关心 delta 和 error;done 不需要处理,流结束会自然退出
   await readSse(res, ({ event, data }) => {
     if (event === 'delta') {
       const text = readField(data, 'text')

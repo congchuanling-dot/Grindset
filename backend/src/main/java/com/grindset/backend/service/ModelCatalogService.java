@@ -63,15 +63,20 @@ public class ModelCatalogService {
     /**
      * 前端明确指定厂商和模型时使用(首页对话、Agent)。
      * 参数不合法抛 400,对话接口可以把文案直接返回给前端。
+     *
+     * <p>provider 不存在和 model 不在白名单是两种错误,分开报,前端才知道是换厂商还是换模型。</p>
      */
     public List<LlmTarget> requireTargets(String providerId, String model) {
+        // 一次 load 拿到全部渠道,避免按 provider 重复查库
         Catalog catalog = load();
         List<CatalogChannel> channels =
                 catalog.channelsByProvider().getOrDefault(providerId, List.of());
+        // provider 本身不在目录里
         if (channels.isEmpty()) {
             throw new BizException(ErrorCode.BAD_REQUEST, "不支持的模型服务:" + providerId);
         }
         List<LlmTarget> targets = toTargets(channels, providerId, model);
+        // provider 存在,但 model 不在它的白名单里
         if (targets.isEmpty()) {
             throw new BizException(ErrorCode.BAD_REQUEST, "不支持的模型:" + model);
         }
@@ -81,16 +86,21 @@ public class ModelCatalogService {
     /**
      * 服务端场景选模型(简历解析、AI 面试):配置优先,否则取第一个可用模型。
      * 配置不完整或没有可用模型时抛 502,scenario 用于拼错误文案。
+     *
+     * <p>只 load 一次目录:原来每个候选模型都重新查三张表,provider 一多就是 N+1。</p>
      */
     public SelectedModel selectTargets(String provider, String model, String scenario) {
         String providerId = provider == null ? "" : provider.strip();
         String modelId = model == null ? "" : model.strip();
+        // provider/model 只填一个视为配置错误,不能猜
         if (providerId.isEmpty() != modelId.isEmpty()) {
             throw new BizException(ErrorCode.BAD_GATEWAY,
                     scenario + "模型配置不完整,请同时配置 provider 与 model");
         }
 
+        // 只 load 一次,下面按目录顺序找
         Catalog catalog = load();
+        // 显式配置了就用配置,拿不到可用 key 直接报错,不偷偷降级
         if (!providerId.isEmpty()) {
             List<LlmTarget> targets = toTargets(
                     catalog.channelsByProvider().getOrDefault(providerId, List.of()),
@@ -102,6 +112,7 @@ public class ModelCatalogService {
             return new SelectedModel(targets, modelId);
         }
 
+        // 没配置:按目录顺序取第一个有 key 且有模型的,保证新环境零配置可用
         for (ProviderInfo info : catalog.providers()) {
             for (ModelInfo modelInfo : info.models()) {
                 List<LlmTarget> targets = toTargets(
@@ -115,14 +126,17 @@ public class ModelCatalogService {
         throw new BizException(ErrorCode.BAD_GATEWAY, "未配置可用的模型服务");
     }
 
+    /** 一个 key 一个候选目标:LlmRouter 会按顺序换 key 重试,所以这里不能提前合并 */
     private static List<LlmTarget> toTargets(List<CatalogChannel> channels,
                                              String providerId, String model) {
         List<LlmTarget> targets = new ArrayList<>();
         for (CatalogChannel channel : channels) {
+            // 渠道按优先级排过序,不支持该模型的直接跳过
             if (!channel.supports(model)) {
                 continue;
             }
             for (KeyEntry key : channel.keys()) {
+                // 同一渠道的 key 也按最久未用排序,逐个交给 Router 轮询
                 targets.add(new LlmTarget(providerId, channel.displayName(),
                         channel.baseUrl(), key.apiKey(), key.id()));
             }

@@ -70,10 +70,12 @@ export interface ApiResponse<T> {
 export async function unwrapJson<T>(res: Response, fallback: string): Promise<T> {
   let payload: ApiResponse<T> | null = null
   try {
+    // 错误响应体里通常有更准确的 message,先解析再判断,不要只看 HTTP 状态
     payload = (await res.json()) as ApiResponse<T>
   } catch {
     // 响应体不是 JSON,用兜底文案
   }
+  // HTTP 状态和业务 code 任一失败都算失败
   if (!res.ok || !payload || payload.code !== 0) {
     throw new Error(payload?.message || `${fallback}（HTTP ${res.status}）`)
   }
@@ -86,6 +88,7 @@ export async function readApiError(res: Response, fallback: string): Promise<str
     const payload = (await res.json()) as ApiResponse<unknown>
     return payload?.message || `${fallback}（HTTP ${res.status}）`
   } catch {
+    // 错误分支不能再抛异常,否则会盖掉原始错误
     return `${fallback}（HTTP ${res.status}）`
   }
 }

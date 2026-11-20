@@ -44,6 +44,7 @@ public class AgentController {
     public SseEmitter chat(@AuthenticationPrincipal LoginUser loginUser, @RequestBody ChatRequest request) {
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
         long userId = loginUser.userId();
+        // SSE 会挂住整个请求周期,用虚拟线程,别占满 Tomcat 的工作线程
         Thread.ofVirtual().name("agent-sse-", 0).start(() -> runChat(userId, request, emitter));
         return emitter;
     }
@@ -80,6 +81,7 @@ public class AgentController {
         try {
             emitter.send(SseEmitter.event().name(event).data(objectMapper.writeValueAsString(data)));
         } catch (IOException | IllegalStateException e) {
+            // 响应头已经发出,连接断了也改不了状态码,只能当作客户端已离开
             throw new ClientGoneException();
         }
     }

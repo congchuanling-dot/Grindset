@@ -128,7 +128,10 @@ public class InterviewLlmService {
         this.llmJson = llmJson;
     }
 
-    /** 流式生成第 seq 道主问题,增量回调给上层转发 SSE */
+    /**
+     * 流式生成第 seq 道主问题,增量回调给上层转发 SSE。
+     * 出题是用户等待感最强的环节,必须首字就出,不能等整段生成完再返回。
+     */
     public void streamQuestion(InterviewSession session, String resumeText, int seq,
                                List<String> coveredPoints,
                                List<KnowledgeProfileService.Candidate> candidates,
@@ -144,6 +147,9 @@ public class InterviewLlmService {
     /**
      * 答题后决策:一句话点评 + 是否追问。
      * JSON 不合法或违反次数约束时带提示重试一次,仍失败返回 502。
+     *
+     * <p>追问次数在代码里再校验一次:模型经常无视提示词,不能只靠 prompt 约束。
+     * 追问时 evaluation 可以为空,收束时必须带评分。</p>
      */
     public InterviewTurnDecision decide(InterviewSession session, String resumeText,
                                         InterviewQuestion question, List<InterviewMessage> thread,
@@ -154,17 +160,23 @@ public class InterviewLlmService {
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
                 decisionPrompt(session, resumeText, question, thread, knownPoints)));
 
+        // 解析后先 normalize 兜空值,再校验追问次数;两步都通过才算有效结果,
+        // 否则 LlmJsonService 会带着错误提示重试一次
         return llmJson.call(selection.targets(), selection.model(), messages,
                 raw -> {
                     InterviewTurnDecision decision =
                             normalizeDecision(llmJson.parse(raw, InterviewTurnDecision.class));
+                    // 追问 3 次必须收束,这类硬约束不能只靠提示词
                     validateDecision(decision, followUpCount(question));
                     return decision;
                 },
                 "AI 点评结果异常,请稍后重试");
     }
 
-    /** 决策里缺评分时的兜底:单独再要一次本题评分 */
+    /**
+     * 决策里缺评分时的兜底:模型追问时通常不给 evaluation,
+     * 收束时如果还缺,就用这套更窄的提示词单独要一次评分。
+     */
     public InterviewTurnDecision.Evaluation evaluateOnly(InterviewSession session, String resumeText,
                                                          InterviewQuestion question,
                                                          List<InterviewMessage> thread,
@@ -174,18 +186,20 @@ public class InterviewLlmService {
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, EVALUATE_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
                 decisionPrompt(session, resumeText, question, thread, knownPoints)));
+        // 评分兜底不重试:失败直接报错,避免收束阶段再拖一轮
         return llmJson.callOnce(selection.targets(), selection.model(), messages,
                 raw -> normalizeEvaluation(llmJson.parse(raw, InterviewTurnDecision.Evaluation.class)),
                 "AI 评分结果异常,请稍后重试");
     }
 
-    /** 生成整场复盘报告,失败重试一次 */
+    /** 生成整场复盘报告;threadsText 只包含已收束的题目,未答完的不参与评分 */
     public InterviewReport report(InterviewSession session, String resumeText, String threadsText) {
         ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, REPORT_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
                 reportPrompt(session, resumeText, threadsText)));
+        // 报告字段多,失败重试一次;仍失败就报错,不能返回半成品
         return llmJson.call(selection.targets(), selection.model(), messages,
                 raw -> normalizeReport(llmJson.parse(raw, InterviewReport.class)),
                 "AI 复盘结果异常,请稍后重试");

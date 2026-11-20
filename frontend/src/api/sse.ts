@@ -7,7 +7,8 @@ export interface SseEvent {
 
 /**
  * 逐块读取 SSE 响应,按空行切出事件后回调。
- * onEvent 返回 true 表示让调用方提前结束读取(例如收到 done / error)。
+ * onEvent 返回 true 表示让调用方提前结束读取:
+ * 收到 done / error 就主动 cancel,不能等服务端关连接,否则 UI 会一直卡在"生成中"。
  */
 export async function readSse(
   res: Response,
@@ -25,11 +26,13 @@ export async function readSse(
     for (;;) {
       const { done, value } = await reader.read()
       if (done) break
+      // chunk 边界可能刚好切断一个事件,必须保留半截 buffer 等下一块
       buffer = (buffer + decoder.decode(value, { stream: true })).replace(/\r\n/g, '\n')
 
       // SSE 以空行分隔事件,可能一次读到多个,也可能读到半个
       let index = buffer.indexOf('\n\n')
       while (index >= 0) {
+        // 回调返回 true 表示业务上已经结束(done/error),立刻停止读取
         if (dispatch(buffer.slice(0, index), onEvent)) {
           await reader.cancel().catch(() => undefined)
           return
@@ -55,6 +58,7 @@ function dispatch(chunk: string, onEvent: (event: SseEvent) => boolean | void): 
     if (line.startsWith('event:')) {
       event = line.slice(6).trim()
     } else if (line.startsWith('data:')) {
+      // data 可能有多行,协议要求按换行拼回一个整体再解析
       dataLines.push(line.slice(5).trim())
     }
   }
@@ -63,7 +67,7 @@ function dispatch(chunk: string, onEvent: (event: SseEvent) => boolean | void): 
   return onEvent({ event, data: dataLines.join('\n') }) === true
 }
 
-/** 把 SSE data 解析成对象,失败或不是对象时返回 null */
+/** 把 SSE data 解析成对象;单条脏数据不能打断整个流,失败就返回 null 让调用方跳过 */
 export function readJson(raw: string): Record<string, unknown> | null {
   try {
     const parsed = JSON.parse(raw) as unknown
