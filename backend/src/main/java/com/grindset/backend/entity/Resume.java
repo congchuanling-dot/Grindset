@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 /**
  * resumes 表:一次简历上传对应一条记录。
- * 只保存解析结果和元信息,不保存原件与原始纯文本。
+ * 解析结果落子表;原件存阿里云 OSS 私有桶,这里只保存 object key。
  */
 @TableName("resumes")
 public class Resume {
@@ -24,6 +24,9 @@ public class Resume {
     private String fileType;
 
     private Integer fileSize;
+
+    /** 阿里云 OSS 对象 key;未配置 OSS 或上传失败时为空 */
+    private String originalObjectKey;
 
     private String candidateName;
 
@@ -80,6 +83,14 @@ public class Resume {
 
     public void setFileSize(Integer fileSize) {
         this.fileSize = fileSize;
+    }
+
+    public String getOriginalObjectKey() {
+        return originalObjectKey;
+    }
+
+    public void setOriginalObjectKey(String originalObjectKey) {
+        this.originalObjectKey = originalObjectKey;
     }
 
     public String getCandidateName() {

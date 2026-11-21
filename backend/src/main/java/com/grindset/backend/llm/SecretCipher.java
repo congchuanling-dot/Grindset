@@ -15,11 +15,11 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * API Key 的对称加密。AES-256-GCM,每条密文独立随机 IV,
- * AAD 绑定渠道 ID,防止把 A 渠道的密文搬到 B 渠道也能用。
+ * 数据库敏感凭证的统一对称加密。AES-256-GCM,每条密文独立随机 IV,
+ * AAD 绑定业务行 ID,防止把 A 行的密文搬到 B 行也能用。
  *
- * 主密钥来自 LLM_MASTER_KEY;没配则用 JWT 密钥派生(仅方便本地开发,
- * 生产必须单独配置,否则换 JWT 密钥会导致已存 key 全部解不开)。
+ * 主密钥来自 SECRET_MASTER_KEY;没配则用 JWT 密钥派生
+ * (仅方便本地开发,生产必须单独配置,否则换 JWT 密钥会导致已存密文全部解不开)。
  */
 @Component
 public class SecretCipher {
@@ -33,11 +33,11 @@ public class SecretCipher {
     private final SecureRandom random = new SecureRandom();
     private final SecretKeySpec key;
 
-    public SecretCipher(@Value("${app.llm.master-key:}") String masterKey,
+    public SecretCipher(@Value("${app.secrets.master-key:}") String masterKey,
                         @Value("${app.jwt.secret}") String jwtSecret) {
         boolean fallback = masterKey == null || masterKey.isBlank();
         if (fallback) {
-            log.warn("未配置 LLM_MASTER_KEY,改用 JWT 密钥派生主密钥;生产环境请单独配置");
+            log.warn("未配置 SECRET_MASTER_KEY,改用 JWT 密钥派生主密钥;生产环境请单独配置");
         }
         String seed = fallback ? jwtSecret : masterKey;
         this.key = new SecretKeySpec(sha256(seed), "AES");
@@ -79,7 +79,7 @@ public class SecretCipher {
             cipher.updateAAD(aadBytes(aad));
             return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new LlmException(500, "解密 API Key 失败,请检查 LLM_MASTER_KEY 是否被更换");
+            throw new LlmException(500, "解密凭证失败,请检查 SECRET_MASTER_KEY 是否被更换");
         }
     }
 

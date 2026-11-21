@@ -117,9 +117,12 @@ function ResumePage() {
       setSelectedId(created.id)
       setDetail(created)
       clearOriginal()
-      const url = URL.createObjectURL(file)
-      objectUrlRef.current = url
-      setOriginalUrl(url)
+      // 后端已存到 OSS 时直接用签名 URL；没配 OSS 时保留本地临时预览兜底
+      if (!created.originalUrl) {
+        const url = URL.createObjectURL(file)
+        objectUrlRef.current = url
+        setOriginalUrl(url)
+      }
     } catch (e) {
       setError(errMessage(e))
     } finally {
@@ -158,7 +161,7 @@ function ResumePage() {
           <div>
             <h1 className="text-base font-semibold text-slate-800">简历管理</h1>
             <p className="mt-1 text-xs text-slate-500">
-              上传 PDF / DOCX / MD / TXT，一人可保存多份，随时切换查看解析结果。原件只在本次会话可预览，不落库。
+              上传 PDF / DOCX / MD / TXT，一人可保存多份，随时切换查看解析结果。原件存入私有 OSS，仅通过临时签名链接预览。
             </p>
           </div>
           <button
@@ -348,6 +351,7 @@ function ResumeSwitcher({
 }
 
 function ParseFailedPanel({ detail, onPick }: { detail: ResumeDetail; onPick: () => void }) {
+  const downloadUrl = detail.originalDownloadUrl ?? detail.originalUrl
   return (
     <div className="flex min-h-[420px] flex-col items-center justify-center rounded-xl border border-rose-200 bg-white px-6 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-500">
@@ -357,13 +361,24 @@ function ParseFailedPanel({ detail, onPick }: { detail: ResumeDetail; onPick: ()
       <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
         {detail.errorMsg || '未识别到有效内容，请换一份文字版简历重试。'}
       </p>
-      <button
-        type="button"
-        onClick={onPick}
-        className="mt-5 rounded-lg bg-teal-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
-      >
-        重新上传
-      </button>
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={onPick}
+          className="rounded-lg bg-teal-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
+        >
+          重新上传
+        </button>
+        {downloadUrl && (
+          <a
+            href={downloadUrl}
+            download={detail.fileName}
+            className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+          >
+            下载原件
+          </a>
+        )}
+      </div>
     </div>
   )
 }

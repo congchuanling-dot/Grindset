@@ -6,7 +6,9 @@ import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.dto.ResumeDetail;
 import com.grindset.backend.dto.ResumeSummary;
 import com.grindset.backend.security.LoginUser;
+import com.grindset.backend.service.ResumeOriginalStorage;
 import com.grindset.backend.service.ResumeService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -58,6 +62,26 @@ public class ResumeController {
                                     @PathVariable long id) {
         resumeService.delete(userId(loginUser), id);
         return ApiResponse.ok(null);
+    }
+
+    /**
+     * 代理返回原件,用于 PDF 内嵌预览。
+     * OSS 默认域名会强制下载,所以不能把签名 URL 直接交给 iframe。
+     */
+    @GetMapping("/{id}/original")
+    public void original(@AuthenticationPrincipal LoginUser loginUser,
+                         @PathVariable long id,
+                         HttpServletResponse response) throws IOException {
+        ResumeService.OriginalFile file = resumeService.openOriginal(userId(loginUser), id);
+        response.setContentType(ResumeOriginalStorage.contentTypeOf(file.fileType()));
+        if (file.size() > 0) {
+            response.setContentLengthLong(file.size());
+        }
+        response.setHeader("Content-Disposition", ResumeOriginalStorage.inlineDisposition(file.fileName()));
+        response.setHeader("Cache-Control", "private, max-age=300");
+        try (InputStream in = file.stream()) {
+            in.transferTo(response.getOutputStream());
+        }
     }
 
     private static long userId(LoginUser loginUser) {

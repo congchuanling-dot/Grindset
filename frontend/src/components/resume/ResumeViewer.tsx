@@ -4,13 +4,15 @@ import {
   Download,
   Eye,
   FileText,
+  Loader2,
   Printer,
   RotateCw,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import type { ResumeDetail } from '../../api/resume'
+import { fetchResumeOriginal, type ResumeDetail } from '../../api/resume'
+import { errMessage } from '../../utils/error'
 import ResumePaper from './ResumePaper'
 
 type ViewerTab = 'original' | 'text'
@@ -25,7 +27,7 @@ interface ResumeViewerProps {
 
 /**
  * 简历预览，上传页和 AI 面试页共用同一套视图，避免两处样式/交互分叉。
- * 原件暂不落库，所以除刚上传的当前会话外，「原件」tab 只显示占位。
+ * 原件存 OSS 私有桶，由后端下发带时效的签名 URL；未配置 OSS 时用刚上传的本地地址兜底。
  */
 function ResumeViewer({ detail, originalUrl = null, editable = false }: ResumeViewerProps) {
   const [tab, setTab] = useState<ViewerTab>('text')
@@ -95,7 +97,44 @@ function TabButton({
 }
 
 function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; originalUrl: string | null }) {
-  const canInline = detail.fileType === 'PDF' && originalUrl !== null
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState('')
+
+  // OSS 默认域名会强制下载，PDF 预览改由后端代理取字节再转成本地 blob
+  useEffect(() => {
+    if (originalUrl || detail.fileType !== 'PDF' || !detail.hasOriginal) {
+      setBlobUrl(null)
+      setLoading(false)
+      setLoadError('')
+      return
+    }
+    let cancelled = false
+    let created: string | null = null
+    setLoading(true)
+    setLoadError('')
+    fetchResumeOriginal(detail.id)
+      .then((blob) => {
+        if (cancelled) return
+        created = URL.createObjectURL(blob)
+        setBlobUrl(created)
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setLoadError(errMessage(e))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+      if (created) URL.revokeObjectURL(created)
+    }
+  }, [detail.id, detail.fileType, detail.hasOriginal, originalUrl])
+
+  // 后端签名 URL 优先；本地 ObjectURL 只在未配置 OSS 时兜底
+  const url = originalUrl ?? blobUrl
+  const downloadUrl = url ?? detail.originalDownloadUrl ?? detail.originalUrl
+  const canInline = detail.fileType === 'PDF' && url !== null
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
@@ -118,9 +157,9 @@ function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; origin
           <RotateCw size={15} />
         </ToolbarButton>
         <span className="mx-1 h-4 w-px bg-slate-200" />
-        {originalUrl ? (
+        {downloadUrl ? (
           <a
-            href={originalUrl}
+            href={downloadUrl}
             download={detail.fileName}
             title="下载原件"
             className="rounded p-1.5 transition hover:bg-slate-200/70 hover:text-slate-700"
@@ -128,7 +167,7 @@ function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; origin
             <Download size={15} />
           </a>
         ) : (
-          <ToolbarButton title="原件暂不保存，无法下载">
+          <ToolbarButton title="原件未存储，无法下载">
             <Download size={15} />
           </ToolbarButton>
         )}
@@ -138,18 +177,53 @@ function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; origin
       </div>
 
       <div className="flex flex-1 flex-col">
-        {canInline ? (
+        {loading && !url ? (
+          <div className="flex flex-1 items-center justify-center">
+            <Loader2 size={22} className="animate-spin text-teal-600" />
+          </div>
+        ) : canInline ? (
           <div className="flex-1 overflow-auto bg-slate-100 p-4">
             <iframe
-              src={`${originalUrl}#toolbar=0&navpanes=0&view=FitH`}
+              src={`${url}#toolbar=0&navpanes=0&view=FitH`}
               title="简历原件"
               className="mx-auto h-[680px] w-full max-w-[760px] rounded-sm bg-white shadow-sm ring-1 ring-slate-200"
             />
           </div>
+        ) : loadError ? (
+          <OriginalError message={loadError} downloadUrl={downloadUrl} fileName={detail.fileName} />
         ) : (
-          <OriginalPlaceholder hasOriginal={originalUrl !== null} />
+          <OriginalPlaceholder hasOriginal={url !== null} />
         )}
       </div>
+    </div>
+  )
+}
+
+function OriginalError({
+  message,
+  downloadUrl,
+  fileName,
+}: {
+  message: string
+  downloadUrl: string | null
+  fileName: string
+}) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-500">
+        <Eye size={22} />
+      </span>
+      <h2 className="mt-4 text-sm font-semibold text-slate-800">原件加载失败</h2>
+      <p className="mt-2 max-w-sm text-xs leading-5 text-slate-500">{message}</p>
+      {downloadUrl && (
+        <a
+          href={downloadUrl}
+          download={fileName}
+          className="mt-4 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+        >
+          下载原件
+        </a>
+      )}
     </div>
   )
 }
@@ -160,11 +234,13 @@ function OriginalPlaceholder({ hasOriginal }: { hasOriginal: boolean }) {
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
         <Eye size={22} />
       </span>
-      <h2 className="mt-4 text-sm font-semibold text-slate-800">原件预览暂未开放</h2>
+      <h2 className="mt-4 text-sm font-semibold text-slate-800">
+        {hasOriginal ? '该格式暂不支持内嵌预览' : '原件未存储'}
+      </h2>
       <p className="mt-2 max-w-sm text-xs leading-5 text-slate-500">
         {hasOriginal
-          ? '当前格式不支持内嵌预览，请切换到「文字版」查看解析结果。'
-          : '简历原件暂不保存，只能查看解析后的文字版。原件预览会在后续版本接入。'}
+          ? 'PDF 可直接内嵌查看，DOCX / MD / TXT 请点击工具栏的下载按钮后打开。'
+          : '未配置 OSS 或原件上传失败，只能查看解析后的文字版。'}
       </p>
     </div>
   )

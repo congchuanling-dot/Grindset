@@ -23,6 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,12 +52,14 @@ public class ResumeService {
     private final ResumeSkillMapper skillMapper;
     private final ResumeTextExtractor extractor;
     private final ResumeLlmParser parser;
+    private final ResumeOriginalStorage originalStorage;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
 
     public ResumeService(ResumeMapper resumeMapper, ResumeSectionMapper sectionMapper,
                          ResumeSectionItemMapper itemMapper, ResumeSkillMapper skillMapper,
                          ResumeTextExtractor extractor, ResumeLlmParser parser,
+                         ResumeOriginalStorage originalStorage,
                          SnowflakeIdGenerator idGenerator, TransactionTemplate transactionTemplate) {
         this.resumeMapper = resumeMapper;
         this.sectionMapper = sectionMapper;
@@ -64,6 +67,7 @@ public class ResumeService {
         this.skillMapper = skillMapper;
         this.extractor = extractor;
         this.parser = parser;
+        this.originalStorage = originalStorage;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
     }
@@ -88,15 +92,25 @@ public class ResumeService {
         ResumeTextExtractor.ExtractedText extracted = extractor.extract(file.getOriginalFilename(), bytes);
 
         long resumeId = idGenerator.nextId();
+        // 原件是旁路:未配置 OSS 或上传失败都返回 null,不影响后续解析
+        String objectKey = originalStorage.upload(userId, resumeId, extracted.fileType(), bytes);
+
         Resume resume = new Resume();
         resume.setId(resumeId);
         resume.setUserId(userId);
         resume.setFileName(extracted.fileName());
         resume.setFileType(extracted.fileType());
         resume.setFileSize(bytes.length);
+        resume.setOriginalObjectKey(objectKey);
         resume.setCandidateType(CandidateType.UNKNOWN.name());
         resume.setParseStatus(PARSING);
-        resumeMapper.insert(resume);
+        try {
+            resumeMapper.insert(resume);
+        } catch (RuntimeException e) {
+            // 主表没落成,清理刚上传的对象,避免孤儿文件
+            originalStorage.deleteQuietly(objectKey);
+            throw e;
+        }
 
         ParsedResume parsed;
         String model;
@@ -175,16 +189,39 @@ public class ResumeService {
                     section.getSectionType(), section.getTitle(), itemViews));
         }
 
+        String objectKey = resume.getOriginalObjectKey();
+        boolean hasOriginal = objectKey != null && !objectKey.isBlank();
+        String originalUrl = hasOriginal ? originalStorage.previewUrl(objectKey) : null;
+        String originalDownloadUrl = hasOriginal
+                ? originalStorage.downloadUrl(objectKey, resume.getFileName()) : null;
+
         return new ResumeDetail(String.valueOf(resume.getId()), resume.getFileName(), resume.getFileType(),
                 resume.getFileSize() == null ? 0 : resume.getFileSize(),
+                hasOriginal, originalUrl, originalDownloadUrl,
                 resume.getParseStatus() == null ? PARSING : resume.getParseStatus(),
                 resume.getErrorMsg(), resume.getCandidateName(), resume.getCandidateType(),
                 resume.getModel(), format(resume), skillViews, sectionViews);
     }
 
-    /** 物理删除主表与所有子表数据 */
+    /** 打开原件流,供 Controller 代理预览;原件不存在或存储未配置返回 404 */
+    public OriginalFile openOriginal(long userId, long id) {
+        Resume resume = requireOwned(userId, id);
+        String objectKey = resume.getOriginalObjectKey();
+        if (objectKey == null || objectKey.isBlank()) {
+            throw new BizException(ErrorCode.NOT_FOUND, "原件未存储");
+        }
+        InputStream stream = originalStorage.open(objectKey);
+        if (stream == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "原件不存在或存储未配置");
+        }
+        return new OriginalFile(stream, resume.getFileName(), resume.getFileType(),
+                resume.getFileSize() == null ? 0 : resume.getFileSize());
+    }
+
+    /** 物理删除主表与所有子表数据,提交后再清理 OSS 原件 */
     public void delete(long userId, long id) {
-        requireOwned(userId, id);
+        Resume resume = requireOwned(userId, id);
+        String objectKey = resume.getOriginalObjectKey();
         transactionTemplate.executeWithoutResult(status -> {
             skillMapper.delete(new QueryWrapper<ResumeSkill>().eq("resume_id", id));
 
@@ -198,6 +235,7 @@ public class ResumeService {
             sectionMapper.delete(new QueryWrapper<ResumeSection>().eq("resume_id", id));
             resumeMapper.deleteById(id);
         });
+        originalStorage.deleteQuietly(objectKey);
     }
 
     /** 事务内写入章节、条目、技能,并把主表更新为解析成功 */
@@ -280,5 +318,11 @@ public class ResumeService {
 
     private static String format(Resume resume) {
         return resume.getCreatedAt() == null ? "" : resume.getCreatedAt().format(STANDARD);
+    }
+
+    /**
+     * 原件流与展示信息,调用方负责关闭 stream。
+     */
+    public record OriginalFile(InputStream stream, String fileName, String fileType, long size) {
     }
 }

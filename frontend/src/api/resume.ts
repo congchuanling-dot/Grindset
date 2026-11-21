@@ -31,6 +31,12 @@ export interface ResumeDetail {
   fileName: string
   fileType: string
   fileSize: number
+  /** 后端是否成功保存了原件（未配置 OSS 或上传失败时为 false） */
+  hasOriginal: boolean
+  /** 原件签名预览 URL，可能为空或过期，重新拉详情即可刷新 */
+  originalUrl: string | null
+  /** 原件签名下载 URL，带原文件名 */
+  originalDownloadUrl: string | null
   parseStatus: number
   errorMsg: string | null
   candidateName: string | null
@@ -91,4 +97,18 @@ export async function deleteResume(id: string): Promise<void> {
     throw new Error('无法连接服务器，请确认后端已启动')
   }
   await unwrapJson<null>(res, '删除简历失败')
+}
+
+/** 通过后端代理获取原件字节，用于 PDF 内嵌预览（绕开 OSS 默认域名的强制下载） */
+export async function fetchResumeOriginal(id: string): Promise<Blob> {
+  let res: Response
+  try {
+    res = await authFetch(`/api/resumes/${id}/original`)
+  } catch {
+    throw new Error('无法连接服务器，请确认后端已启动')
+  }
+  if (!res.ok) {
+    throw new Error(res.status === 404 ? '原件未存储' : '加载原件失败，请刷新后重试')
+  }
+  return res.blob()
 }

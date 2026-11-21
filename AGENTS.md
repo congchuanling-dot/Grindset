@@ -73,6 +73,8 @@ mysql -uroot -p123456 < sql/008_coding_schema.sql
 mysql -uroot -p123456 < sql/009_coding_seed.sql
 mysql -uroot -p123456 < sql/010_oauth_client_schema.sql
 mysql -uroot -p123456 < sql/011_agent_chat_schema.sql
+mysql -uroot -p123456 < sql/012_resume_original_schema.sql
+mysql -uroot -p123456 < sql/013_storage_config_schema.sql
 ```
 
 大模型渠道/模型/密钥表不在 `sql/` 下，需要额外执行（**必须带 utf8mb4 参数**，否则中文展示名会乱码）：
@@ -109,8 +111,10 @@ npm run dev
 | --- | --- |
 | `JWT_SECRET` | access token 签名密钥 |
 | `ADMIN_TOKEN` | 管理接口 `X-Admin-Token`；未配置时 `/api/admin/**` 全部 403 |
-| `LLM_MASTER_KEY` | 加密数据库里 API Key 与 OAuth client_secret 的主密钥；换掉会导致已存密文全部解不开 |
+| `SECRET_MASTER_KEY` | 加密数据库里 LLM API Key、OAuth client_secret 与 OSS AccessKey 的主密钥；换掉会导致已存密文全部解不开 |
 | `DEEPSEEK_API_KEY` / `DASHSCOPE_API_KEY` / `ZHIPU_API_KEY` / `MINIMAX_API_KEY` / `ARK_API_KEY` | 各厂商兜底 key（正常应通过管理接口写入数据库 key 池） |
+| `ALIYUN_OSS_ENDPOINT` / `ALIYUN_OSS_BUCKET` / `ALIYUN_OSS_ACCESS_KEY_ID` / `ALIYUN_OSS_ACCESS_KEY_SECRET` | 简历原件的 OSS 兜底配置；正式环境应通过 `/api/admin/storage/oss` 写入数据库，这里只给本地开发用 |
+| `ALIYUN_OSS_RESUME_PREFIX` / `ALIYUN_OSS_URL_EXPIRE_SECONDS` | 可选：原件对象前缀（默认 `resumes`）与签名 URL 有效期（默认 3600 秒） |
 | `RESUME_LLM_PROVIDER` / `RESUME_LLM_MODEL` | 简历解析固定使用的厂商/模型；两者都不配则自动选第一个可用 |
 | `INTERVIEW_LLM_PROVIDER` / `INTERVIEW_LLM_MODEL` | AI 面试/评分/错题重练/题库评分固定使用；规则同上 |
 | `JUDGE_JAVA_IMAGE` / `JUDGE_PYTHON_IMAGE` | 判题镜像名 |
@@ -192,14 +196,15 @@ npm run dev
 
 ### 6.1 简历解析
 
-`ResumeController → ResumeService → ResumeTextExtractor → ResumeLlmParser`
+`ResumeController → ResumeService → ResumeTextExtractor → ResumeLlmParser`（原件旁路：`ResumeOriginalStorage`）
 
 1. 上传 PDF/DOCX/MD/TXT（单文件 ≤ 10MB）
 2. 用 PDFBox / POI / 文本读取做**确定性文本抽取**（不交给 LLM）
 3. LLM 只负责把纯文本转成固定 JSON 结构（失败重试一次）
 4. 落库通用章节模型：`resumes` → `resume_sections` → `resume_section_items`，技能单独 `resume_skills`
-5. **不保存简历原件与原始纯文本**，只存结构化结果；解析失败写 `parse_status=2` 与 `error_msg`
-6. 章节类型见 `common/ResumeSectionType`，未知类型统一降级 `OTHER` 并保留原章节标题；新增类型只改枚举，不改表
+5. 原件上传**阿里云 OSS 私有桶**，`resumes.original_object_key` 只存对象 key；未配置 OSS 或上传失败自动跳过，不影响解析。PDF 预览走 `GET /api/resumes/{id}/original` 由后端流式代理（OSS 默认域名会强制下载，不能直接给 iframe）；下载与分享用带时效的签名 URL（`originalUrl` / `originalDownloadUrl`）
+6. **不保存原始纯文本**；解析失败写 `parse_status=2` 与 `error_msg`
+7. 章节类型见 `common/ResumeSectionType`，未知类型统一降级 `OTHER` 并保留原章节标题；新增类型只改枚举，不改表
 
 ### 6.2 AI 面试
 
@@ -303,6 +308,7 @@ npm run dev
 | POST | `/` | multipart 字段 `file`，上传并同步解析，返回结构化详情 |
 | GET | `/` | 当前用户简历列表 |
 | GET | `/{id}` | 简历详情（章节 + 条目 + 技能） |
+| GET | `/{id}/original` | 代理返回原件字节（PDF 内嵌预览用，inline 响应头） |
 | DELETE | `/{id}` | 删除简历及子表数据 |
 
 ### AI 面试 `/api/interviews`
@@ -358,11 +364,13 @@ npm run dev
 | POST | `/api/admin/knowledge/rebuild?userId=` | 按用户重建掌握度画像 |
 | POST | `/api/admin/wrong-questions/rebuild?userId=` | 按用户回填历史错题 |
 | POST | `/api/admin/questions/import` | JSON 批量导入题库，按内容哈希幂等 |
+| GET | `/api/admin/storage/oss` | 查看简历原件 OSS 配置（AccessKey 只返回掩码） |
+| PUT | `/api/admin/storage/oss` | 新增/更新 OSS 配置（AK/SK 加密入库；不传则保留原密文） |
 
 ## 8. 大模型接入架构
 
 - 渠道、模型目录、key 池都在数据库：`llm_channels`、`llm_models`、`llm_keys`
-- key 用 AES-GCM 密文存储（`llm/SecretCipher`），主密钥来自 `LLM_MASTER_KEY`
+- key 用 AES-GCM 密文存储（`llm/SecretCipher`），主密钥来自 `SECRET_MASTER_KEY`
 - `ModelCatalogService` 每次请求直接查库聚合，改库即时生效（无缓存）
 - `LlmRouter` 按「渠道优先级 + key 最久未用」依次尝试候选：
   - **流式**：只有尚未吐出第一个字时才允许换 key；已输出后失败直接上报，避免内容重复
@@ -389,6 +397,8 @@ npm run dev
 | `009_coding_seed.sql` | — | 编程题种子数据 |
 | `010_oauth_client_schema.sql` | `oauth_client_config` | 第三方登录客户端凭证（secret 加密存储） |
 | `011_agent_chat_schema.sql` | `agent_conversations`、`agent_messages` | 首页 Agent 会话与完整消息流（可重放、可恢复） |
+| `012_resume_original_schema.sql` | `resumes.original_object_key` | 简历原件在 OSS 中的对象 key |
+| `013_storage_config_schema.sql` | `storage_config` | 外部存储配置（OSS AccessKey 密文，AAD 绑定行 id） |
 | `db/llm_catalog.sql` | `llm_channels`、`llm_models`、`llm_keys` | 大模型渠道/模型/密钥池 |
 | `db/llm_keys_balance.sql` | 余额相关扩展列 | 渠道余额维护字段 |
 
@@ -401,7 +411,7 @@ npm run dev
 
 ## 10. 硬性约定（改代码时必须遵守）
 
-1. 简历解析第一版**不保存原件**，只保存结构化结果。
+1. 简历原件存**阿里云 OSS 私有桶**，库中只存 `original_object_key`；未配置 OSS 或上传失败必须自动跳过，不能阻断解析。**不保存原始纯文本**。
 2. 简历章节使用通用模型，新增经历类型只改枚举，不改表结构。
 3. 文本抽取只用 PDFBox / POI 等确定性库，**不要用 LLM 做文本抽取**。
 4. LLM 只负责「纯文本 → 固定 JSON」，未知章节统一 `OTHER` 并保留原标题。
@@ -453,6 +463,8 @@ npm run dev
 - **JSON 列**：修改实体 JSON 字段时注意 MyBatis-Plus 的类型处理器配置，避免写入变成字符串。
 - **时间**：数据库时区 `Asia/Shanghai`，展示格式统一 `yyyy-MM-dd HH:mm`。
 - **OAuth 凭证在库里**：GitHub / Google 的 client_secret 是 `oauth_client_config` 里的 AES-GCM 密文，AAD 绑定该行 `id`。换 secret 必须用同一主密钥重新加密后 `UPDATE`，不要只改明文；改 `id` 也会解不开。
+- **OSS 凭证在库里**：`storage_config` 的 AccessKey 同样是 AES-GCM 密文，AAD 绑定行 `id`；数据库配置优先，环境变量仅兜底。未配置或上传失败时原件自动跳过，解析照常。
+- **签名 URL 会过期**：默认 1 小时，页面长时间停留后原件预览 403，重新拉 `GET /api/resumes/{id}` 换新链接。
 
 ## 13. 文档索引（docs/）
 
