@@ -13,11 +13,13 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.grindset.backend.common.constant.ResumeParseStatus.PARSING;
+
 /**
  * 解析补偿任务:处理"落库成功但消息没发出去"或 worker 崩溃后的残留记录。
  */
 @Component
-@ConditionalOnProperty(name = "app.worker.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "app.resume.worker.enabled", havingValue = "true", matchIfMissing = true)
 public class ResumeParseReconciler {
 
     private static final Logger log = LoggerFactory.getLogger(ResumeParseReconciler.class);
@@ -31,7 +33,7 @@ public class ResumeParseReconciler {
     public ResumeParseReconciler(ResumeMapper resumeMapper, ResumeParsePublisher publisher,
                                  ResumeParseService parseService,
                                  @Value("${app.resume.parse.stuck-minutes:10}") int stuckMinutes,
-                                 @Value("${app.resume.parse.max-attempts:3}") int maxAttempts) {
+                                 @Value("${app.resume.parse.max-attempts:4}") int maxAttempts) {
         this.resumeMapper = resumeMapper;
         this.publisher = publisher;
         this.parseService = parseService;
@@ -44,7 +46,7 @@ public class ResumeParseReconciler {
     public void reconcile() {
         LocalDateTime cutoff = LocalDateTime.now().minusMinutes(stuckMinutes);
         List<Resume> stuck = resumeMapper.selectList(new QueryWrapper<Resume>()
-                .eq("parse_status", 0)
+                .eq("parse_status", PARSING)
                 .lt("updated_at", cutoff)
                 .orderByAsc("updated_at")
                 .last("LIMIT 100"));

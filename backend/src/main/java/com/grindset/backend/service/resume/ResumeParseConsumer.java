@@ -12,36 +12,48 @@ import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
+
+import static com.grindset.backend.common.constant.ResumeParseStatus.PARSING;
 
 /**
  * 简历解析消费者。api 实例通过 WORKER_ENABLED=false 关闭消费。
  */
 @Component
-@ConditionalOnProperty(name = "app.worker.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "app.resume.worker.enabled", havingValue = "true", matchIfMissing = true)
 public class ResumeParseConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(ResumeParseConsumer.class);
 
     private static final String LOCK_PREFIX = "resume:parse:";
-    private static final Duration LOCK_TTL = Duration.ofMinutes(10);
+
+    /** 只有锁的值仍是自己写入的 token 才删除,避免误删其它 worker 续上的锁 */
+    private static final DefaultRedisScript<Long> UNLOCK_SCRIPT = new DefaultRedisScript<>(
+            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+            Long.class);
 
     private final ResumeParseService parseService;
     private final ResumeParsePublisher publisher;
     private final StringRedisTemplate redis;
     private final int maxAttempts;
+    private final Duration lockTtl;
 
     public ResumeParseConsumer(ResumeParseService parseService, ResumeParsePublisher publisher,
                                StringRedisTemplate redis,
-                               @Value("${app.resume.parse.max-attempts:3}") int maxAttempts) {
+                               @Value("${app.resume.parse.max-attempts:4}") int maxAttempts,
+                               @Value("${app.resume.parse.lock-ttl-minutes:10}") int lockTtlMinutes) {
         this.parseService = parseService;
         this.publisher = publisher;
         this.redis = redis;
         this.maxAttempts = maxAttempts;
+        this.lockTtl = Duration.ofMinutes(Math.max(1, lockTtlMinutes));
     }
 
     @RabbitListener(queues = RabbitResumeConfig.QUEUE)
@@ -55,10 +67,15 @@ public class ResumeParseConsumer {
             channel.basicNack(deliveryTag, false, false);
             return;
         }
+        if (message.attempt() <= 0) {
+            log.error("简历解析消息 attempt 非法,进入死信 resumeId={} attempt={}", resumeId, message.attempt());
+            channel.basicNack(deliveryTag, false, false);
+            return;
+        }
 
         String lockKey = LOCK_PREFIX + resumeId;
-        boolean locked = tryLock(lockKey, message.traceId());
-        if (!locked) {
+        String lockToken = tryLock(lockKey);
+        if (lockToken == null) {
             // 同一份简历正在被其它线程处理,30 秒后再看
             try {
                 publisher.delay(message, RabbitResumeConfig.RETRY_30S_ROUTING);
@@ -85,7 +102,15 @@ public class ResumeParseConsumer {
                 return;
             }
             // 成功或已永久失败都不再重复解析
-            if (resume.getParseStatus() != null && resume.getParseStatus() != 0) {
+            if (resume.getParseStatus() != null && resume.getParseStatus() != PARSING) {
+                channel.basicAck(deliveryTag, false);
+                return;
+            }
+            // 补偿任务可能已经把 attempt 推进,旧消息不能把进度改回去
+            int currentAttempt = resume.getParseAttempt() == null ? 0 : resume.getParseAttempt();
+            if (message.attempt() < currentAttempt) {
+                log.info("跳过过期解析消息 resumeId={} messageAttempt={} currentAttempt={}",
+                        resumeId, message.attempt(), currentAttempt);
                 channel.basicAck(deliveryTag, false);
                 return;
             }
@@ -121,24 +146,28 @@ public class ResumeParseConsumer {
                 channel.basicNack(deliveryTag, false, true);
             }
         } finally {
-            releaseLock(lockKey);
+            releaseLock(lockKey, lockToken);
         }
     }
 
     /** Redis 不可用时退化为不加锁,不阻断解析 */
-    private boolean tryLock(String key, String traceId) {
+    private String tryLock(String key) {
+        String token = UUID.randomUUID().toString();
         try {
-            Boolean ok = redis.opsForValue().setIfAbsent(key, traceId == null ? "1" : traceId, LOCK_TTL);
-            return Boolean.TRUE.equals(ok);
+            Boolean ok = redis.opsForValue().setIfAbsent(key, token, lockTtl);
+            return Boolean.TRUE.equals(ok) ? token : null;
         } catch (RuntimeException e) {
             log.warn("简历解析锁不可用,继续执行 key={}", key, e);
-            return true;
+            return token;
         }
     }
 
-    private void releaseLock(String key) {
+    private void releaseLock(String key, String token) {
+        if (token == null) {
+            return;
+        }
         try {
-            redis.delete(key);
+            redis.execute(UNLOCK_SCRIPT, List.of(key), token);
         } catch (RuntimeException e) {
             log.warn("释放简历解析锁失败 key={}", key, e);
         }

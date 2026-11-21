@@ -140,7 +140,8 @@ npm run dev
 | `RABBITMQ_USER` / `RABBITMQ_PASSWORD` / `RABBITMQ_VHOST` | RabbitMQ 凭证与 vhost，默认 `grindset` / `grindset123` / `/grindset` |
 | `WORKER_ENABLED` | 是否消费简历解析消息。api 角色设 `false`，worker 角色设 `true`（默认） |
 | `RESUME_UPLOAD_PERMITS` | 单实例上传并发闸门，默认 8 |
-| `RESUME_PARSE_MAX_ATTEMPTS` / `RESUME_PARSE_STUCK_MINUTES` / `RESUME_PARSE_RECONCILE_MS` | 解析最大尝试次数（默认 3）、卡住判定分钟数（默认 10）、补偿扫描间隔毫秒（默认 300000） |
+| `RESUME_PARSE_MAX_ATTEMPTS` / `RESUME_PARSE_LOCK_TTL_MINUTES` | 最大执行次数（默认 4，即首次 + 3 次重试）、解析锁 TTL 分钟数（默认 10） |
+| `RESUME_PARSE_STUCK_MINUTES` / `RESUME_PARSE_RECONCILE_MS` | 卡住判定分钟数（默认 10）、补偿扫描间隔毫秒（默认 300000） |
 | `VITE_PROXY_TARGET` | 前端开发代理目标 |
 
 ## 4. 后端架构
@@ -201,7 +202,8 @@ npm run dev
   - `resume.exchange`（direct）→ `resume.parse.queue`（quorum、持久化、DLX=`resume.dlx`）
   - `resume.parse.dlq`（quorum）：超过最大尝试次数或永久失败的消息
   - `resume.parse.retry.30s` / `.2m` / `.10m`（classic TTL）：TTL 到期通过 DLX 回到主交换机
-- 重试：`attempt` 是 **1-based 执行次数**（首次=1）；可重试错误按 `attempt+1` 投递下一档重试，超过 `max-attempts` 标记失败并进 DLQ
+- 重试：`attempt` 是 **1-based 执行次数**（首次=1）；可重试错误按 `attempt+1` 投递下一档重试（2→30s、3→2m、4→10m），达到 `max-attempts`（默认 4）后标记失败并进 DLQ
+- 锁：Redis `resume:parse:{resumeId}`，TTL 由 `RESUME_PARSE_LOCK_TTL_MINUTES` 控制；释放时用 Lua 比对 token，避免误删其它 worker 的锁
 - 补偿：`ResumeParseReconciler` 每 5 分钟扫描 `parse_status=0` 且 `updated_at` 超过 10 分钟、`parse_attempt<3` 的记录，重新投递或标记失败
 - 可靠性：事务提交后再发消息；publisher confirm 只记日志；暂时不做 outbox，靠补偿任务兜底
 - OSS 不可用或投递失败时，上传接口回退为同步解析，保证功能可用
@@ -243,7 +245,7 @@ npm run dev
 4. 消费者从 OSS 重新下载原件，用 PDFBox / POI / 文本读取做**确定性文本抽取**（不交给 LLM）
 5. LLM 只负责把纯文本转成固定 JSON 结构（失败重试一次）
 6. 事务落库通用章节模型：`resumes` → `resume_sections` → `resume_section_items`，技能单独 `resume_skills`；成功后 `parse_status=1`
-7. 失败：可重试错误按 30s / 2m / 10m 重试，超过 3 次标记 `parse_status=2` 并写 `error_msg`，消息进死信队列
+7. 失败：可重试错误按 30s / 2m / 10m 重试，达到最大执行次数（默认 4，首次 + 3 次重试）后标记 `parse_status=2` 并写 `error_msg`，消息进死信队列
 8. OSS 未配置、上传失败或消息投递失败时，回退为上传请求内同步解析，不阻断功能
 9. PDF 预览走 `GET /api/resumes/{id}/original` 由后端流式代理（OSS 默认域名会强制下载，不能直接给 iframe）；下载与分享用带时效的签名 URL（`originalUrl` / `originalDownloadUrl`）
 10. **不保存原始纯文本**；章节类型见 `common/ResumeSectionType`，未知类型统一降级 `OTHER` 并保留原章节标题；新增类型只改枚举，不改表

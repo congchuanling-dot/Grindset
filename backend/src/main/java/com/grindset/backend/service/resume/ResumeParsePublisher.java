@@ -37,12 +37,15 @@ public class ResumeParsePublisher {
         send(RabbitResumeConfig.EXCHANGE, RabbitResumeConfig.ROUTING, message);
     }
 
-    /** 临时失败后按次数选择延迟队列;超过上限进死信 */
+    /**
+     * 临时失败后按次数选择延迟队列。
+     * nextAttempt 是 1-based 执行次数:2 = 第一次重试,3 = 第二次重试,4 = 第三次重试。
+     */
     public void retry(ResumeParseMessage message, int nextAttempt) {
         String routingKey = switch (nextAttempt) {
-            case 1 -> RabbitResumeConfig.RETRY_30S_ROUTING;
-            case 2 -> RabbitResumeConfig.RETRY_2M_ROUTING;
-            case 3 -> RabbitResumeConfig.RETRY_10M_ROUTING;
+            case 2 -> RabbitResumeConfig.RETRY_30S_ROUTING;
+            case 3 -> RabbitResumeConfig.RETRY_2M_ROUTING;
+            case 4 -> RabbitResumeConfig.RETRY_10M_ROUTING;
             default -> null;
         };
         if (routingKey == null) {

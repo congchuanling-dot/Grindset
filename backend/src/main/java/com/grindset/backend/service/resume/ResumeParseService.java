@@ -91,9 +91,10 @@ public class ResumeParseService {
         try {
             temp = Files.createTempFile("grindset-resume-parse-", ".upload");
             if (!originalStorage.downloadTo(objectKey, temp)) {
-                String message = "原件不存在或下载失败";
-                markFailed(resume.getId(), message);
-                return ParseOutcome.permanent(message);
+                // OSS 临时不可用或对象暂时读不到,交给重试队列;超过次数再进死信
+                String message = "原件下载失败，稍后重试";
+                markRetryableFailure(resume.getId(), attempt, message);
+                return ParseOutcome.retryable(message);
             }
             parseFile(resume, temp, resume.getFileName());
             return ParseOutcome.ok();
@@ -203,7 +204,11 @@ public class ResumeParseService {
             patch.setParseStatus(SUCCESS);
             patch.setParseFinishedAt(LocalDateTime.now());
             patch.setErrorMsg("");
-            resumeMapper.updateById(patch);
+            int updated = resumeMapper.updateById(patch);
+            if (updated == 0) {
+                // 解析期间简历被删除:抛异常让事务回滚,避免留下孤儿子表数据
+                throw new BizException(ErrorCode.NOT_FOUND, "简历已删除,停止解析");
+            }
         });
     }
 
