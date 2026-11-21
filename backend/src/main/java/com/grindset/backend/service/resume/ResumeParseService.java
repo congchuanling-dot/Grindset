@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.grindset.backend.common.constant.ResumeParseStatus.FAILED;
 import static com.grindset.backend.common.constant.ResumeParseStatus.PARSING;
@@ -118,7 +119,22 @@ public class ResumeParseService {
     public void parseFile(Resume resume, Path file, String fileName) {
         ResumeTextExtractor.ExtractedText extracted = extractor.extract(fileName, file);
         ResumeLlmParser.ParseResult result = parser.parse(extracted.text());
-        saveParsed(resume.getId(), result.resume(), result.model());
+        saveParsed(resume.getId(), result.resume(), result.model(), false);
+    }
+
+    /**
+     * 用前端编辑后的结构化内容直接覆盖数据库,不调 LLM。
+     * 先规范化(枚举降级、长度截断、熟练度夹取),再在事务里整体替换章节/条目/技能。
+     */
+    public void replaceStructured(Resume resume, ParsedResume parsed) {
+        if ((parsed.getSections() == null || parsed.getSections().isEmpty())
+                && (parsed.getSkills() == null || parsed.getSkills().isEmpty())) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "简历内容不能为空");
+        }
+        // 类型不在编辑范围内,沿用原来解析出的值
+        parsed.setCandidateType(resume.getCandidateType() == null
+                ? CandidateType.UNKNOWN.name() : resume.getCandidateType().name());
+        saveParsed(resume.getId(), parser.normalize(parsed), resume.getModel(), true);
     }
 
     public void markParsing(long resumeId, int attempt) {
@@ -154,9 +170,20 @@ public class ResumeParseService {
         }
     }
 
-    /** 事务内写入章节、条目、技能,并把主表更新为解析成功 */
-    private void saveParsed(long resumeId, ParsedResume parsed, String model) {
+    /** 事务内写入章节、条目、技能,并把主表更新为解析成功;replace=true 时先清空旧的结构化数据 */
+    private void saveParsed(long resumeId, ParsedResume parsed, String model, boolean replace) {
         transactionTemplate.executeWithoutResult(status -> {
+            if (replace) {
+                skillMapper.delete(new QueryWrapper<ResumeSkill>().eq("resume_id", resumeId));
+                List<ResumeSection> oldSections = sectionMapper.selectList(
+                        new QueryWrapper<ResumeSection>().eq("resume_id", resumeId));
+                if (!oldSections.isEmpty()) {
+                    List<Long> oldSectionIds = oldSections.stream().map(ResumeSection::getId).toList();
+                    itemMapper.delete(new QueryWrapper<ResumeSectionItem>().in("section_id", oldSectionIds));
+                }
+                sectionMapper.delete(new QueryWrapper<ResumeSection>().eq("resume_id", resumeId));
+            }
+
             int sectionSort = 0;
             for (ParsedResume.Section section : parsed.getSections()) {
                 ResumeSection sectionRow = new ResumeSection();

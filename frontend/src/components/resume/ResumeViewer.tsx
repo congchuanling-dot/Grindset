@@ -1,17 +1,11 @@
+import { Download, Eye, FileText, Loader2 } from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Eye,
-  FileText,
-  Loader2,
-  Printer,
-  RotateCw,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { fetchResumeOriginal, type ResumeDetail } from '../../api/resume'
+  fetchResumeOriginal,
+  updateResume,
+  type ResumeDetail,
+  type ResumeUpdatePayload,
+} from '../../api/resume'
 import { errMessage } from '../../utils/error'
 import ResumePaper from './ResumePaper'
 
@@ -23,13 +17,15 @@ interface ResumeViewerProps {
   originalUrl?: string | null
   /** 文字版是否可编辑：上传页传 true，AI 面试页默认只读 */
   editable?: boolean
+  /** 保存文字版后的最新详情，由页面同步列表与当前详情 */
+  onSaved?: (detail: ResumeDetail) => void
 }
 
 /**
  * 简历预览，上传页和 AI 面试页共用同一套视图，避免两处样式/交互分叉。
  * 原件存 OSS 私有桶，由后端下发带时效的签名 URL；未配置 OSS 时用刚上传的本地地址兜底。
  */
-function ResumeViewer({ detail, originalUrl = null, editable = false }: ResumeViewerProps) {
+function ResumeViewer({ detail, originalUrl = null, editable = false, onSaved }: ResumeViewerProps) {
   const [tab, setTab] = useState<ViewerTab>('text')
   const [dirty, setDirty] = useState(false)
 
@@ -38,9 +34,12 @@ function ResumeViewer({ detail, originalUrl = null, editable = false }: ResumeVi
     setDirty(false)
   }, [detail.id])
 
+  // OSS 签名下载链接优先；未配置 OSS 时用刚上传的本地地址兜底
+  const downloadUrl = detail.originalDownloadUrl ?? originalUrl
+
   return (
     <div className="flex min-h-[560px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2">
         <div className="flex items-center gap-1">
           <TabButton active={tab === 'original'} onClick={() => setTab('original')} icon={<Eye size={15} />}>
             原件
@@ -49,18 +48,31 @@ function ResumeViewer({ detail, originalUrl = null, editable = false }: ResumeVi
             文字版
           </TabButton>
         </div>
-        <span className="text-xs text-slate-400">
-          {dirty ? '文字版有未保存的修改' : '解析结果'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400">
+            {dirty ? '文字版有未保存的修改' : '解析结果'}
+          </span>
+          {downloadUrl && (
+            <a
+              href={downloadUrl}
+              download={detail.fileName}
+              title="下载原件"
+              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+            >
+              <Download size={14} />
+              下载原件
+            </a>
+          )}
+        </div>
       </div>
 
       {/* 两个视图都保持挂载:切回文字版时未保存的编辑不会丢 */}
       <div className={tab === 'original' ? 'flex flex-1 flex-col' : 'hidden'}>
-        <OriginalPreview detail={detail} originalUrl={originalUrl} />
+        <OriginalPreview detail={detail} originalUrl={originalUrl} downloadUrl={downloadUrl} />
       </div>
       <div className={tab === 'text' ? 'flex flex-1 flex-col' : 'hidden'}>
         {editable ? (
-          <TextEditor detail={detail} dirty={dirty} onDirty={setDirty} />
+          <TextEditor detail={detail} dirty={dirty} onDirty={setDirty} onSaved={onSaved} />
         ) : (
           <div className="flex-1 overflow-auto bg-slate-100 p-4">
             <ResumePaper detail={detail} />
@@ -96,7 +108,15 @@ function TabButton({
   )
 }
 
-function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; originalUrl: string | null }) {
+function OriginalPreview({
+  detail,
+  originalUrl,
+  downloadUrl,
+}: {
+  detail: ResumeDetail
+  originalUrl: string | null
+  downloadUrl: string | null
+}) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -171,84 +191,42 @@ function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; origin
 
   // 后端签名 URL 优先；本地 ObjectURL 只在未配置 OSS 时兜底
   const url = originalUrl ?? blobUrl
-  const downloadUrl = url ?? detail.originalDownloadUrl ?? detail.originalUrl
   const canInline = isPdf && url !== null
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
-        <ToolbarButton title="上一页（占位）">
-          <ChevronLeft size={15} />
-        </ToolbarButton>
-        <span className="px-1 text-xs">1 / 1</span>
-        <ToolbarButton title="下一页（占位）">
-          <ChevronRight size={15} />
-        </ToolbarButton>
-        <span className="mx-1 h-4 w-px bg-slate-200" />
-        <ToolbarButton title="缩小（占位）">
-          <ZoomOut size={15} />
-        </ToolbarButton>
-        <span className="px-1 text-xs">100%</span>
-        <ToolbarButton title="放大（占位）">
-          <ZoomIn size={15} />
-        </ToolbarButton>
-        <ToolbarButton title="旋转（占位）">
-          <RotateCw size={15} />
-        </ToolbarButton>
-        <span className="mx-1 h-4 w-px bg-slate-200" />
-        {downloadUrl ? (
-          <a
-            href={downloadUrl}
-            download={detail.fileName}
-            title="下载原件"
-            className="rounded p-1.5 transition hover:bg-slate-200/70 hover:text-slate-700"
-          >
-            <Download size={15} />
-          </a>
-        ) : (
-          <ToolbarButton title="原件未存储，无法下载">
-            <Download size={15} />
-          </ToolbarButton>
-        )}
-        <ToolbarButton title="打印（占位）">
-          <Printer size={15} />
-        </ToolbarButton>
-      </div>
-
-      <div className="flex flex-1 flex-col">
-        {isText ? (
-          textLoading ? (
-            <div className="flex flex-1 items-center justify-center">
-              <Loader2 size={22} className="animate-spin text-teal-600" />
-            </div>
-          ) : textError ? (
-            <OriginalError message={textError} downloadUrl={downloadUrl} fileName={detail.fileName} />
-          ) : textContent !== null ? (
-            <div className="flex-1 overflow-auto bg-slate-100 p-4">
-              <pre className="mx-auto min-h-[680px] w-full max-w-[760px] whitespace-pre-wrap break-words rounded-sm bg-white p-8 font-sans text-sm leading-7 text-slate-700 shadow-sm ring-1 ring-slate-200">
-                {textContent}
-              </pre>
-            </div>
-          ) : (
-            <OriginalPlaceholder hasOriginal={url !== null} />
-          )
-        ) : loading && !url ? (
+      {isText ? (
+        textLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 size={22} className="animate-spin text-teal-600" />
           </div>
-        ) : canInline ? (
+        ) : textError ? (
+          <OriginalError message={textError} downloadUrl={downloadUrl} fileName={detail.fileName} />
+        ) : textContent !== null ? (
           <div className="flex-1 overflow-auto bg-slate-100 p-4">
-            <iframe
-              src={`${url}#toolbar=0&navpanes=0&view=FitH`}
-              title="简历原件"
-              className="mx-auto h-[680px] w-full max-w-[760px] rounded-sm bg-white shadow-sm ring-1 ring-slate-200"
-            />
+            <pre className="mx-auto min-h-[680px] w-full max-w-[760px] whitespace-pre-wrap break-words rounded-sm bg-white p-8 font-sans text-sm leading-7 text-slate-700 shadow-sm ring-1 ring-slate-200">
+              {textContent}
+            </pre>
           </div>
-        ) : loadError ? (
-          <OriginalError message={loadError} downloadUrl={downloadUrl} fileName={detail.fileName} />
         ) : (
           <OriginalPlaceholder hasOriginal={url !== null} />
-        )}
-      </div>
+        )
+      ) : loading && !url ? (
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 size={22} className="animate-spin text-teal-600" />
+        </div>
+      ) : canInline ? (
+        <div className="flex-1 overflow-auto bg-slate-100 p-4">
+          <iframe
+            src={`${url}#toolbar=0&navpanes=0&view=FitH`}
+            title="简历原件"
+            className="mx-auto h-[680px] w-full max-w-[760px] rounded-sm bg-white shadow-sm ring-1 ring-slate-200"
+          />
+        </div>
+      ) : loadError ? (
+        <OriginalError message={loadError} downloadUrl={downloadUrl} fileName={detail.fileName} />
+      ) : (
+        <OriginalPlaceholder hasOriginal={url !== null} />
+      )}
     </div>
   )
 }
@@ -336,22 +314,80 @@ function OriginalPlaceholder({ hasOriginal }: { hasOriginal: boolean }) {
       </h2>
       <p className="mt-2 max-w-sm text-xs leading-5 text-slate-500">
         {hasOriginal
-          ? 'PDF 可直接内嵌查看，DOCX / MD / TXT 请点击工具栏的下载按钮后打开。'
+          ? 'PDF 可直接内嵌查看，DOCX 请点击右上角的下载按钮后打开。'
           : '未配置 OSS 或原件上传失败，只能查看解析后的文字版。'}
       </p>
     </div>
   )
 }
 
-function ToolbarButton({ title, children }: { title: string; children: React.ReactNode }) {
+interface ItemForm {
+  title: string
+  subtitle: string
+  startDate: string
+  endDate: string
+  description: string
+  tags: string
+}
+
+interface SectionForm {
+  type: string
+  title: string
+  items: ItemForm[]
+}
+
+interface ResumeForm {
+  candidateName: string
+  sections: SectionForm[]
+}
+
+/** 详情 → 表单；tags 用顿号拼成一行方便编辑 */
+function toForm(detail: ResumeDetail): ResumeForm {
+  return {
+    candidateName: detail.candidateName ?? '',
+    sections: detail.sections.map((section) => ({
+      type: section.type,
+      title: section.title,
+      items: section.items.map((item) => ({
+        title: item.title ?? '',
+        subtitle: item.subtitle ?? '',
+        startDate: item.startDate ?? '',
+        endDate: item.endDate ?? '',
+        description: item.description ?? '',
+        tags: item.tags.join('、'),
+      })),
+    })),
+  }
+}
+
+/** 描述可能很长，按内容自动撑高，不出现内部滚动条 */
+function AutoResizeTextarea({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [value])
+
   return (
-    <button
-      type="button"
-      title={title}
-      className="rounded p-1.5 transition hover:bg-slate-200/70 hover:text-slate-700"
-    >
-      {children}
-    </button>
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={1}
+      className="mt-1 w-full resize-none overflow-hidden bg-transparent text-xs leading-6 text-slate-600 outline-none placeholder:text-slate-300"
+    />
   )
 }
 
@@ -359,21 +395,93 @@ function TextEditor({
   detail,
   dirty,
   onDirty,
+  onSaved,
 }: {
   detail: ResumeDetail
   dirty: boolean
   onDirty: (value: boolean) => void
+  onSaved?: (detail: ResumeDetail) => void
 }) {
-  const editorRef = useRef<HTMLDivElement>(null)
+  const [form, setForm] = useState<ResumeForm>(() => toForm(detail))
   const [hint, setHint] = useState('')
+  const [hintError, setHintError] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  // contenteditable 的内容由原生 DOM 管理,详情变化时整体重置
+  // 切换简历或保存成功后，用最新详情重置表单
   useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = toEditableHtml(detail)
-    }
-    setHint('')
+    setForm(toForm(detail))
   }, [detail])
+
+  // 切换简历时清空上一次的保存提示
+  useEffect(() => {
+    setHint('')
+    setHintError(false)
+  }, [detail.id])
+
+  /** 所有编辑都在结构化草稿上改，提交时直接序列化成 sections/items/skills */
+  function edit(mutate: (draft: ResumeForm) => void) {
+    setForm((prev) => {
+      const draft: ResumeForm = {
+        candidateName: prev.candidateName,
+        sections: prev.sections.map((section) => ({
+          ...section,
+          items: section.items.map((item) => ({ ...item })),
+        })),
+      }
+      mutate(draft)
+      return draft
+    })
+    onDirty(true)
+  }
+
+  function handleSave() {
+    const payload: ResumeUpdatePayload = {
+      candidateName: form.candidateName.trim(),
+      sections: form.sections
+        .map((section) => ({
+          type: section.type,
+          title: section.title.trim(),
+          items: section.items.map((item) => ({
+            title: item.title.trim(),
+            subtitle: item.subtitle.trim(),
+            startDate: item.startDate.trim(),
+            endDate: item.endDate.trim(),
+            description: item.description,
+            tags: item.tags
+              .split(/[,，、]/)
+              .map((tag) => tag.trim())
+              .filter(Boolean),
+          })),
+        }))
+        .filter((section) => section.title.length > 0 || section.items.some((item) => item.title.length > 0)),
+      skills: detail.skills.map((skill) => ({
+        name: skill.name,
+        category: skill.category,
+        proficiency: skill.proficiency,
+        evidence: skill.evidence,
+      })),
+    }
+    if (payload.sections.length === 0 && payload.skills.length === 0) {
+      setHintError(true)
+      setHint('简历内容不能为空')
+      return
+    }
+
+    setSaving(true)
+    setHint('')
+    setHintError(false)
+    updateResume(detail.id, payload)
+      .then((updated) => {
+        onDirty(false)
+        onSaved?.(updated)
+        setHint('已保存，改动已写入结构化数据')
+      })
+      .catch((e: unknown) => {
+        setHintError(true)
+        setHint(errMessage(e))
+      })
+      .finally(() => setSaving(false))
+  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -386,78 +494,170 @@ function TextEditor({
           >
             {dirty ? '未保存' : '已同步'}
           </span>
-          <span className="text-xs text-slate-400">点击正文即可编辑（占位，不写入数据库）</span>
+          <span className="text-xs text-slate-400">直接编辑字段，保存后写入章节与条目</span>
         </div>
         <button
           type="button"
-          onClick={() => {
-            onDirty(false)
-            setHint('第一版暂未开放保存，修改不会写入数据库')
-          }}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          保存修改
+          {saving && <Loader2 size={13} className="animate-spin" />}
+          {saving ? '保存中…' : '保存修改'}
         </button>
       </div>
 
       <div className="flex-1 overflow-auto bg-slate-100 p-4">
-        <div
-          ref={editorRef}
-          contentEditable
-          suppressContentEditableWarning
-          onInput={() => onDirty(true)}
-          className="mx-auto min-h-[620px] w-full max-w-[760px] bg-white px-8 py-8 text-sm leading-7 text-slate-700 shadow-sm ring-1 ring-slate-200 outline-none md:px-12 [&_h1]:text-center [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:text-slate-800 [&_h2]:mt-5 [&_h2]:border-b [&_h2]:border-slate-200 [&_h2]:pb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-slate-700 [&_p]:my-1"
-        />
+        <div className="mx-auto min-h-[620px] w-full max-w-[760px] bg-white px-8 py-8 shadow-sm ring-1 ring-slate-200 md:px-12">
+          <input
+            value={form.candidateName}
+            onChange={(e) => {
+              const value = e.target.value
+              edit((draft) => {
+                draft.candidateName = value
+              })
+            }}
+            placeholder="未识别姓名"
+            className="w-full bg-transparent text-center text-xl font-semibold text-slate-800 outline-none focus:bg-slate-50"
+          />
+          <p className="mt-1 text-center text-xs text-slate-400">{detail.fileName}</p>
+
+          {form.sections.map((section, sectionIndex) => (
+            <section key={sectionIndex} className="mt-6">
+              <input
+                value={section.title}
+                onChange={(e) => {
+                  const value = e.target.value
+                  edit((draft) => {
+                    draft.sections[sectionIndex].title = value
+                  })
+                }}
+                placeholder="章节标题"
+                className="w-full border-b border-slate-200 bg-transparent pb-1 text-sm font-semibold tracking-wide text-slate-700 outline-none focus:border-teal-400"
+              />
+              {section.items.length === 0 && <p className="mt-2 text-xs text-slate-400">（无条目）</p>}
+              {section.items.map((item, itemIndex) => {
+                const hasSubtitle = item.subtitle.length > 0
+                const hasTime = item.startDate.length > 0 || item.endDate.length > 0
+                const hasTags = item.tags.length > 0
+                return (
+                  <div
+                    key={itemIndex}
+                    className="mt-2 rounded-lg border border-slate-200/80 bg-white px-3 py-2 transition focus-within:border-teal-300 focus-within:bg-teal-50/20"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <input
+                          value={item.title}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            edit((draft) => {
+                              draft.sections[sectionIndex].items[itemIndex].title = value
+                            })
+                          }}
+                          placeholder="主体（公司 / 学校 / 项目）"
+                          className="w-full bg-transparent text-sm font-medium text-slate-800 outline-none placeholder:text-slate-300"
+                        />
+                        {hasSubtitle && (
+                          <input
+                            value={item.subtitle}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              edit((draft) => {
+                                draft.sections[sectionIndex].items[itemIndex].subtitle = value
+                              })
+                            }}
+                            placeholder="角色 / 专业"
+                            className="mt-0.5 w-full bg-transparent text-xs text-slate-500 outline-none placeholder:text-slate-300"
+                          />
+                        )}
+                      </div>
+                      {hasTime && (
+                        <div className="flex shrink-0 items-center gap-1 text-xs text-slate-400">
+                          <input
+                            value={item.startDate}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              edit((draft) => {
+                                draft.sections[sectionIndex].items[itemIndex].startDate = value
+                              })
+                            }}
+                            className="w-16 bg-transparent text-right outline-none"
+                          />
+                          <span className="text-slate-300">-</span>
+                          <input
+                            value={item.endDate}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              edit((draft) => {
+                                draft.sections[sectionIndex].items[itemIndex].endDate = value
+                              })
+                            }}
+                            className="w-16 bg-transparent outline-none"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <AutoResizeTextarea
+                      value={item.description}
+                      onChange={(value) =>
+                        edit((draft) => {
+                          draft.sections[sectionIndex].items[itemIndex].description = value
+                        })
+                      }
+                      placeholder="描述"
+                    />
+                    {hasTags && (
+                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px]">
+                        <span className="shrink-0 text-slate-300">标签</span>
+                        <input
+                          value={item.tags}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            edit((draft) => {
+                              draft.sections[sectionIndex].items[itemIndex].tags = value
+                            })
+                          }}
+                          className="min-w-0 flex-1 bg-transparent text-teal-700 outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </section>
+          ))}
+
+          {detail.skills.length > 0 && (
+            <section className="mt-6">
+              <h3 className="border-b border-slate-200 pb-1 text-sm font-semibold tracking-wide text-slate-700">
+                技能清单
+              </h3>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {detail.skills.map((skill) => (
+                  <span key={skill.id} className="rounded bg-teal-50 px-2 py-0.5 text-xs text-teal-700">
+                    {skill.name}
+                    {skill.proficiency ? ` · ${skill.proficiency}/5` : ''}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-slate-400">技能清单暂不支持在这里修改</p>
+            </section>
+          )}
+        </div>
       </div>
 
-      {hint && <p className="border-t border-slate-200 bg-white px-4 py-2 text-[11px] text-amber-600">{hint}</p>}
+      {hint && (
+        <p
+          className={`border-t border-slate-200 bg-white px-4 py-2 text-[11px] ${
+            hintError ? 'text-rose-600' : 'text-teal-600'
+          }`}
+        >
+          {hint}
+        </p>
+      )}
     </div>
   )
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
-/** 把结构化详情转成可编辑的 HTML,交给 contenteditable 渲染 */
-function toEditableHtml(detail: ResumeDetail): string {
-  const parts: string[] = []
-  parts.push(`<h1>${escapeHtml(detail.candidateName || '未识别姓名')}</h1>`)
-  parts.push(`<p style="text-align:center;color:#94a3b8;font-size:12px">${escapeHtml(detail.fileName)}</p>`)
-
-  for (const section of detail.sections) {
-    parts.push(`<h2>${escapeHtml(section.title)}</h2>`)
-    if (section.items.length === 0) {
-      parts.push('<p style="color:#94a3b8;font-size:12px">（无条目）</p>')
-    }
-    for (const item of section.items) {
-      const head = [item.title, item.subtitle].filter(Boolean).map((v) => escapeHtml(v as string)).join(' · ')
-      const time = [item.startDate, item.endDate].filter(Boolean).map((v) => escapeHtml(v as string)).join(' - ')
-      parts.push(
-        `<p><strong>${head || '未命名'}</strong>${
-          time ? `<span style="color:#94a3b8;font-size:12px">　${time}</span>` : ''
-        }</p>`,
-      )
-      if (item.description) {
-        parts.push(`<p style="font-size:13px;color:#475569">${escapeHtml(item.description)}</p>`)
-      }
-      if (item.tags.length > 0) {
-        parts.push(
-          `<p style="font-size:12px;color:#0f766e">${item.tags.map((tag) => `#${escapeHtml(tag)}`).join('　')}</p>`,
-        )
-      }
-    }
-  }
-
-  if (detail.skills.length > 0) {
-    parts.push('<h2>技能清单</h2>')
-    parts.push(
-      `<p style="font-size:13px;color:#475569">${detail.skills
-        .map((skill) => `${escapeHtml(skill.name)}${skill.proficiency ? `（${skill.proficiency}/5）` : ''}`)
-        .join('、')}</p>`,
-    )
-  }
-  return parts.join('')
 }
 
 export default ResumeViewer

@@ -3,6 +3,7 @@ package com.grindset.backend.controller;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
+import com.grindset.backend.dto.ParsedResume;
 import com.grindset.backend.dto.ResumeDetail;
 import com.grindset.backend.dto.ResumeSummary;
 import com.grindset.backend.security.LoginUser;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -62,6 +65,16 @@ public class ResumeController {
                                     @PathVariable long id) {
         resumeService.delete(userId(loginUser), id);
         return ApiResponse.ok(null);
+    }
+
+    /**
+     * 保存文字版编辑:直接提交编辑后的结构化内容,后端覆盖章节/条目/技能,不重新调用模型。
+     */
+    @PutMapping("/{id}")
+    public ApiResponse<ResumeDetail> update(@AuthenticationPrincipal LoginUser loginUser,
+                                            @PathVariable long id,
+                                            @RequestBody ParsedResume request) {
+        return ApiResponse.ok(resumeService.updateContent(userId(loginUser), id, request));
     }
 
     /**

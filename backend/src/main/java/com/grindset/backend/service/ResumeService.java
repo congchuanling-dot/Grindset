@@ -6,6 +6,7 @@ import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.CandidateType;
 import com.grindset.backend.common.ResumeFileType;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.dto.ParsedResume;
 import com.grindset.backend.dto.ResumeDetail;
 import com.grindset.backend.dto.ResumeSummary;
 import com.grindset.backend.entity.Resume;
@@ -233,6 +234,19 @@ public class ResumeService {
                 resume.getParseStatus() == null ? PARSING : resume.getParseStatus(),
                 resume.getErrorMsg(), resume.getCandidateName(), enumName(resume.getCandidateType()),
                 resume.getModel(), format(resume), skillViews, sectionViews);
+    }
+
+    /** 保存文字版编辑:直接用结构化内容覆盖章节、条目、技能,不重新调用模型 */
+    public ResumeDetail updateContent(long userId, long id, ParsedResume parsed) {
+        Resume resume = requireOwned(userId, id);
+        if (resume.getParseStatus() != null && resume.getParseStatus() == PARSING) {
+            throw new BizException(ErrorCode.CONFLICT, "简历正在解析中,请稍后再保存");
+        }
+        if (parsed == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "简历内容不能为空");
+        }
+        parseService.replaceStructured(resume, parsed);
+        return get(userId, id);
     }
 
     /** 打开原件流,供 Controller 代理预览;原件不存在或存储未配置返回 404 */

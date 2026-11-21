@@ -78,8 +78,8 @@ public class ResumeLlmParser {
         return "以下是简历原文,请按要求输出 JSON:\n<<<\n" + text + "\n>>>";
     }
 
-    /** 枚举降级、空值兜底、长度截断、熟练度夹取 */
-    private ParsedResume normalize(ParsedResume parsed) {
+    /** 枚举降级、空值兜底、长度截断、熟练度夹取;编辑保存时也复用它 */
+    public ParsedResume normalize(ParsedResume parsed) {
         parsed.setCandidateType(CandidateType.from(parsed.getCandidateType()).name());
         parsed.setCandidateName(Texts.truncate(Texts.blankToNull(parsed.getCandidateName()), 128));
 

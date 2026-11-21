@@ -99,6 +99,49 @@ export async function deleteResume(id: string): Promise<void> {
   await unwrapJson<null>(res, '删除简历失败')
 }
 
+export interface ResumeUpdateSkill {
+  name: string
+  category: string | null
+  proficiency: number | null
+  evidence: string | null
+}
+
+export interface ResumeUpdateItem {
+  title: string
+  subtitle: string
+  startDate: string
+  endDate: string
+  description: string
+  tags: string[]
+}
+
+export interface ResumeUpdateSection {
+  type: string
+  title: string
+  items: ResumeUpdateItem[]
+}
+
+/** 文字版编辑保存：直接提交结构化内容，后端覆盖章节/条目/技能，不重新调用模型 */
+export interface ResumeUpdatePayload {
+  candidateName: string
+  sections: ResumeUpdateSection[]
+  skills: ResumeUpdateSkill[]
+}
+
+export async function updateResume(id: string, payload: ResumeUpdatePayload): Promise<ResumeDetail> {
+  let res: Response
+  try {
+    res = await authFetch(`/api/resumes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    throw new Error('无法连接服务器，请确认后端已启动')
+  }
+  return unwrapJson<ResumeDetail>(res, '保存简历失败')
+}
+
 /** 通过后端代理获取原件字节，用于 PDF 内嵌预览（绕开 OSS 默认域名的强制下载） */
 export async function fetchResumeOriginal(id: string): Promise<Blob> {
   let res: Response

@@ -15,13 +15,6 @@ import { ParseStatus } from '../constants/status'
 const ACCEPT = '.pdf,.docx,.md,.txt'
 const MAX_BYTES = 10 * 1024 * 1024
 
-const TYPE_LABELS: Record<string, string> = {
-  FRESH_GRADUATE: '应届生',
-  INTERN: '找实习',
-  EXPERIENCED: '社招',
-  UNKNOWN: '未识别',
-}
-
 function ResumePage() {
   const [resumes, setResumes] = useState<ResumeSummary[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -182,12 +175,7 @@ function ResumePage() {
     <div className="flex h-full flex-col overflow-y-auto bg-slate-50">
       <header className="border-b border-slate-200 bg-white px-4 py-4 md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-base font-semibold text-slate-800">简历管理</h1>
-            <p className="mt-1 text-xs text-slate-500">
-              上传 PDF / DOCX / MD / TXT，一人可保存多份，随时切换查看解析结果。原件存入私有 OSS，仅通过临时签名链接预览。
-            </p>
-          </div>
+          <h1 className="text-base font-semibold text-slate-800">简历管理</h1>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -248,7 +236,17 @@ function ResumePage() {
                 ) : detail.parseStatus === ParseStatus.PARSING ? (
                   <ParsingPanel fileName={detail.fileName} />
                 ) : (
-                  <ResumeViewer detail={detail} originalUrl={originalUrl} editable />
+                  <ResumeViewer
+                    detail={detail}
+                    originalUrl={originalUrl}
+                    editable
+                    onSaved={(updated) => {
+                      setDetail(updated)
+                      setResumes((prev) =>
+                        prev.map((item) => (item.id === updated.id ? toSummary(updated) : item)),
+                      )
+                    }}
+                  />
                 )
               ) : (
                 <div className="flex h-64 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm text-slate-400">
@@ -341,23 +339,17 @@ function ResumeSwitcher({
       </select>
 
       {detail && (
-        <>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-            {TYPE_LABELS[detail.candidateType] ?? '未识别'}
-          </span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs ${
-              status === ParseStatus.SUCCESS
-                ? 'bg-teal-50 text-teal-700'
-                : status === ParseStatus.FAILED
-                  ? 'bg-rose-50 text-rose-600'
-                  : 'bg-amber-50 text-amber-700'
-            }`}
-          >
-            {status === ParseStatus.SUCCESS ? '解析成功' : status === ParseStatus.FAILED ? '解析失败' : '解析中'}
-          </span>
-          {detail.model && <span className="text-xs text-slate-400">{detail.model}</span>}
-        </>
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs ${
+            status === ParseStatus.SUCCESS
+              ? 'bg-teal-50 text-teal-700'
+              : status === ParseStatus.FAILED
+                ? 'bg-rose-50 text-rose-600'
+                : 'bg-amber-50 text-amber-700'
+          }`}
+        >
+          {status === ParseStatus.SUCCESS ? '解析成功' : status === ParseStatus.FAILED ? '解析失败' : '解析中'}
+        </span>
       )}
 
       <div className="ml-auto flex items-center gap-3">
