@@ -47,6 +47,9 @@ public class ResumeTextExtractor {
 
     private static final byte[] PDF_MAGIC = "%PDF-".getBytes(StandardCharsets.ISO_8859_1);
 
+    /** PDF 规范允许 %PDF- 出现在文件前 1024 字节内,部分工具会在前面加 BOM 或空行 */
+    private static final int HEADER_SCAN_BYTES = 1024;
+
     /**
      * 只做文件名归一、后缀白名单和文件头校验,不抽全文。
      * 上传接口用它拿到类型后先落库/入队,把完整抽取留给解析线程。
@@ -89,7 +92,7 @@ public class ResumeTextExtractor {
     /** 读取文件头,用于防止改后缀上传 */
     private static byte[] readHeader(Path file) {
         try (InputStream in = Files.newInputStream(file)) {
-            return in.readNBytes(4);
+            return in.readNBytes(HEADER_SCAN_BYTES);
         } catch (IOException e) {
             throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "文件读取失败,请重新上传");
         }
@@ -122,7 +125,8 @@ public class ResumeTextExtractor {
     /** 文件头校验,防止把别的文件改后缀上传 */
     private static void checkHeader(ResumeFileType fileType, byte[] bytes) {
         boolean matched = switch (fileType) {
-            case PDF -> startsWith(bytes, PDF_MAGIC);
+            // PDF 头部可能被 BOM/空行推后,在前 1024 字节内找到 %PDF- 即可
+            case PDF -> contains(bytes, PDF_MAGIC);
             // DOCX 是 ZIP 包
             case DOCX -> bytes.length >= 4 && bytes[0] == 0x50 && bytes[1] == 0x4B
                     && bytes[2] == 0x03 && bytes[3] == 0x04;
@@ -131,6 +135,22 @@ public class ResumeTextExtractor {
         if (!matched) {
             throw new BizException(ErrorCode.BAD_REQUEST, "文件内容与扩展名不符,请重新选择");
         }
+    }
+
+    private static boolean contains(byte[] bytes, byte[] needle) {
+        for (int i = 0; i <= bytes.length - needle.length; i++) {
+            boolean hit = true;
+            for (int j = 0; j < needle.length; j++) {
+                if (bytes[i + j] != needle[j]) {
+                    hit = false;
+                    break;
+                }
+            }
+            if (hit) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean startsWith(byte[] bytes, byte[] prefix) {

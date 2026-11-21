@@ -43,8 +43,12 @@ public class ResumeParsePublisher {
             case 1 -> RabbitResumeConfig.RETRY_30S_ROUTING;
             case 2 -> RabbitResumeConfig.RETRY_2M_ROUTING;
             case 3 -> RabbitResumeConfig.RETRY_10M_ROUTING;
-            default -> RabbitResumeConfig.DLQ_ROUTING;
+            default -> null;
         };
+        if (routingKey == null) {
+            deadLetter(message);
+            return;
+        }
         send(RabbitResumeConfig.EXCHANGE, routingKey, withAttempt(message, nextAttempt));
     }
 
@@ -55,7 +59,8 @@ public class ResumeParsePublisher {
 
     /** 永久失败直接进死信队列 */
     public void deadLetter(ResumeParseMessage message) {
-        send(RabbitResumeConfig.EXCHANGE, RabbitResumeConfig.DLQ_ROUTING, message);
+        // 死信 routing 只绑定在 resume.dlx 上,发到主交换机不可路由
+        send(RabbitResumeConfig.DLX, RabbitResumeConfig.DLQ_ROUTING, message);
     }
 
     public ResumeParseMessage toMessage(Resume resume, int attempt) {
