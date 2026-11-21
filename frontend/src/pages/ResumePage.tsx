@@ -72,6 +72,30 @@ function ResumePage() {
     }
   }, [])
 
+  // 异步解析:上传后轮询详情,直到成功或失败
+  useEffect(() => {
+    if (!detail || detail.parseStatus !== ParseStatus.PARSING) return
+    let cancelled = false
+    const timer = window.setInterval(() => {
+      getResume(detail.id)
+        .then((latest) => {
+          if (cancelled) return
+          setDetail(latest)
+          setResumes((prev) => prev.map((item) => (item.id === latest.id ? toSummary(latest) : item)))
+          if (latest.parseStatus !== ParseStatus.PARSING) {
+            window.clearInterval(timer)
+          }
+        })
+        .catch(() => {
+          // 轮询失败保持当前状态,下一轮继续
+        })
+    }, 2000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [detail?.id, detail?.parseStatus])
+
   // 切换简历加载详情
   useEffect(() => {
     if (!selectedId) {
@@ -219,8 +243,10 @@ function ResumePage() {
                 </div>
               )}
               {detail ? (
-                detail.parseStatus === 2 ? (
+                detail.parseStatus === ParseStatus.FAILED ? (
                   <ParseFailedPanel detail={detail} onPick={() => fileInputRef.current?.click()} />
+                ) : detail.parseStatus === ParseStatus.PARSING ? (
+                  <ParsingPanel fileName={detail.fileName} />
                 ) : (
                   <ResumeViewer detail={detail} originalUrl={originalUrl} editable />
                 )
@@ -346,6 +372,20 @@ function ResumeSwitcher({
           删除
         </button>
       </div>
+    </div>
+  )
+}
+
+function ParsingPanel({ fileName }: { fileName: string }) {
+  return (
+    <div className="flex min-h-[420px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+        <Loader2 size={22} className="animate-spin" />
+      </span>
+      <h2 className="mt-4 text-sm font-semibold text-slate-800">AI 正在解析简历</h2>
+      <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+        「{fileName}」已进入解析队列，通常需要 10~40 秒，完成后会自动刷新。
+      </p>
     </div>
   )
 }

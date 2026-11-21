@@ -15,6 +15,7 @@ Grindset 是一个「面试复习闭环」全栈应用：
 技术栈：
 
 - 后端：Spring Boot 3.4.1 / Java 21 / Maven / MyBatis-Plus 3.5.9 / MySQL 8 / Redis / JWT(jjwt) / PDFBox / Apache POI
+- 消息队列：RabbitMQ 3.13 + Spring AMQP，用于简历解析异步任务（主队列 quorum + TTL 重试 + 死信队列）
 - 前端：React 19 / TypeScript / Vite 8 / Tailwind CSS 4 / react-router-dom 7 / lucide-react / Monaco Editor
 - 判题：本机 Docker 一次性容器（Java / Python），断网并限制 CPU、内存、进程数
 
@@ -55,6 +56,7 @@ Grindset/
 
 - JDK 21+、Maven 3.9+、Node.js 20+
 - MySQL 8（Docker 即可）、Redis
+- RabbitMQ 3.13（Docker 即可），简历异步解析依赖；未启动时 Worker 会持续重连并打印日志
 - 使用编程题判题时需要本机 Docker，并提前拉取判题镜像
 
 ### 3.2 数据库
@@ -75,6 +77,7 @@ mysql -uroot -p123456 < sql/010_oauth_client_schema.sql
 mysql -uroot -p123456 < sql/011_agent_chat_schema.sql
 mysql -uroot -p123456 < sql/012_resume_original_schema.sql
 mysql -uroot -p123456 < sql/013_storage_config_schema.sql
+mysql -uroot -p123456 < sql/014_resume_parse_mq.sql
 ```
 
 大模型渠道/模型/密钥表不在 `sql/` 下，需要额外执行（**必须带 utf8mb4 参数**，否则中文展示名会乱码）：
@@ -86,6 +89,16 @@ mysql --default-character-set=utf8mb4 -uroot -p123456 grindset < backend/src/mai
 
 默认连接：MySQL `localhost:3306/grindset`，root/123456；Redis `localhost:6379`，无密码（见 `backend/src/main/resources/application.yml`）。
 
+RabbitMQ 本地初始化（Docker）：
+
+```bash
+docker run -d --name grindset-rabbitmq -p 5672:5672 -p 15672:15672 \
+  -e RABBITMQ_DEFAULT_USER=grindset -e RABBITMQ_DEFAULT_PASS=grindset123 \
+  -e RABBITMQ_DEFAULT_VHOST=/grindset rabbitmq:3.13-management
+```
+
+管理台 `http://localhost:15672`。队列/交换机由应用启动时自动声明，无需手工创建。
+
 ### 3.3 后端
 
 ```bash
@@ -94,6 +107,11 @@ mvn spring-boot:run
 ```
 
 **实际端口是 8081**（`application.yml` 中 `server.port: 8081`）。README 里写的 8080 是过期信息，不要被误导。健康检查：`GET http://localhost:8081/api/health`。
+
+同一个 jar 支持两种启动角色（用 `WORKER_ENABLED` 切换，不需要拆微服务）：
+
+- **api**：`WORKER_ENABLED=false`，只接收 HTTP 请求和投递解析消息，不消费
+- **worker**：`WORKER_ENABLED=true`（默认），既提供 HTTP 也消费简历解析消息；本地开发单进程用这个即可
 
 ### 3.4 前端
 
@@ -118,6 +136,11 @@ npm run dev
 | `RESUME_LLM_PROVIDER` / `RESUME_LLM_MODEL` | 简历解析固定使用的厂商/模型；两者都不配则自动选第一个可用 |
 | `INTERVIEW_LLM_PROVIDER` / `INTERVIEW_LLM_MODEL` | AI 面试/评分/错题重练/题库评分固定使用；规则同上 |
 | `JUDGE_JAVA_IMAGE` / `JUDGE_PYTHON_IMAGE` | 判题镜像名 |
+| `RABBITMQ_HOST` / `RABBITMQ_PORT` | RabbitMQ 地址，默认 `localhost:5672` |
+| `RABBITMQ_USER` / `RABBITMQ_PASSWORD` / `RABBITMQ_VHOST` | RabbitMQ 凭证与 vhost，默认 `grindset` / `grindset123` / `/grindset` |
+| `WORKER_ENABLED` | 是否消费简历解析消息。api 角色设 `false`，worker 角色设 `true`（默认） |
+| `RESUME_UPLOAD_PERMITS` | 单实例上传并发闸门，默认 8 |
+| `RESUME_PARSE_MAX_ATTEMPTS` / `RESUME_PARSE_STUCK_MINUTES` / `RESUME_PARSE_RECONCILE_MS` | 解析最大尝试次数（默认 3）、卡住判定分钟数（默认 10）、补偿扫描间隔毫秒（默认 300000） |
 | `VITE_PROXY_TARGET` | 前端开发代理目标 |
 
 ## 4. 后端架构
@@ -166,6 +189,22 @@ npm run dev
 - 慢 LLM 调用放在数据库事务外，先拿到结果再开短事务落库
 - 画像、错题收录是**旁路**：失败只记日志，不回滚主流程，可通过管理员重建接口修复
 - 判题使用单线程 `ExecutorService` 串行执行，提交先落库 `PENDING`，前端轮询
+- 简历上传用 `Semaphore` 限制单实例并发（默认 8），临时文件落盘、用后即删
+
+### 4.5 异步任务（RabbitMQ）
+
+简历解析走 RabbitMQ，生产者与消费者在同一个应用里，靠 `WORKER_ENABLED` 控制角色：
+
+- 生产者：`ResumeService.upload()` 落库 `parse_status=0` 后调用 `ResumeParsePublisher.publish()`，消息只带元数据（`resumeId` / `userId` / `objectKey` / `fileType` / `fileName` / `attempt` / `traceId`），不带文件字节
+- 消费者：`ResumeParseConsumer` 手动 ack，Redis 锁 `resume:parse:{resumeId}`（TTL 10 分钟）做幂等；从 OSS 重新下载原件 → 抽文本 → LLM → 事务落库
+- 拓扑（`RabbitResumeConfig`）：
+  - `resume.exchange`（direct）→ `resume.parse.queue`（quorum、持久化、DLX=`resume.dlx`）
+  - `resume.parse.dlq`（quorum）：超过最大尝试次数或永久失败的消息
+  - `resume.parse.retry.30s` / `.2m` / `.10m`（classic TTL）：TTL 到期通过 DLX 回到主交换机
+- 重试：`attempt` 是 **1-based 执行次数**（首次=1）；可重试错误按 `attempt+1` 投递下一档重试，超过 `max-attempts` 标记失败并进 DLQ
+- 补偿：`ResumeParseReconciler` 每 5 分钟扫描 `parse_status=0` 且 `updated_at` 超过 10 分钟、`parse_attempt<3` 的记录，重新投递或标记失败
+- 可靠性：事务提交后再发消息；publisher confirm 只记日志；暂时不做 outbox，靠补偿任务兜底
+- OSS 不可用或投递失败时，上传接口回退为同步解析，保证功能可用
 
 ## 5. 前端架构
 
@@ -196,15 +235,18 @@ npm run dev
 
 ### 6.1 简历解析
 
-`ResumeController → ResumeService → ResumeTextExtractor → ResumeLlmParser`（原件旁路：`ResumeOriginalStorage`）
+`ResumeController → ResumeService → ResumeParsePublisher → RabbitMQ → ResumeParseConsumer → ResumeParseService`（原件 `ResumeOriginalStorage`）
 
-1. 上传 PDF/DOCX/MD/TXT（单文件 ≤ 10MB）
-2. 用 PDFBox / POI / 文本读取做**确定性文本抽取**（不交给 LLM）
-3. LLM 只负责把纯文本转成固定 JSON 结构（失败重试一次）
-4. 落库通用章节模型：`resumes` → `resume_sections` → `resume_section_items`，技能单独 `resume_skills`
-5. 原件上传**阿里云 OSS 私有桶**，`resumes.original_object_key` 只存对象 key；未配置 OSS 或上传失败自动跳过，不影响解析。PDF 预览走 `GET /api/resumes/{id}/original` 由后端流式代理（OSS 默认域名会强制下载，不能直接给 iframe）；下载与分享用带时效的签名 URL（`originalUrl` / `originalDownloadUrl`）
-6. **不保存原始纯文本**；解析失败写 `parse_status=2` 与 `error_msg`
-7. 章节类型见 `common/ResumeSectionType`，未知类型统一降级 `OTHER` 并保留原章节标题；新增类型只改枚举，不改表
+1. 上传 PDF/DOCX/MD/TXT（单文件 ≤ 10MB），`MultipartFile.transferTo()` 流式落临时文件，堆里不保留整份文件
+2. 原件流式上传**阿里云 OSS 私有桶**，`resumes.original_object_key` 只存对象 key
+3. 落库 `parse_status=0`、`parse_attempt=0` 后投递解析消息，**接口立即返回**，前端每 2 秒轮询 `GET /api/resumes/{id}`
+4. 消费者从 OSS 重新下载原件，用 PDFBox / POI / 文本读取做**确定性文本抽取**（不交给 LLM）
+5. LLM 只负责把纯文本转成固定 JSON 结构（失败重试一次）
+6. 事务落库通用章节模型：`resumes` → `resume_sections` → `resume_section_items`，技能单独 `resume_skills`；成功后 `parse_status=1`
+7. 失败：可重试错误按 30s / 2m / 10m 重试，超过 3 次标记 `parse_status=2` 并写 `error_msg`，消息进死信队列
+8. OSS 未配置、上传失败或消息投递失败时，回退为上传请求内同步解析，不阻断功能
+9. PDF 预览走 `GET /api/resumes/{id}/original` 由后端流式代理（OSS 默认域名会强制下载，不能直接给 iframe）；下载与分享用带时效的签名 URL（`originalUrl` / `originalDownloadUrl`）
+10. **不保存原始纯文本**；章节类型见 `common/ResumeSectionType`，未知类型统一降级 `OTHER` 并保留原章节标题；新增类型只改枚举，不改表
 
 ### 6.2 AI 面试
 
@@ -305,7 +347,7 @@ npm run dev
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| POST | `/` | multipart 字段 `file`，上传并同步解析，返回结构化详情 |
+| POST | `/` | multipart 字段 `file`，上传并**异步解析**；立即返回 `parseStatus=0`，前端轮询详情 |
 | GET | `/` | 当前用户简历列表 |
 | GET | `/{id}` | 简历详情（章节 + 条目 + 技能） |
 | GET | `/{id}/original` | 代理返回原件字节（PDF 内嵌预览用，inline 响应头） |
@@ -399,6 +441,7 @@ npm run dev
 | `011_agent_chat_schema.sql` | `agent_conversations`、`agent_messages` | 首页 Agent 会话与完整消息流（可重放、可恢复） |
 | `012_resume_original_schema.sql` | `resumes.original_object_key` | 简历原件在 OSS 中的对象 key |
 | `013_storage_config_schema.sql` | `storage_config` | 外部存储配置（OSS AccessKey 密文，AAD 绑定行 id） |
+| `014_resume_parse_mq.sql` | `resumes` 扩展列 | `parse_attempt`、`parse_started_at`、`parse_finished_at`（异步解析状态） |
 | `db/llm_catalog.sql` | `llm_channels`、`llm_models`、`llm_keys` | 大模型渠道/模型/密钥池 |
 | `db/llm_keys_balance.sql` | 余额相关扩展列 | 渠道余额维护字段 |
 
@@ -424,6 +467,7 @@ npm run dev
 11. 题库第一版是力扣刷题形态，不做 PDF/爬虫导入、管理后台 UI、代码判题以外的扩展。
 12. 简历预览组件在简历管理页和 AI 面试页共用同一实现，两处样式/行为必须一致。
 13. 闭集字段（文件类型、章节类型、候选人阶段、题型、判题形态、题目来源、判题语言/状态、面试风格等）在**实体层用枚举**；DTO 与前端契约保持字符串或数字。数据库值必须与枚举 `name()` 一致，例外如 `InterviewStyle` 用小写 `@EnumValue`。
+14. 简历解析是**异步任务**：上传只负责落库 + 投递消息，不在请求线程里调 LLM；消费者必须幂等（Redis 锁 + `parse_status` 判断），可重试错误走 TTL 重试队列，超过次数进死信队列。**不保存原始纯文本**，worker 从 OSS 重新下载原件。
 
 ## 11. 常见改动指引
 
@@ -466,6 +510,10 @@ npm run dev
 - **OAuth 凭证在库里**：GitHub / Google 的 client_secret 是 `oauth_client_config` 里的 AES-GCM 密文，AAD 绑定该行 `id`。换 secret 必须用同一主密钥重新加密后 `UPDATE`，不要只改明文；改 `id` 也会解不开。
 - **OSS 凭证在库里**：`storage_config` 的 AccessKey 同样是 AES-GCM 密文，AAD 绑定行 `id`；数据库配置优先，环境变量仅兜底。未配置或上传失败时原件自动跳过，解析照常。
 - **签名 URL 会过期**：默认 1 小时，页面长时间停留后原件预览 403，重新拉 `GET /api/resumes/{id}` 换新链接。
+- **RabbitMQ 必须可连**：简历异步解析依赖 RabbitMQ；未启动时应用仍能启动，但消息发不出去会回退同步解析。检查 `resume.parse.queue` 的 consumers 与 messages。
+- **worker 角色**：`WORKER_ENABLED=false` 的 api 实例只投递不消费；只部署 api 不部署 worker 会导致简历一直停在 `parse_status=0`。
+- **死信队列要监控**：`resume.parse.dlq` 有消息说明解析连续失败或消息非法，需要看日志并人工重投。
+- **解析字段**：`parse_attempt` 是 1-based 执行次数，`parse_started_at` / `parse_finished_at` 用于排查卡住任务；补偿任务依赖它们。
 
 ## 13. 文档索引（docs/）
 

@@ -38,6 +38,13 @@ public class Resume {
     /** 0 解析中 / 1 成功 / 2 失败 */
     private Integer parseStatus;
 
+    /** 已尝试解析次数,用于异步重试和补偿 */
+    private Integer parseAttempt;
+
+    private LocalDateTime parseStartedAt;
+
+    private LocalDateTime parseFinishedAt;
+
     private String errorMsg;
 
     /** 解析使用的模型 ID */
@@ -117,6 +124,30 @@ public class Resume {
 
     public void setParseStatus(Integer parseStatus) {
         this.parseStatus = parseStatus;
+    }
+
+    public Integer getParseAttempt() {
+        return parseAttempt;
+    }
+
+    public void setParseAttempt(Integer parseAttempt) {
+        this.parseAttempt = parseAttempt;
+    }
+
+    public LocalDateTime getParseStartedAt() {
+        return parseStartedAt;
+    }
+
+    public void setParseStartedAt(LocalDateTime parseStartedAt) {
+        this.parseStartedAt = parseStartedAt;
+    }
+
+    public LocalDateTime getParseFinishedAt() {
+        return parseFinishedAt;
+    }
+
+    public void setParseFinishedAt(LocalDateTime parseFinishedAt) {
+        this.parseFinishedAt = parseFinishedAt;
     }
 
     public String getErrorMsg() {

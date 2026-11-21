@@ -13,10 +13,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Date;
 
 /**
@@ -38,12 +40,12 @@ public class ResumeOriginalStorage {
     }
 
     /**
-     * 上传原件。
+     * 上传原件(流式,不把整份文件读进堆)。
      *
-     * @return object key;未配置 OSS、上传失败或内容为空时返回 null
+     * @return object key;未配置 OSS、上传失败或文件为空时返回 null
      */
-    public String upload(long userId, long resumeId, ResumeFileType fileType, byte[] bytes) {
-        if (bytes == null || bytes.length == 0) {
+    public String upload(long userId, long resumeId, ResumeFileType fileType, Path file, long size) {
+        if (file == null || size <= 0) {
             return null;
         }
         StorageConfigService.ResolvedOss config = configService.resolve();
@@ -53,15 +55,37 @@ public class ResumeOriginalStorage {
         String key = objectKey(config.dirPrefix(), userId, resumeId, fileType);
         try {
             ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentLength(bytes.length);
+            metadata.setContentLength(size);
             metadata.setContentType(contentType(fileType));
-            try (ByteArrayInputStream in = new ByteArrayInputStream(bytes)) {
+            try (InputStream in = Files.newInputStream(file)) {
                 client(config).putObject(config.bucket(), key, in, metadata);
             }
             return key;
         } catch (Exception e) {
             log.warn("简历原件上传 OSS 失败,已跳过原件存储 resumeId={} type={}", resumeId, fileType, e);
             return null;
+        }
+    }
+
+    /**
+     * 把 OSS 原件下载到本地临时文件,供解析线程抽取文本。
+     *
+     * @return 成功返回 true;未配置、对象不存在或网络失败返回 false
+     */
+    public boolean downloadTo(String objectKey, Path target) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return false;
+        }
+        StorageConfigService.ResolvedOss config = configService.resolve();
+        if (config == null) {
+            return false;
+        }
+        try (InputStream in = client(config).getObject(config.bucket(), objectKey).getObjectContent()) {
+            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+            return true;
+        } catch (Exception e) {
+            log.warn("下载 OSS 简历原件失败 key={}", objectKey, e);
+            return false;
         }
     }
 

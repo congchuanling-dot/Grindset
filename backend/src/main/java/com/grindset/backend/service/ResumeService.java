@@ -5,9 +5,7 @@ import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.CandidateType;
 import com.grindset.backend.common.ResumeFileType;
-import com.grindset.backend.common.ResumeSectionType;
 import com.grindset.backend.common.SnowflakeIdGenerator;
-import com.grindset.backend.dto.ParsedResume;
 import com.grindset.backend.dto.ResumeDetail;
 import com.grindset.backend.dto.ResumeSummary;
 import com.grindset.backend.entity.Resume;
@@ -18,23 +16,27 @@ import com.grindset.backend.mapper.ResumeMapper;
 import com.grindset.backend.mapper.ResumeSectionItemMapper;
 import com.grindset.backend.mapper.ResumeSectionMapper;
 import com.grindset.backend.mapper.ResumeSkillMapper;
+import com.grindset.backend.service.resume.ResumeParsePublisher;
+import com.grindset.backend.service.resume.ResumeParseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import static com.grindset.backend.common.constant.InputLimits.MAX_RESUME_FILE_BYTES;
-import static com.grindset.backend.common.constant.ResumeParseStatus.FAILED;
 import static com.grindset.backend.common.constant.ResumeParseStatus.PARSING;
-import static com.grindset.backend.common.constant.ResumeParseStatus.SUCCESS;
 import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
@@ -46,35 +48,40 @@ public class ResumeService {
 
     private static final Logger log = LoggerFactory.getLogger(ResumeService.class);
 
-    private static final int MAX_ERROR_LENGTH = 500;
-
     private final ResumeMapper resumeMapper;
     private final ResumeSectionMapper sectionMapper;
     private final ResumeSectionItemMapper itemMapper;
     private final ResumeSkillMapper skillMapper;
     private final ResumeTextExtractor extractor;
-    private final ResumeLlmParser parser;
     private final ResumeOriginalStorage originalStorage;
+    private final ResumeParseService parseService;
+    private final ResumeParsePublisher parsePublisher;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
 
+    /** 单实例上传并发闸门,避免大量 PDF/OSS 同时占用内存 */
+    private final Semaphore uploadSlots;
+
     public ResumeService(ResumeMapper resumeMapper, ResumeSectionMapper sectionMapper,
                          ResumeSectionItemMapper itemMapper, ResumeSkillMapper skillMapper,
-                         ResumeTextExtractor extractor, ResumeLlmParser parser,
-                         ResumeOriginalStorage originalStorage,
-                         SnowflakeIdGenerator idGenerator, TransactionTemplate transactionTemplate) {
+                         ResumeTextExtractor extractor, ResumeOriginalStorage originalStorage,
+                         ResumeParseService parseService, ResumeParsePublisher parsePublisher,
+                         SnowflakeIdGenerator idGenerator, TransactionTemplate transactionTemplate,
+                         @Value("${app.resume.parse.upload-permits:8}") int uploadPermits) {
         this.resumeMapper = resumeMapper;
         this.sectionMapper = sectionMapper;
         this.itemMapper = itemMapper;
         this.skillMapper = skillMapper;
         this.extractor = extractor;
-        this.parser = parser;
         this.originalStorage = originalStorage;
+        this.parseService = parseService;
+        this.parsePublisher = parsePublisher;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
+        this.uploadSlots = new Semaphore(Math.max(1, uploadPermits));
     }
 
-    /** 上传并同步解析,返回完整详情 */
+    /** 上传并异步解析:落库 + 投递 MQ + 立即返回;OSS 不可用时回退同步解析 */
     public ResumeDetail upload(long userId, MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BizException(ErrorCode.BAD_REQUEST, "请选择要上传的简历文件");
@@ -82,56 +89,78 @@ public class ResumeService {
         if (file.getSize() > MAX_RESUME_FILE_BYTES) {
             throw new BizException(ErrorCode.PAYLOAD_TOO_LARGE, "文件不能超过 10MB");
         }
+        //todo:之后改成等待而不是直接抛异常
+        if (!uploadSlots.tryAcquire()) {
+            throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "当前上传人数较多，请稍后重试");
+        }
 
-        byte[] bytes;
+        Path temp = null;
         try {
-            bytes = file.getBytes();
-        } catch (IOException e) {
+            // 流式落盘,堆里不保留整份文件
+            temp = Files.createTempFile("grindset-resume-upload-", ".upload");
+            file.transferTo(temp.toFile());
+            long fileSize = Files.size(temp);
+            ResumeTextExtractor.Preflight preflight = extractor.preflight(file.getOriginalFilename(), temp);
+
+            long resumeId = idGenerator.nextId();
+            String objectKey = originalStorage.upload(userId, resumeId, preflight.fileType(), temp, fileSize);
+
+            Resume resume = new Resume();
+            resume.setId(resumeId);
+            resume.setUserId(userId);
+            resume.setFileName(preflight.fileName());
+            resume.setFileType(preflight.fileType());
+            resume.setFileSize((int) Math.min(fileSize, Integer.MAX_VALUE));
+            resume.setOriginalObjectKey(objectKey);
+            resume.setCandidateType(CandidateType.UNKNOWN);
+            resume.setParseStatus(PARSING);
+            resume.setParseAttempt(0);
+            try {
+                resumeMapper.insert(resume);
+            } catch (RuntimeException e) {
+                // 主表没落成,清理刚上传的对象,避免孤儿文件
+                originalStorage.deleteQuietly(objectKey);
+                throw e;
+            }
+
+            if (objectKey == null) {
+                // OSS 未配置或上传失败:保持原来的同步解析行为
+                parseSync(resume, temp, preflight);
+            } else {
+                try {
+                    parsePublisher.publish(resume);
+                } catch (RuntimeException e) {
+                    log.warn("投递解析消息失败,回退同步解析 resumeId={}", resumeId, e);
+                    parseSync(resume, temp, preflight);
+                }
+            }
+            return get(userId, resumeId);
+        } catch (IOException | IllegalStateException e) {
             throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "文件读取失败,请重新上传");
+        } finally {
+            deleteQuietly(temp);
+            uploadSlots.release();
         }
+    }
 
-        // 校验失败直接返回,不产生数据库记录
-        ResumeTextExtractor.ExtractedText extracted = extractor.extract(file.getOriginalFilename(), bytes);
-
-        long resumeId = idGenerator.nextId();
-        // 原件是旁路:未配置 OSS 或上传失败都返回 null,不影响后续解析
-        String objectKey = originalStorage.upload(userId, resumeId, extracted.fileType(), bytes);
-
-        Resume resume = new Resume();
-        resume.setId(resumeId);
-        resume.setUserId(userId);
-        resume.setFileName(extracted.fileName());
-        resume.setFileType(extracted.fileType());
-        resume.setFileSize(bytes.length);
-        resume.setOriginalObjectKey(objectKey);
-        resume.setCandidateType(CandidateType.UNKNOWN);
-        resume.setParseStatus(PARSING);
+    private void parseSync(Resume resume, Path temp, ResumeTextExtractor.Preflight preflight) {
         try {
-            resumeMapper.insert(resume);
+            parseService.parseFile(resume, temp, preflight.fileName());
         } catch (RuntimeException e) {
-            // 主表没落成,清理刚上传的对象,避免孤儿文件
-            originalStorage.deleteQuietly(objectKey);
+            parseService.markFailed(resume.getId(), e.getMessage());
             throw e;
         }
+    }
 
-        ParsedResume parsed;
-        String model;
-        try {
-            ResumeLlmParser.ParseResult result = parser.parse(extracted.text());
-            parsed = result.resume();
-            model = result.model();
-        } catch (RuntimeException e) {
-            markFailed(resumeId, e.getMessage());
-            throw e;
+    private static void deleteQuietly(Path path) {
+        if (path == null) {
+            return;
         }
-
         try {
-            transactionTemplate.executeWithoutResult(status -> saveParsed(resumeId, parsed, model));
-        } catch (RuntimeException e) {
-            markFailed(resumeId, "解析结果保存失败");
-            throw e;
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            log.warn("删除简历临时文件失败 path={}", path, e);
         }
-        return get(userId, resumeId);
     }
 
     /** 当前用户的简历列表,新的在前 */
@@ -239,74 +268,6 @@ public class ResumeService {
             resumeMapper.deleteById(id);
         });
         originalStorage.deleteQuietly(objectKey);
-    }
-
-    /** 事务内写入章节、条目、技能,并把主表更新为解析成功 */
-    private void saveParsed(long resumeId, ParsedResume parsed, String model) {
-        int sectionSort = 0;
-        for (ParsedResume.Section section : parsed.getSections()) {
-            ResumeSection sectionRow = new ResumeSection();
-            sectionRow.setId(idGenerator.nextId());
-            sectionRow.setResumeId(resumeId);
-            sectionRow.setSectionType(ResumeSectionType.from(section.getType()));
-            sectionRow.setTitle(section.getTitle());
-            sectionRow.setSort(sectionSort++);
-            sectionMapper.insert(sectionRow);
-
-            int itemSort = 0;
-            for (ParsedResume.Item item : section.getItems()) {
-                ResumeSectionItem itemRow = new ResumeSectionItem();
-                itemRow.setId(idGenerator.nextId());
-                itemRow.setSectionId(sectionRow.getId());
-                itemRow.setTitle(item.getTitle());
-                itemRow.setSubtitle(item.getSubtitle());
-                itemRow.setStartDate(item.getStartDate());
-                itemRow.setEndDate(item.getEndDate());
-                itemRow.setDescription(item.getDescription());
-                itemRow.setTags(item.getTags());
-                itemRow.setSort(itemSort++);
-                itemMapper.insert(itemRow);
-            }
-        }
-
-        int skillSort = 0;
-        for (ParsedResume.Skill skill : parsed.getSkills()) {
-            ResumeSkill skillRow = new ResumeSkill();
-            skillRow.setId(idGenerator.nextId());
-            skillRow.setResumeId(resumeId);
-            skillRow.setName(skill.getName());
-            skillRow.setCategory(skill.getCategory());
-            skillRow.setProficiency(skill.getProficiency());
-            skillRow.setEvidence(skill.getEvidence());
-            skillRow.setSort(skillSort++);
-            skillMapper.insert(skillRow);
-        }
-
-        Resume patch = new Resume();
-        patch.setId(resumeId);
-        patch.setCandidateName(parsed.getCandidateName());
-        patch.setCandidateType(CandidateType.from(parsed.getCandidateType()));
-        patch.setModel(model);
-        patch.setParseStatus(SUCCESS);
-        patch.setErrorMsg("");
-        resumeMapper.updateById(patch);
-    }
-
-    /** 解析失败留痕:单独更新状态,不影响已提交的主表记录 */
-    private void markFailed(long resumeId, String message) {
-        String errorMsg = message == null || message.isBlank() ? "解析失败" : message.strip();
-        if (errorMsg.length() > MAX_ERROR_LENGTH) {
-            errorMsg = errorMsg.substring(0, MAX_ERROR_LENGTH);
-        }
-        Resume patch = new Resume();
-        patch.setId(resumeId);
-        patch.setParseStatus(FAILED);
-        patch.setErrorMsg(errorMsg);
-        try {
-            resumeMapper.updateById(patch);
-        } catch (RuntimeException e) {
-            log.warn("更新简历失败状态出错 resumeId={}", resumeId, e);
-        }
     }
 
     private Resume requireOwned(long userId, long id) {

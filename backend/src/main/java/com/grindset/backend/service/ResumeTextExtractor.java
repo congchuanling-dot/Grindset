@@ -17,13 +17,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -46,28 +48,51 @@ public class ResumeTextExtractor {
     private static final byte[] PDF_MAGIC = "%PDF-".getBytes(StandardCharsets.ISO_8859_1);
 
     /**
-     * @param originalName 上传文件名(可能带路径)
-     * @param bytes        文件字节
-     * @return 清洗并截断后的纯文本 + 归一化的文件类型
+     * 只做文件名归一、后缀白名单和文件头校验,不抽全文。
+     * 上传接口用它拿到类型后先落库/入队,把完整抽取留给解析线程。
      */
-    public ExtractedText extract(String originalName, byte[] bytes) {
+    public Preflight preflight(String originalName, Path file) {
         String fileName = baseName(originalName);
         ResumeFileType fileType = fileType(fileName);
-        checkHeader(fileType, bytes);
+        checkHeader(fileType, readHeader(file));
+        return new Preflight(fileName, fileType);
+    }
 
-        String raw = switch (fileType) {
-            case PDF -> extractPdf(bytes);
-            case DOCX -> extractDocx(bytes);
-            default -> decodeText(bytes);
-        };
+    /**
+     * 从临时文件抽取文本,不在堆里保留整份文件。
+     *
+     * @param originalName 上传文件名(可能带路径)
+     * @param file         已落盘的临时文件
+     */
+    public ExtractedText extract(String originalName, Path file) {
+        Preflight preflight = preflight(originalName, file);
+        String raw;
+        try {
+            raw = switch (preflight.fileType()) {
+                case PDF -> extractPdf(file);
+                case DOCX -> extractDocx(file);
+                default -> decodeText(Files.readAllBytes(file));
+            };
+        } catch (IOException e) {
+            throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "文件读取失败,请重新上传");
+        }
 
         String cleaned = clean(raw);
         validate(cleaned);
         if (cleaned.length() > MAX_CHARS) {
-            log.warn("简历文本超过 {} 字,已截断,type={}", MAX_CHARS, fileType);
+            log.warn("简历文本超过 {} 字,已截断,type={}", MAX_CHARS, preflight.fileType());
             cleaned = cleaned.substring(0, MAX_CHARS);
         }
-        return new ExtractedText(fileName, fileType, cleaned);
+        return new ExtractedText(preflight.fileName(), preflight.fileType(), cleaned);
+    }
+
+    /** 读取文件头,用于防止改后缀上传 */
+    private static byte[] readHeader(Path file) {
+        try (InputStream in = Files.newInputStream(file)) {
+            return in.readNBytes(4);
+        } catch (IOException e) {
+            throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "文件读取失败,请重新上传");
+        }
     }
 
     /** 去掉路径,只保留文件名,并截断到数据库列宽 */
@@ -120,8 +145,8 @@ public class ResumeTextExtractor {
         return true;
     }
 
-    private static String extractPdf(byte[] bytes) {
-        try (PDDocument document = Loader.loadPDF(bytes)) {
+    private static String extractPdf(Path file) {
+        try (PDDocument document = Loader.loadPDF(file.toFile())) {
             PDFTextStripper stripper = new PDFTextStripper();
             stripper.setSortByPosition(true);
             return stripper.getText(document);
@@ -133,8 +158,9 @@ public class ResumeTextExtractor {
     }
 
     /** 段落和表格都要抽,表格一行拼一行,避免项目经历丢失 */
-    private static String extractDocx(byte[] bytes) {
-        try (XWPFDocument document = new XWPFDocument(new ByteArrayInputStream(bytes))) {
+    private static String extractDocx(Path file) {
+        try (InputStream in = Files.newInputStream(file);
+             XWPFDocument document = new XWPFDocument(in)) {
             StringBuilder sb = new StringBuilder();
             for (IBodyElement element : document.getBodyElements()) {
                 if (element instanceof XWPFParagraph paragraph) {
@@ -200,6 +226,12 @@ public class ResumeTextExtractor {
         if (garbled * 10 > text.length()) {
             throw new BizException(ErrorCode.UNPROCESSABLE_ENTITY, "未能正确识别文件内容,请换一份简历重试");
         }
+    }
+
+    /**
+     * 上传预检结果。
+     */
+    public record Preflight(String fileName, ResumeFileType fileType) {
     }
 
     /**
