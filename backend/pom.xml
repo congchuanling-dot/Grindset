@@ -91,7 +91,6 @@
             <version>3.17.4</version>
         </dependency>
 
-        <!-- RabbitMQ:简历解析异步任务队列 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>

@@ -10,3 +10,6 @@ Thumbs.db
 # Env
 *.env
 .env.local
+
+# 爬取产物（正文 + 图片，体积大，不入库）
+scripts/output/
