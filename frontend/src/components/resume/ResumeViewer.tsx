@@ -100,10 +100,15 @@ function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; origin
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState('')
+  const [textContent, setTextContent] = useState<string | null>(null)
+  const [textLoading, setTextLoading] = useState(false)
+  const [textError, setTextError] = useState('')
+  const isPdf = detail.fileType === 'PDF'
+  const isText = detail.fileType === 'TXT' || detail.fileType === 'MD'
 
   // OSS 默认域名会强制下载，PDF 预览改由后端代理取字节再转成本地 blob
   useEffect(() => {
-    if (originalUrl || detail.fileType !== 'PDF' || !detail.hasOriginal) {
+    if (originalUrl || !isPdf || !detail.hasOriginal) {
       setBlobUrl(null)
       setLoading(false)
       setLoadError('')
@@ -129,12 +134,45 @@ function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; origin
       cancelled = true
       if (created) URL.revokeObjectURL(created)
     }
-  }, [detail.id, detail.fileType, detail.hasOriginal, originalUrl])
+  }, [detail.id, isPdf, detail.hasOriginal, originalUrl])
+
+  // TXT / MD 直接按纯文本读取；原件已存 OSS 时走后端代理，避免签名域名强制下载和跨域
+  useEffect(() => {
+    if (!isText) {
+      setTextContent(null)
+      setTextLoading(false)
+      setTextError('')
+      return
+    }
+    if (!detail.hasOriginal && !originalUrl) {
+      setTextContent(null)
+      setTextLoading(false)
+      setTextError('')
+      return
+    }
+    let cancelled = false
+    setTextContent(null)
+    setTextLoading(true)
+    setTextError('')
+    loadText(detail.id, detail.hasOriginal, originalUrl)
+      .then((text) => {
+        if (!cancelled) setTextContent(text)
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setTextError(errMessage(e))
+      })
+      .finally(() => {
+        if (!cancelled) setTextLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [detail.id, detail.hasOriginal, isText, originalUrl])
 
   // 后端签名 URL 优先；本地 ObjectURL 只在未配置 OSS 时兜底
   const url = originalUrl ?? blobUrl
   const downloadUrl = url ?? detail.originalDownloadUrl ?? detail.originalUrl
-  const canInline = detail.fileType === 'PDF' && url !== null
+  const canInline = isPdf && url !== null
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
@@ -177,7 +215,23 @@ function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; origin
       </div>
 
       <div className="flex flex-1 flex-col">
-        {loading && !url ? (
+        {isText ? (
+          textLoading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <Loader2 size={22} className="animate-spin text-teal-600" />
+            </div>
+          ) : textError ? (
+            <OriginalError message={textError} downloadUrl={downloadUrl} fileName={detail.fileName} />
+          ) : textContent !== null ? (
+            <div className="flex-1 overflow-auto bg-slate-100 p-4">
+              <pre className="mx-auto min-h-[680px] w-full max-w-[760px] whitespace-pre-wrap break-words rounded-sm bg-white p-8 font-sans text-sm leading-7 text-slate-700 shadow-sm ring-1 ring-slate-200">
+                {textContent}
+              </pre>
+            </div>
+          ) : (
+            <OriginalPlaceholder hasOriginal={url !== null} />
+          )
+        ) : loading && !url ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 size={22} className="animate-spin text-teal-600" />
           </div>
@@ -197,6 +251,49 @@ function OriginalPreview({ detail, originalUrl }: { detail: ResumeDetail; origin
       </div>
     </div>
   )
+}
+
+/** 原件最多展示的字符数，避免超长 TXT 把浏览器渲染卡死 */
+const MAX_TEXT_PREVIEW_CHARS = 200_000
+
+async function loadText(resumeId: string, hasOriginal: boolean, originalUrl: string | null): Promise<string> {
+  const blob = hasOriginal
+    ? await fetchResumeOriginal(resumeId)
+    : await fetchLocalBlob(originalUrl)
+  return readTextBlob(blob)
+}
+
+async function fetchLocalBlob(originalUrl: string | null): Promise<Blob> {
+  if (!originalUrl) {
+    throw new Error('原件未存储')
+  }
+  const res = await fetch(originalUrl)
+  if (!res.ok) {
+    throw new Error('加载原件失败，请刷新后重试')
+  }
+  return res.blob()
+}
+
+/** 按 UTF-8 严格解码，失败回退 GB18030，和后端文本抽取规则保持一致 */
+async function readTextBlob(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  let text: string
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    text = new TextDecoder('utf-8').decode(bytes.subarray(3))
+  } else {
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+    } catch {
+      try {
+        text = new TextDecoder('gb18030').decode(bytes)
+      } catch {
+        text = new TextDecoder('utf-8').decode(bytes)
+      }
+    }
+  }
+  return text.length > MAX_TEXT_PREVIEW_CHARS
+    ? `${text.slice(0, MAX_TEXT_PREVIEW_CHARS)}\n\n……内容过长，仅展示前 ${MAX_TEXT_PREVIEW_CHARS} 个字符`
+    : text
 }
 
 function OriginalError({
