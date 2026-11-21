@@ -2,6 +2,7 @@ package com.grindset.backend.service;
 
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.common.InterviewStyle;
 import com.grindset.backend.common.Texts;
 import com.grindset.backend.config.InterviewProperties;
 import com.grindset.backend.dto.BankEvaluation;
@@ -586,11 +587,11 @@ public class InterviewLlmService {
         };
     }
 
-    private static String styleLabel(String style) {
-        if ("pressure".equals(style)) {
+    private static String styleLabel(InterviewStyle style) {
+        if (style == InterviewStyle.PRESSURE) {
             return "压力面,追问直接、会质疑回答里的漏洞";
         }
-        if ("relaxed".equals(style)) {
+        if (style == InterviewStyle.RELAXED) {
             return "轻松聊天式,允许候选人展开";
         }
         return "难度适中,按正常技术面节奏";

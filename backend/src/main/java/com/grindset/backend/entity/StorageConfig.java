@@ -3,6 +3,7 @@ package com.grindset.backend.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.grindset.backend.common.StorageProvider;
 
 import java.time.LocalDateTime;
 
@@ -18,7 +19,7 @@ public class StorageConfig {
     private Long id;
 
     /** 目前仅 ALIYUN_OSS */
-    private String provider;
+    private StorageProvider provider;
 
     private String endpoint;
 
@@ -50,11 +51,11 @@ public class StorageConfig {
         this.id = id;
     }
 
-    public String getProvider() {
+    public StorageProvider getProvider() {
         return provider;
     }
 
-    public void setProvider(String provider) {
+    public void setProvider(StorageProvider provider) {
         this.provider = provider;
     }
 

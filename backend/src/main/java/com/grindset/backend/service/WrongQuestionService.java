@@ -5,6 +5,7 @@ import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.Texts;
+import com.grindset.backend.common.WrongQuestionSource;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.RetryEvaluation;
 import com.grindset.backend.dto.RetryResult;
@@ -135,7 +136,7 @@ public class WrongQuestionService {
         wrong.setUserId(userId);
         wrong.setSessionId(sessionId);
         wrong.setQuestionId(questionId);
-        wrong.setSource("INTERVIEW");
+        wrong.setSource(WrongQuestionSource.INTERVIEW);
         wrong.setPosition(session == null ? null : session.getPosition());
         wrong.setRound(session == null ? null : session.getRound());
         wrong.setQuestionContent(questionContent);
@@ -188,7 +189,7 @@ public class WrongQuestionService {
             wrong.setId(idGenerator.nextId());
             wrong.setUserId(userId);
             wrong.setQuestionId(bankQuestionId);
-            wrong.setSource("BANK");
+            wrong.setSource(WrongQuestionSource.BANK);
             wrong.setQuestionContent(questionContent);
             wrong.setOriginalAnswer(Texts.truncate(answer, SNAPSHOT_ANSWER_MAX));
             wrong.setOriginalScore(score);
@@ -222,7 +223,7 @@ public class WrongQuestionService {
                                           List<String> knowledgePoints, List<Long> kpIds,
                                           String answer, int score, String comment,
                                           String suggestion, LocalDateTime now) {
-        wrong.setSource("BANK");
+        wrong.setSource(WrongQuestionSource.BANK);
         wrong.setQuestionContent(questionContent);
         wrong.setOriginalAnswer(Texts.truncate(answer, SNAPSHOT_ANSWER_MAX));
         wrong.setOriginalScore(score);

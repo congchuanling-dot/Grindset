@@ -3,6 +3,8 @@ package com.grindset.backend.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.grindset.backend.common.constant.JudgeLanguage;
+import com.grindset.backend.common.constant.SubmissionStatus;
 
 import java.time.LocalDateTime;
 
@@ -21,12 +23,12 @@ public class QuestionSubmission {
     private Long questionId;
 
     /** JAVA / PYTHON */
-    private String language;
+    private JudgeLanguage language;
 
     private String code;
 
     /** PENDING / RUNNING / ACCEPTED / WRONG_ANSWER / COMPILE_ERROR / RUNTIME_ERROR / TIME_LIMIT_EXCEEDED / SYSTEM_ERROR */
-    private String status;
+    private SubmissionStatus status;
 
     private Integer passed;
 
@@ -64,11 +66,11 @@ public class QuestionSubmission {
         this.questionId = questionId;
     }
 
-    public String getLanguage() {
+    public JudgeLanguage getLanguage() {
         return language;
     }
 
-    public void setLanguage(String language) {
+    public void setLanguage(JudgeLanguage language) {
         this.language = language;
     }
 
@@ -80,11 +82,11 @@ public class QuestionSubmission {
         this.code = code;
     }
 
-    public String getStatus() {
+    public SubmissionStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(SubmissionStatus status) {
         this.status = status;
     }
 

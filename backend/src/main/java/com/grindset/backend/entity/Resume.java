@@ -3,6 +3,8 @@ package com.grindset.backend.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.grindset.backend.common.CandidateType;
+import com.grindset.backend.common.ResumeFileType;
 
 import java.time.LocalDateTime;
 
@@ -21,7 +23,7 @@ public class Resume {
     private String fileName;
 
     /** PDF / DOCX / MD / TXT */
-    private String fileType;
+    private ResumeFileType fileType;
 
     private Integer fileSize;
 
@@ -31,7 +33,7 @@ public class Resume {
     private String candidateName;
 
     /** FRESH_GRADUATE / INTERN / EXPERIENCED / UNKNOWN */
-    private String candidateType;
+    private CandidateType candidateType;
 
     /** 0 解析中 / 1 成功 / 2 失败 */
     private Integer parseStatus;
@@ -69,11 +71,11 @@ public class Resume {
         this.fileName = fileName;
     }
 
-    public String getFileType() {
+    public ResumeFileType getFileType() {
         return fileType;
     }
 
-    public void setFileType(String fileType) {
+    public void setFileType(ResumeFileType fileType) {
         this.fileType = fileType;
     }
 
@@ -101,11 +103,11 @@ public class Resume {
         this.candidateName = candidateName;
     }
 
-    public String getCandidateType() {
+    public CandidateType getCandidateType() {
         return candidateType;
     }
 
-    public void setCandidateType(String candidateType) {
+    public void setCandidateType(CandidateType candidateType) {
         this.candidateType = candidateType;
     }
 

@@ -25,9 +25,6 @@ public final class InterviewConstants {
     /** 消息类型:面试官点评 */
     public static final String TYPE_FEEDBACK = "FEEDBACK";
 
-    /** 面试风格可选项:压力面 / 常规 / 轻松 */
-    public static final Set<String> STYLES = Set.of("pressure", "middle", "relaxed");
-
     /** 单场面试可选的总题数 */
     public static final Set<Integer> QUESTION_COUNTS = Set.of(3, 5, 8);
 

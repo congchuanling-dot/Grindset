@@ -7,6 +7,7 @@ import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.ResponseHeaderOverrides;
+import com.grindset.backend.common.ResumeFileType;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ public class ResumeOriginalStorage {
      *
      * @return object key;未配置 OSS、上传失败或内容为空时返回 null
      */
-    public String upload(long userId, long resumeId, String fileType, byte[] bytes) {
+    public String upload(long userId, long resumeId, ResumeFileType fileType, byte[] bytes) {
         if (bytes == null || bytes.length == 0) {
             return null;
         }
@@ -163,29 +164,17 @@ public class ResumeOriginalStorage {
         }
     }
 
-    private static String objectKey(String dirPrefix, long userId, long resumeId, String fileType) {
-        String ext = switch (fileType == null ? "" : fileType) {
-            case "PDF" -> "pdf";
-            case "DOCX" -> "docx";
-            case "MD" -> "md";
-            case "TXT" -> "txt";
-            default -> "bin";
-        };
+    private static String objectKey(String dirPrefix, long userId, long resumeId, ResumeFileType fileType) {
+        String ext = fileType == null ? "bin" : fileType.extension();
         return dirPrefix + "/" + userId + "/" + resumeId + "." + ext;
     }
 
-    private static String contentType(String fileType) {
-        return switch (fileType == null ? "" : fileType) {
-            case "PDF" -> "application/pdf";
-            case "DOCX" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-            case "MD" -> "text/markdown; charset=utf-8";
-            case "TXT" -> "text/plain; charset=utf-8";
-            default -> "application/octet-stream";
-        };
+    private static String contentType(ResumeFileType fileType) {
+        return fileType == null ? "application/octet-stream" : fileType.contentType();
     }
 
     /** 后端代理预览时的响应类型 */
-    public static String contentTypeOf(String fileType) {
+    public static String contentTypeOf(ResumeFileType fileType) {
         return contentType(fileType);
     }
 

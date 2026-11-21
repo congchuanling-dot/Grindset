@@ -1,6 +1,6 @@
 package com.grindset.backend.service;
 
-import com.grindset.backend.common.constant.JudgeLanguages;
+import com.grindset.backend.common.constant.JudgeLanguage;
 import com.grindset.backend.common.constant.SubmissionStatus;
 import com.grindset.backend.entity.QuestionTestCase;
 import org.slf4j.Logger;
@@ -17,7 +17,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -76,28 +75,23 @@ public class JudgeService {
     }
 
     public boolean supports(String language) {
-        return JudgeLanguages.JAVA.equals(normalizeLanguage(language)) || JudgeLanguages.PYTHON.equals(normalizeLanguage(language));
+        return JudgeLanguage.from(language) != null;
     }
 
-    public static String normalizeLanguage(String language) {
-        String value = language == null ? "" : language.strip().toUpperCase(Locale.ROOT);
-        return switch (value) {
-            case "JAVA", "JDK" -> JudgeLanguages.JAVA;
-            case "PYTHON", "PY", "PYTHON3" -> JudgeLanguages.PYTHON;
-            default -> value;
-        };
+    /** 兼容前端/历史语言的别名,不认识返回 null */
+    public static JudgeLanguage parse(String language) {
+        return JudgeLanguage.from(language);
     }
 
     /**
      * 跑一组用例。status 为最终结论,passed/total 为通过数;
      * 编译失败、系统错误时 cases 为空或已执行的部分结果。
      */
-    public JudgeOutcome judge(String language, String code, List<QuestionTestCase> cases,
+    public JudgeOutcome judge(JudgeLanguage lang, String code, List<QuestionTestCase> cases,
                               int timeLimitMs, int memoryLimitMb) {
-        String lang = normalizeLanguage(language);
-        if (!JudgeLanguages.JAVA.equals(lang) && !JudgeLanguages.PYTHON.equals(lang)) {
+        if (lang == null) {
             return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
-                    "暂不支持的语言：" + language, List.of());
+                    "暂不支持的语言", List.of());
         }
         if (code == null || code.isBlank()) {
             return new JudgeOutcome(SubmissionStatus.COMPILE_ERROR, 0, cases.size(), 0, "代码不能为空", List.of());
@@ -107,7 +101,7 @@ public class JudgeService {
                     "代码不能超过 " + MAX_CODE_LENGTH + " 字符", List.of());
         }
 
-        String image = JudgeLanguages.JAVA.equals(lang) ? javaImage : pythonImage;
+        String image = lang == JudgeLanguage.JAVA ? javaImage : pythonImage;
         if (!dockerImageExists(image)) {
             log.error("判题镜像不存在 image={}", image);
             return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
@@ -118,7 +112,7 @@ public class JudgeService {
         try {
             workspace = Files.createTempDirectory("grindset-judge-");
             Files.writeString(workspace.resolve("runner.sh"), RUNNER_SCRIPT, StandardCharsets.UTF_8);
-            if (JudgeLanguages.JAVA.equals(lang)) {
+            if (lang == JudgeLanguage.JAVA) {
                 Files.writeString(workspace.resolve("Main.java"), code, StandardCharsets.UTF_8);
                 ExecResult compile = exec(dockerRun(workspace, image, memoryLimitMb,
                                 List.of("sh", "-c", "javac -encoding UTF-8 -d out Main.java")),
@@ -136,7 +130,7 @@ public class JudgeService {
             List<CaseOutcome> outcomes = new ArrayList<>();
             int passed = 0;
             int totalRuntime = 0;
-            String overallStatus = SubmissionStatus.ACCEPTED;
+            SubmissionStatus overallStatus = SubmissionStatus.ACCEPTED;
             String errorMessage = null;
             int index = 0;
             for (QuestionTestCase testCase : cases) {
@@ -165,14 +159,14 @@ public class JudgeService {
                         actual, ok, ok ? "通过" : "输出与期望不一致"));
                 if (ok) {
                     passed++;
-                } else if (SubmissionStatus.ACCEPTED.equals(overallStatus)) {
+                } else if (overallStatus == SubmissionStatus.ACCEPTED) {
                     overallStatus = SubmissionStatus.WRONG_ANSWER;
                     errorMessage = "用例 " + index + " 输出与期望不一致";
                 }
             }
             return new JudgeOutcome(overallStatus, passed, cases.size(), totalRuntime, errorMessage, outcomes);
         } catch (IOException e) {
-            log.error("判题失败 language={}", language, e);
+            log.error("判题失败 language={}", lang, e);
             return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
                     "判题服务异常：" + e.getMessage(), List.of());
         } finally {
@@ -181,13 +175,13 @@ public class JudgeService {
     }
 
     /** 运行单个用例;超时用容器内 timeout 命令,宿主侧再做兜底 kill */
-    private ExecResult runCase(String lang, Path workspace, String image, int memoryLimitMb,
+    private ExecResult runCase(JudgeLanguage lang, Path workspace, String image, int memoryLimitMb,
                                int timeLimitMs, QuestionTestCase testCase) throws IOException {
         int seconds = Math.max(1, (timeLimitMs + 999) / 1000);
         Files.writeString(workspace.resolve("input.txt"),
                 testCase.getInput() == null ? "" : testCase.getInput(), StandardCharsets.UTF_8);
 
-        List<String> program = JudgeLanguages.JAVA.equals(lang)
+        List<String> program = lang == JudgeLanguage.JAVA
                 ? List.of("java", "-Xmx" + heapMb(memoryLimitMb) + "m", "-Xss16m", "-cp", "out", "Main")
                 : List.of("python3", "-I", "-B", "main.py");
         List<String> args = new ArrayList<>(List.of("sh", "/workspace/runner.sh", String.valueOf(seconds)));
@@ -431,7 +425,7 @@ public class JudgeService {
     }
 
     public record JudgeOutcome(
-            String status,
+            SubmissionStatus status,
             int passed,
             int total,
             int runtimeMs,

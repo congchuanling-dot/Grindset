@@ -2,6 +2,7 @@ package com.grindset.backend.service;
 
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.common.ResumeFileType;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
@@ -51,12 +52,12 @@ public class ResumeTextExtractor {
      */
     public ExtractedText extract(String originalName, byte[] bytes) {
         String fileName = baseName(originalName);
-        String fileType = fileType(fileName);
+        ResumeFileType fileType = fileType(fileName);
         checkHeader(fileType, bytes);
 
         String raw = switch (fileType) {
-            case "PDF" -> extractPdf(bytes);
-            case "DOCX" -> extractDocx(bytes);
+            case PDF -> extractPdf(bytes);
+            case DOCX -> extractDocx(bytes);
             default -> decodeText(bytes);
         };
 
@@ -83,24 +84,22 @@ public class ResumeTextExtractor {
         return name.length() > 255 ? name.substring(0, 255) : name;
     }
 
-    private static String fileType(String fileName) {
+    private static ResumeFileType fileType(String fileName) {
         int dot = fileName.lastIndexOf('.');
         String ext = dot < 0 ? "" : fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
-        return switch (ext) {
-            case "pdf" -> "PDF";
-            case "docx" -> "DOCX";
-            case "md" -> "MD";
-            case "txt" -> "TXT";
-            default -> throw new BizException(ErrorCode.BAD_REQUEST, "仅支持 PDF、DOCX、MD、TXT,.doc 请另存为 .docx");
-        };
+        ResumeFileType type = ResumeFileType.fromExtension(ext);
+        if (type == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "仅支持 PDF、DOCX、MD、TXT,.doc 请另存为 .docx");
+        }
+        return type;
     }
 
     /** 文件头校验,防止把别的文件改后缀上传 */
-    private static void checkHeader(String fileType, byte[] bytes) {
+    private static void checkHeader(ResumeFileType fileType, byte[] bytes) {
         boolean matched = switch (fileType) {
-            case "PDF" -> startsWith(bytes, PDF_MAGIC);
+            case PDF -> startsWith(bytes, PDF_MAGIC);
             // DOCX 是 ZIP 包
-            case "DOCX" -> bytes.length >= 4 && bytes[0] == 0x50 && bytes[1] == 0x4B
+            case DOCX -> bytes.length >= 4 && bytes[0] == 0x50 && bytes[1] == 0x4B
                     && bytes[2] == 0x03 && bytes[3] == 0x04;
             default -> true;
         };
@@ -210,6 +209,6 @@ public class ResumeTextExtractor {
      * @param fileType PDF / DOCX / MD / TXT
      * @param text     清洗并截断后的正文
      */
-    public record ExtractedText(String fileName, String fileType, String text) {
+    public record ExtractedText(String fileName, ResumeFileType fileType, String text) {
     }
 }

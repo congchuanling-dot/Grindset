@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.common.InterviewStyle;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.CreateInterviewRequest;
 import com.grindset.backend.dto.InterviewDetail;
@@ -30,7 +31,6 @@ import java.util.Map;
 import static com.grindset.backend.service.interview.InterviewConstants.MAX_FOCUS;
 import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_COUNTS;
 import static com.grindset.backend.common.constant.InterviewSessionStatus.ONGOING;
-import static com.grindset.backend.service.interview.InterviewConstants.STYLES;
 import static com.grindset.backend.service.interview.InterviewViews.format;
 import static com.grindset.backend.service.interview.InterviewViews.intValue;
 
@@ -83,8 +83,8 @@ public class InterviewSessionService {
             throw new BizException(ErrorCode.BAD_REQUEST, "面试岗位过长");
         }
 
-        String style = request.getStyle() == null ? "" : request.getStyle().strip();
-        if (!STYLES.contains(style)) {
+        InterviewStyle style = InterviewStyle.from(request.getStyle());
+        if (style == null) {
             throw new BizException(ErrorCode.BAD_REQUEST, "面试风格不合法");
         }
 
@@ -152,7 +152,7 @@ public class InterviewSessionService {
         for (InterviewSession session : sessions) {
             result.add(new InterviewSummary(String.valueOf(session.getId()),
                     names.getOrDefault(session.getResumeId(), "已删除的简历"),
-                    session.getPosition(), session.getStyle(), session.getRound(),
+                    session.getPosition(), styleCode(session), session.getRound(),
                     intValue(session.getQuestionCount()), intValue(session.getCompletedQuestions()),
                     intValue(session.getStatus()), session.getOverallScore(), format(session.getCreatedAt())));
         }
@@ -226,11 +226,15 @@ public class InterviewSessionService {
         }
 
         return new InterviewDetail(String.valueOf(session.getId()), String.valueOf(session.getResumeId()),
-                resumeFileName, session.getPosition(), session.getStyle(), session.getRound(),
+                resumeFileName, session.getPosition(), styleCode(session), session.getRound(),
                 session.getFocus() == null ? List.of() : session.getFocus(),
                 intValue(session.getQuestionCount()), intValue(session.getCompletedQuestions()),
                 intValue(session.getStatus()), session.getOverallScore(),
                 format(session.getCreatedAt()), questionViews, report);
+    }
+
+    private static String styleCode(InterviewSession session) {
+        return session.getStyle() == null ? null : session.getStyle().code();
     }
 
     private List<String> normalizeFocus(List<String> focus) {

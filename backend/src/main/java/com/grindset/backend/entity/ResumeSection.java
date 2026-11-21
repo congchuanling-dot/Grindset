@@ -3,6 +3,7 @@ package com.grindset.backend.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.grindset.backend.common.ResumeSectionType;
 
 /**
  * resume_sections 表:简历里的一个章节。
@@ -16,7 +17,7 @@ public class ResumeSection {
 
     private Long resumeId;
 
-    private String sectionType;
+    private ResumeSectionType sectionType;
 
     private String title;
 
@@ -38,11 +39,11 @@ public class ResumeSection {
         this.resumeId = resumeId;
     }
 
-    public String getSectionType() {
+    public ResumeSectionType getSectionType() {
         return sectionType;
     }
 
-    public void setSectionType(String sectionType) {
+    public void setSectionType(ResumeSectionType sectionType) {
         this.sectionType = sectionType;
     }
 

@@ -5,7 +5,7 @@ import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.Texts;
-import com.grindset.backend.common.constant.JudgeLanguages;
+import com.grindset.backend.common.constant.JudgeLanguage;
 import com.grindset.backend.common.constant.SubmissionStatus;
 import com.grindset.backend.dto.CodeRunRequest;
 import com.grindset.backend.dto.CodeRunResult;
@@ -91,13 +91,13 @@ public class CodingService {
         long acceptedCount = submissionMapper.selectCount(new QueryWrapper<QuestionSubmission>()
                 .eq("user_id", userId)
                 .eq("question_id", id)
-                .eq("status", SubmissionStatus.ACCEPTED));
+                .eq("status", SubmissionStatus.ACCEPTED.name()));
 
         return new CodingDetail(
                 String.valueOf(question.getId()),
                 question.getTitle(),
                 question.getContent(),
-                question.getType(),
+                question.getType() == null ? null : question.getType().name(),
                 question.getDifficulty() == null ? 2 : question.getDifficulty(),
                 question.getDomain(),
                 question.getKpNames() == null ? List.of() : question.getKpNames(),
@@ -115,7 +115,7 @@ public class CodingService {
     /** 运行例题,同步返回逐用例结果,不写提交历史 */
     public CodeRunResult run(long userId, long id, CodeRunRequest request) {
         QuestionBank question = questionBankService.requireCodingQuestion(id);
-        String language = requireLanguage(request);
+        JudgeLanguage language = requireLanguage(request);
         String code = requireCode(request);
 
         List<QuestionTestCase> samples = sampleCases(id);
@@ -134,7 +134,7 @@ public class CodingService {
                             nullToEmpty(item.expectedOutput()), nullToEmpty(item.actualOutput()),
                             item.passed(), item.message()))
                     .toList();
-            return new CodeRunResult(outcome.status(), outcome.passed(), outcome.total(),
+            return new CodeRunResult(outcome.status().name(), outcome.passed(), outcome.total(),
                     outcome.runtimeMs(), outcome.errorMessage(), cases);
         } finally {
             activeUsers.remove(userId);
@@ -146,7 +146,7 @@ public class CodingService {
     /** 提交代码:落库后异步判题,返回 PENDING 记录供前端轮询 */
     public CodingSubmissionView submit(long userId, long id, CodeRunRequest request) {
         QuestionBank question = questionBankService.requireCodingQuestion(id);
-        String language = requireLanguage(request);
+        JudgeLanguage language = requireLanguage(request);
         String code = requireCode(request);
 
         List<QuestionTestCase> cases = allCases(id);
@@ -175,7 +175,7 @@ public class CodingService {
     }
 
     private void judgeAsync(long submissionId, long userId, QuestionBank question,
-                            String language, String code, List<QuestionTestCase> cases) {
+                            JudgeLanguage language, String code, List<QuestionTestCase> cases) {
         try {
             QuestionSubmission running = new QuestionSubmission();
             running.setId(submissionId);
@@ -254,9 +254,9 @@ public class CodingService {
                 .orderByAsc("id"));
     }
 
-    private static String requireLanguage(CodeRunRequest request) {
-        String language = request == null ? null : JudgeService.normalizeLanguage(request.language());
-        if (!JudgeLanguages.JAVA.equals(language) && !JudgeLanguages.PYTHON.equals(language)) {
+    private static JudgeLanguage requireLanguage(CodeRunRequest request) {
+        JudgeLanguage language = request == null ? null : JudgeService.parse(request.language());
+        if (language == null) {
             throw new BizException(ErrorCode.BAD_REQUEST, "暂时只支持 Java 和 Python");
         }
         return language;
@@ -277,9 +277,9 @@ public class CodingService {
         return new CodingSubmissionView(
                 String.valueOf(submission.getId()),
                 String.valueOf(submission.getQuestionId()),
-                submission.getLanguage(),
+                submission.getLanguage() == null ? null : submission.getLanguage().name(),
                 Texts.truncate(submission.getCode(), MAX_CODE_LENGTH),
-                submission.getStatus(),
+                submission.getStatus() == null ? null : submission.getStatus().name(),
                 submission.getPassed() == null ? 0 : submission.getPassed(),
                 submission.getTotal() == null ? 0 : submission.getTotal(),
                 submission.getRuntimeMs(),

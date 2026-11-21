@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.grindset.backend.common.JudgeMode;
+import com.grindset.backend.common.QuestionSource;
+import com.grindset.backend.common.QuestionType;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,10 +29,10 @@ public class QuestionBank {
     private String content;
 
     /** BASICS 八股 / SCENARIO 场景 / PROJECT 项目 / CODE 编程 */
-    private String type;
+    private QuestionType type;
 
     /** TEXT 问答 / CODING 编程 */
-    private String judgeMode;
+    private JudgeMode judgeMode;
 
     /** 难度 1~3 */
     private Integer difficulty;
@@ -58,7 +61,7 @@ public class QuestionBank {
     private List<String> kpNames;
 
     /** MANUAL / AI / PDF / CRAWL */
-    private String source;
+    private QuestionSource source;
 
     private String sourceUrl;
 
@@ -95,19 +98,19 @@ public class QuestionBank {
         this.content = content;
     }
 
-    public String getType() {
+    public QuestionType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(QuestionType type) {
         this.type = type;
     }
 
-    public String getJudgeMode() {
+    public JudgeMode getJudgeMode() {
         return judgeMode;
     }
 
-    public void setJudgeMode(String judgeMode) {
+    public void setJudgeMode(JudgeMode judgeMode) {
         this.judgeMode = judgeMode;
     }
 
@@ -183,11 +186,11 @@ public class QuestionBank {
         this.kpNames = kpNames;
     }
 
-    public String getSource() {
+    public QuestionSource getSource() {
         return source;
     }
 
-    public void setSource(String source) {
+    public void setSource(QuestionSource source) {
         this.source = source;
     }
 

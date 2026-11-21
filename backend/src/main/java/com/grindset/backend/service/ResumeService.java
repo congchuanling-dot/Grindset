@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.CandidateType;
+import com.grindset.backend.common.ResumeFileType;
+import com.grindset.backend.common.ResumeSectionType;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.ParsedResume;
 import com.grindset.backend.dto.ResumeDetail;
@@ -102,7 +104,7 @@ public class ResumeService {
         resume.setFileType(extracted.fileType());
         resume.setFileSize(bytes.length);
         resume.setOriginalObjectKey(objectKey);
-        resume.setCandidateType(CandidateType.UNKNOWN.name());
+        resume.setCandidateType(CandidateType.UNKNOWN);
         resume.setParseStatus(PARSING);
         try {
             resumeMapper.insert(resume);
@@ -141,7 +143,7 @@ public class ResumeService {
         List<ResumeSummary> result = new ArrayList<>(rows.size());
         for (Resume row : rows) {
             result.add(new ResumeSummary(String.valueOf(row.getId()), row.getFileName(),
-                    row.getCandidateName(), row.getCandidateType(),
+                    row.getCandidateName(), enumName(row.getCandidateType()),
                     row.getParseStatus() == null ? PARSING : row.getParseStatus(), format(row)));
         }
         return result;
@@ -186,7 +188,7 @@ public class ResumeService {
                             item.getDescription(), item.getTags() == null ? List.of() : item.getTags()))
                     .toList();
             sectionViews.add(new ResumeDetail.SectionView(String.valueOf(section.getId()),
-                    section.getSectionType(), section.getTitle(), itemViews));
+                    enumName(section.getSectionType()), section.getTitle(), itemViews));
         }
 
         String objectKey = resume.getOriginalObjectKey();
@@ -195,11 +197,12 @@ public class ResumeService {
         String originalDownloadUrl = hasOriginal
                 ? originalStorage.downloadUrl(objectKey, resume.getFileName()) : null;
 
-        return new ResumeDetail(String.valueOf(resume.getId()), resume.getFileName(), resume.getFileType(),
+        return new ResumeDetail(String.valueOf(resume.getId()), resume.getFileName(),
+                enumName(resume.getFileType()),
                 resume.getFileSize() == null ? 0 : resume.getFileSize(),
                 hasOriginal, originalUrl, originalDownloadUrl,
                 resume.getParseStatus() == null ? PARSING : resume.getParseStatus(),
-                resume.getErrorMsg(), resume.getCandidateName(), resume.getCandidateType(),
+                resume.getErrorMsg(), resume.getCandidateName(), enumName(resume.getCandidateType()),
                 resume.getModel(), format(resume), skillViews, sectionViews);
     }
 
@@ -245,7 +248,7 @@ public class ResumeService {
             ResumeSection sectionRow = new ResumeSection();
             sectionRow.setId(idGenerator.nextId());
             sectionRow.setResumeId(resumeId);
-            sectionRow.setSectionType(section.getType());
+            sectionRow.setSectionType(ResumeSectionType.from(section.getType()));
             sectionRow.setTitle(section.getTitle());
             sectionRow.setSort(sectionSort++);
             sectionMapper.insert(sectionRow);
@@ -282,7 +285,7 @@ public class ResumeService {
         Resume patch = new Resume();
         patch.setId(resumeId);
         patch.setCandidateName(parsed.getCandidateName());
-        patch.setCandidateType(parsed.getCandidateType());
+        patch.setCandidateType(CandidateType.from(parsed.getCandidateType()));
         patch.setModel(model);
         patch.setParseStatus(SUCCESS);
         patch.setErrorMsg("");
@@ -320,9 +323,13 @@ public class ResumeService {
         return resume.getCreatedAt() == null ? "" : resume.getCreatedAt().format(STANDARD);
     }
 
+    private static String enumName(Enum<?> value) {
+        return value == null ? null : value.name();
+    }
+
     /**
      * 原件流与展示信息,调用方负责关闭 stream。
      */
-    public record OriginalFile(InputStream stream, String fileName, String fileType, long size) {
+    public record OriginalFile(InputStream stream, String fileName, ResumeFileType fileType, long size) {
     }
 }

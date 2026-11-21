@@ -3,6 +3,9 @@ package com.grindset.backend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.common.JudgeMode;
+import com.grindset.backend.common.QuestionSource;
+import com.grindset.backend.common.QuestionType;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.Texts;
 import com.grindset.backend.dto.BankEvaluation;
@@ -61,7 +64,6 @@ public class QuestionBankService {
     private static final int ATTEMPT_HISTORY_LIMIT = 20;
     private static final int TITLE_MAX = 60;
 
-    private static final Set<String> TYPES = Set.of("BASICS", "SCENARIO", "PROJECT", "CODE");
     private static final Set<String> STATUS_FILTERS = Set.of("TODO", "DONE", "WRONG");
 
     private final QuestionBankMapper bankMapper;
@@ -154,8 +156,8 @@ public class QuestionBankService {
                 String.valueOf(question.getId()),
                 question.getTitle(),
                 question.getContent(),
-                question.getType(),
-                question.getJudgeMode() == null ? "TEXT" : question.getJudgeMode(),
+                enumName(question.getType()),
+                question.getJudgeMode() == null ? JudgeMode.TEXT.name() : question.getJudgeMode().name(),
                 intValue(question.getDifficulty()),
                 question.getDomain(),
                 names(question.getKpNames()),
@@ -259,7 +261,7 @@ public class QuestionBankService {
     /** 取编程题;非编程题直接拒绝 */
     public QuestionBank requireCodingQuestion(long id) {
         QuestionBank question = requireOn(id);
-        if (!"CODING".equalsIgnoreCase(question.getJudgeMode())) {
+        if (question.getJudgeMode() != JudgeMode.CODING) {
             throw new BizException(ErrorCode.BAD_REQUEST, "这道题不是编程题");
         }
         return question;
@@ -349,7 +351,7 @@ public class QuestionBankService {
             question.setTitle(clampTitle(Texts.blankToNull(item.title()) == null
                     ? preview(content, TITLE_MAX) : item.title().strip()));
             question.setContent(content);
-            question.setType(normalizeType(item.type()));
+            question.setType(QuestionType.from(item.type()));
             question.setDifficulty(item.difficulty() == null ? 2 : clamp(item.difficulty(), 1, 3));
             question.setDomain(Texts.blankToNull(item.domain()) == null ? "其他" : item.domain().strip());
             question.setReferenceAnswer(Texts.blankToNull(item.referenceAnswer()));
@@ -357,8 +359,7 @@ public class QuestionBankService {
             List<String> kpNames = limited(item.kpNames(), 6, 64);
             question.setKpNames(kpNames.isEmpty() ? question.getKeyPoints() : kpNames);
             question.setKpIds(List.of());
-            question.setSource(Texts.blankToNull(item.source()) == null ? "MANUAL"
-                    : item.source().strip().toUpperCase(Locale.ROOT));
+            question.setSource(QuestionSource.from(item.source()));
             question.setSourceUrl(Texts.blankToNull(item.sourceUrl()));
             question.setContentHash(hash);
             question.setStatus(ONLINE);
@@ -433,8 +434,8 @@ public class QuestionBankService {
                 String.valueOf(question.getId()),
                 question.getTitle(),
                 preview(question.getContent(), MAX_PREVIEW_CHARS),
-                question.getType(),
-                question.getJudgeMode() == null ? "TEXT" : question.getJudgeMode(),
+                enumName(question.getType()),
+                question.getJudgeMode() == null ? JudgeMode.TEXT.name() : question.getJudgeMode().name(),
                 intValue(question.getDifficulty()),
                 question.getDomain(),
                 names(question.getKpNames()),
@@ -487,13 +488,8 @@ public class QuestionBankService {
         return STATUS_FILTERS.contains(upper) ? upper : null;
     }
 
-    private static String normalizeType(String type) {
-        String value = Texts.blankToNull(type);
-        if (value == null) {
-            return "BASICS";
-        }
-        String upper = value.toUpperCase(Locale.ROOT);
-        return TYPES.contains(upper) ? upper : "BASICS";
+    private static String enumName(Enum<?> value) {
+        return value == null ? null : value.name();
     }
 
     private static List<String> names(List<String> values) {

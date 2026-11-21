@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.SnowflakeIdGenerator;
+import com.grindset.backend.common.StorageProvider;
 import com.grindset.backend.config.ResumeProperties;
 import com.grindset.backend.dto.StorageConfigUpdate;
 import com.grindset.backend.dto.StorageConfigView;
@@ -24,8 +25,6 @@ import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 public class StorageConfigService {
 
     private static final Logger log = LoggerFactory.getLogger(StorageConfigService.class);
-
-    public static final String PROVIDER_ALIYUN_OSS = "ALIYUN_OSS";
 
     private static final int MIN_EXPIRE_SECONDS = 60;
     private static final int MAX_EXPIRE_SECONDS = 24 * 3600;
@@ -98,7 +97,8 @@ public class StorageConfigService {
             } catch (RuntimeException e) {
                 log.warn("展示 storage_config 时解密失败,请检查 SECRET_MASTER_KEY");
             }
-            return new StorageConfigView(String.valueOf(row.getId()), row.getProvider(),
+            return new StorageConfigView(String.valueOf(row.getId()),
+                    row.getProvider() == null ? null : row.getProvider().name(),
                     row.getEndpoint(), row.getBucket(), dirPrefix(row.getDirPrefix()),
                     expire(row.getUrlExpireSeconds()),
                     row.getEnabled() != null && row.getEnabled() == 1,
@@ -109,7 +109,7 @@ public class StorageConfigService {
         ResumeProperties.Oss env = properties.getOss();
         boolean envComplete = complete(env.getEndpoint(), env.getBucket())
                 && complete(env.getAccessKeyId(), env.getAccessKeySecret());
-        return new StorageConfigView(null, PROVIDER_ALIYUN_OSS, blankToNull(env.getEndpoint()),
+        return new StorageConfigView(null, StorageProvider.ALIYUN_OSS.name(), blankToNull(env.getEndpoint()),
                 blankToNull(env.getBucket()), dirPrefix(env.getDirPrefix()), expire(env.getUrlExpireSeconds()),
                 envComplete, envComplete ? SecretCipher.mask(env.getAccessKeyId()) : null,
                 !isBlank(env.getAccessKeySecret()), envComplete ? "ENV" : "NONE", null);
@@ -146,7 +146,7 @@ public class StorageConfigService {
             }
             StorageConfig created = new StorageConfig();
             created.setId(idGenerator.nextId());
-            created.setProvider(PROVIDER_ALIYUN_OSS);
+            created.setProvider(StorageProvider.ALIYUN_OSS);
             created.setEndpoint(endpoint);
             created.setBucket(bucket);
             created.setDirPrefix(dirPrefix);
@@ -172,7 +172,7 @@ public class StorageConfigService {
 
     private StorageConfig findRow() {
         return mapper.selectOne(new QueryWrapper<StorageConfig>()
-                .eq("provider", PROVIDER_ALIYUN_OSS)
+                .eq("provider", StorageProvider.ALIYUN_OSS.name())
                 .last("limit 1"));
     }
 

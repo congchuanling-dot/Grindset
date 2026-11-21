@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.grindset.backend.common.InterviewStyle;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,7 +27,7 @@ public class InterviewSession {
     private String position;
 
     /** pressure / middle / relaxed */
-    private String style;
+    private InterviewStyle style;
 
     private String round;
 
@@ -80,11 +81,11 @@ public class InterviewSession {
         this.position = position;
     }
 
-    public String getStyle() {
+    public InterviewStyle getStyle() {
         return style;
     }
 
-    public void setStyle(String style) {
+    public void setStyle(InterviewStyle style) {
         this.style = style;
     }
 

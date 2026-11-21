@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.grindset.backend.common.WrongQuestionSource;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,7 +28,7 @@ public class WrongQuestion {
     private Long questionId;
 
     /** INTERVIEW 面试 / BANK 题库 */
-    private String source;
+    private WrongQuestionSource source;
 
     private String position;
 
@@ -106,11 +107,11 @@ public class WrongQuestion {
         this.questionId = questionId;
     }
 
-    public String getSource() {
+    public WrongQuestionSource getSource() {
         return source;
     }
 
-    public void setSource(String source) {
+    public void setSource(WrongQuestionSource source) {
         this.source = source;
     }
 
