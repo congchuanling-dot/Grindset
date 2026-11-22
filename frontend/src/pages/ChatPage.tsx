@@ -25,6 +25,8 @@ import {
 } from '../api/agent'
 import { fetchModels, type BalanceInfo, type ProviderInfo } from '../api/chat'
 import AgentToolCard from '../components/AgentToolCard'
+import VoiceInputButton from '../components/VoiceInputButton'
+import { useVoiceInput } from '../hooks/useVoiceInput'
 import { errMessage } from '../utils/error'
 
 interface Message {
@@ -72,10 +74,15 @@ function ChatPage() {
   const [modelsError, setModelsError] = useState('')
   const [streamingId, setStreamingId] = useState<string | null>(null)
 
+  /** 语音识别错误提示,显示在输入框下方 */
+  const [voiceError, setVoiceError] = useState('')
+
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const idRef = useRef(0)
+  /** 开始录音时的输入内容,实时结果总是"原内容 + 识别文本" */
+  const voiceBaseRef = useRef('')
   /** Escape 取消重命名时,input 失焦仍会触发 commit,用标记跳过这一次 */
   const cancelRenameRef = useRef(false)
   /**
@@ -137,6 +144,38 @@ function ChatPage() {
       cancelled = true
     }
   }, [])
+
+  /** 语音结果写回输入框,并同步 textarea 高度 */
+  function applyVoiceText(text: string) {
+    setInput(text)
+    requestAnimationFrame(() => {
+      const element = inputRef.current
+      if (!element) return
+      element.style.height = 'auto'
+      element.style.height = `${Math.min(element.scrollHeight, 160)}px`
+    })
+  }
+
+  const voice = useVoiceInput({
+    // 首页 Agent 单次 60 秒;其他页面复用 Hook 时传各自场景的值
+    maxSeconds: 60,
+    onPartial: (text) => applyVoiceText(voiceBaseRef.current + text),
+    onFinal: (text) => {
+      applyVoiceText(voiceBaseRef.current + text)
+      inputRef.current?.focus()
+    },
+    onError: (message) => setVoiceError(message),
+  })
+
+  function handleVoiceToggle() {
+    if (voice.state === 'idle') {
+      setVoiceError('')
+      voiceBaseRef.current = input
+      void voice.start()
+    } else if (voice.state === 'recording') {
+      void voice.stop()
+    }
+  }
 
   // URL 里的会话变化时加载详情;新建会话时清空对话区
   useEffect(() => {
@@ -314,6 +353,8 @@ function ChatPage() {
   function handleSend() {
     const text = input.trim()
     if (!text) return
+    // 正在录音/识别时先取消,避免结果回填到已经发送的输入框
+    voice.cancel()
     void send(text)
   }
 
@@ -411,11 +452,13 @@ function ChatPage() {
   const selectedProvider = providers.find((item) => item.id === selectedProviderId)
   const activeTitle = conversations.find((item) => item.id === activeId)?.title ?? 'AI 助手'
 
-  const caption = modelsError
-    ? modelsError
-    : !modelsLoading && providers.length === 0
-      ? '服务端未配置任何模型的 API Key，请设置环境变量后重启后端'
-      : 'AI 回复由所选模型实时生成，内容仅供参考'
+  const caption = voiceError
+    ? voiceError
+    : modelsError
+      ? modelsError
+      : !modelsLoading && providers.length === 0
+        ? '服务端未配置任何模型的 API Key，请设置环境变量后重启后端'
+        : 'AI 回复由所选模型实时生成，内容仅供参考'
 
   return (
     <div className="relative flex h-full overflow-hidden bg-white">
@@ -684,6 +727,13 @@ function ChatPage() {
                 <Plus size={18} />
               </button>
 
+              <VoiceInputButton
+                state={voice.state}
+                seconds={voice.seconds}
+                disabled={streaming || !selection || detailLoading}
+                onClick={handleVoiceToggle}
+              />
+
               <textarea
                 ref={inputRef}
                 value={input}
@@ -691,7 +741,11 @@ function ChatPage() {
                 onKeyDown={handleKeyDown}
                 rows={1}
                 placeholder={
-                  providers.length > 0 ? '随心输入，Enter 发送' : '请先在服务端配置模型 API Key'
+                  voice.state === 'recording'
+                    ? '正在听你说…'
+                    : providers.length > 0
+                      ? '随心输入，Enter 发送，点击麦克风语音输入'
+                      : '请先在服务端配置模型 API Key'
                 }
                 className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400"
               />

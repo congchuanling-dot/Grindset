@@ -58,6 +58,9 @@ public class SecurityConfig {
                                 "/api/auth/refresh", "/api/auth/logout").permitAll()
                         // GitHub / Google 登录:authorize / callback / exchange 都发生在登录前
                         .requestMatchers("/api/auth/github/**", "/api/auth/google/**").permitAll()
+                        // 语音识别 WebSocket 握手:浏览器无法带 Authorization 头,
+                        // 由 AsrWebSocketHandler 校验 query 里的 access token
+                        .requestMatchers("/api/asr/stream").permitAll()
                         // 管理接口用 X-Admin-Token 自己校验,避免被 JWT 拦死
                         .requestMatchers("/api/admin/**").permitAll()
                         .anyRequest().authenticated())

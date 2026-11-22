@@ -131,6 +131,25 @@ app:
       provider: ${INTERVIEW_LLM_PROVIDER:}
       model: ${INTERVIEW_LLM_MODEL:}
 
+  # 语音识别(豆包/火山引擎流式 ASR)。
+  # api-key 只在后端使用;浏览器带自己的 access token 连 /api/asr/stream,
+  # 由后端代为连接火山引擎。没有配置 api-key 时连接会返回明确错误。
+  asr:
+    enabled: ${ASR_ENABLED:true}
+    volcengine:
+      endpoint: ${VOLC_ASR_ENDPOINT:wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async}
+      api-key: ${VOLC_ASR_API_KEY:}
+      # 豆包流式语音识别模型 2.0 小时版;并发版是 volc.seedasr.sauc.concurrent
+      resource-id: ${VOLC_ASR_RESOURCE_ID:volc.seedasr.sauc.duration}
+      connect-timeout-seconds: ${VOLC_ASR_CONNECT_TIMEOUT_SECONDS:10}
+    session:
+      # 单次识别默认时长(秒),调用方可用 ?maxSeconds= 覆盖
+      default-max-seconds: ${ASR_DEFAULT_MAX_SECONDS:60}
+      # 服务端硬上限(秒),防止长录音产生不可控费用
+      hard-max-seconds: ${ASR_HARD_MAX_SECONDS:300}
+      # 单次会话音频字节上限,默认 10MB(16k/16bit 约 5 分钟)
+      max-audio-bytes: ${ASR_MAX_AUDIO_BYTES:10485760}
+
   # 判题沙箱镜像。国内网络可先按镜像站地址拉取,例如:
   #   docker pull docker.m.daocloud.io/library/eclipse-temurin:21-jdk-alpine
   #   docker tag  docker.m.daocloud.io/library/eclipse-temurin:21-jdk-alpine eclipse-temurin:21-jdk-alpine

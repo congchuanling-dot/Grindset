@@ -11,6 +11,8 @@ export default defineConfig({
       '/api': {
         target: process.env.VITE_PROXY_TARGET ?? 'http://localhost:8081',
         changeOrigin: true,
+        // 语音识别走 WebSocket,开发环境也要把 ws 转发到后端
+        ws: true,
       },
     },
   },
