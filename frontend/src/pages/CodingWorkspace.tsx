@@ -22,6 +22,7 @@ import {
   runCode,
   submitCode,
   type CodeLanguage,
+  type CodeMode,
   type CodeRunResult,
   type CodingDetail,
   type CodingStatus,
@@ -63,7 +64,9 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const [language, setLanguage] = useState<CodeLanguage>('JAVA')
-  const [codes, setCodes] = useState<Record<CodeLanguage, string>>({ JAVA: '', PYTHON: '' })
+  const [mode, setMode] = useState<CodeMode>('ACM')
+  // 代码按「模式:语言」分别保存,切换模式不会丢失另一边的草稿
+  const [codes, setCodes] = useState<Record<string, string>>({})
 
   const [running, setRunning] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -81,11 +84,10 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
         if (cancelled) return
         setDetail(coding)
         setHistory(submissions)
-        const starter = coding.starterCode
-        setCodes({
-          JAVA: starter.JAVA ?? '',
-          PYTHON: starter.PYTHON ?? '',
-        })
+        const initialMode = coding.codeModes[0] ?? 'ACM'
+        setMode(initialMode)
+        setCodes(starterCodes(coding, initialMode))
+        const starter = starterFor(coding, initialMode)
         if (!starter.JAVA && starter.PYTHON) {
           setLanguage('PYTHON')
         }
@@ -124,10 +126,25 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
     return () => window.clearInterval(timer)
   }, [questionId, submission])
 
-  const code = codes[language] ?? ''
+  const code = codes[codeKey(mode, language)] ?? ''
+  const samples = detail?.samples[mode] ?? []
+  const isFunction = mode === 'LEETCODE'
+  const signatureText = detail?.functionName
+    ? `${detail.returnType ?? 'Object'} ${detail.functionName}(${detail.paramTypes.join(', ')})`
+    : ''
 
   function changeCode(next: string) {
-    setCodes((prev) => ({ ...prev, [language]: next }))
+    setCodes((prev) => ({ ...prev, [codeKey(mode, language)]: next }))
+  }
+
+  /** 切模式:保留两边代码,只重置换模式和切换语言的空槽位 */
+  function changeMode(next: CodeMode) {
+    if (!detail || next === mode) return
+    setMode(next)
+    setCodes((prev) => ({ ...prev, ...starterCodes(detail, next) }))
+    setRunResult(null)
+    setSubmission(null)
+    setActionError(null)
   }
 
   const run = useCallback(async () => {
@@ -136,13 +153,13 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
     setActionError(null)
     setRunResult(null)
     try {
-      setRunResult(await runCode(questionId, language, code))
+      setRunResult(await runCode(questionId, language, code, mode))
     } catch (e) {
       setActionError(errMessage(e))
     } finally {
       setRunning(false)
     }
-  }, [code, detail, language, questionId, running, submitting])
+  }, [code, detail, language, mode, questionId, running, submitting])
 
   const submit = useCallback(async () => {
     if (!detail || running || submitting) return
@@ -150,13 +167,13 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
     setActionError(null)
     setRunResult(null)
     try {
-      setSubmission(await submitCode(questionId, language, code))
+      setSubmission(await submitCode(questionId, language, code, mode))
     } catch (e) {
       setActionError(errMessage(e))
     } finally {
       setSubmitting(false)
     }
-  }, [code, detail, language, questionId, running, submitting])
+  }, [code, detail, language, mode, questionId, running, submitting])
 
   const judging = submission != null && PENDING_STATUSES.includes(submission.status)
 
@@ -179,6 +196,9 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
             </span>
             <span className={`rounded-full px-2 py-0.5 text-[11px] ${difficultyClass(detail.difficulty)}`}>
               {difficultyLabel(detail.difficulty)}
+            </span>
+            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] text-indigo-700">
+              {isFunction ? '力扣模式' : 'ACM 模式'}
             </span>
             <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
               {detail.accepted ? '已通过' : detail.status === 'WRONG' ? '待通过' : '未作答'}
@@ -217,17 +237,34 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
             <div className="mt-5">
               <p className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
                 <Terminal size={13} className="text-teal-600" />
-                例题（{detail.samples.length}）
+                例题（{samples.length}）
               </p>
+              {isFunction && (
+                <div className="mt-2 rounded-lg border border-teal-100 bg-teal-50/60 px-3 py-2">
+                  <p className="text-[11px] font-medium text-teal-700">
+                    只需实现函数，不用写 main
+                  </p>
+                  <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded bg-white px-2 py-1 font-mono text-[11px] text-slate-700">
+                    {signatureText}
+                  </pre>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    判题器会自动读入参数并调用它，返回值按 JSON 与期望输出比较。
+                  </p>
+                </div>
+              )}
               <div className="mt-2 space-y-2">
-                {detail.samples.map((sample, index) => (
+                {samples.map((sample, index) => (
                   <div key={index} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                     <p className="text-[11px] font-medium text-slate-500">示例 {index + 1}</p>
-                    <p className="mt-1 text-[11px] text-slate-400">输入</p>
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      {isFunction ? '参数（JSON 数组，按签名顺序）' : '输入'}
+                    </p>
                     <pre className="mt-0.5 overflow-x-auto whitespace-pre-wrap rounded bg-white px-2 py-1 font-mono text-xs text-slate-700">
                       {sample.input || '(空)'}
                     </pre>
-                    <p className="mt-1.5 text-[11px] text-slate-400">期望输出</p>
+                    <p className="mt-1.5 text-[11px] text-slate-400">
+                      {isFunction ? '期望返回值' : '期望输出'}
+                    </p>
                     <pre className="mt-0.5 overflow-x-auto whitespace-pre-wrap rounded bg-white px-2 py-1 font-mono text-xs text-slate-700">
                       {sample.expectedOutput}
                     </pre>
@@ -254,6 +291,23 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
           {/* 右侧:编辑器 + 操作 + 结果 */}
           <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 px-3 py-2">
+              <div className="flex rounded-lg bg-slate-100 p-0.5">
+                {(detail.codeModes.length > 0 ? detail.codeModes : (['ACM'] as CodeMode[])).map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => changeMode(item)}
+                    className={`rounded-md px-2 py-1 text-[11px] transition ${
+                      mode === item
+                        ? 'bg-white font-medium text-teal-700 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    {item === 'LEETCODE' ? '力扣模式' : 'ACM 模式'}
+                  </button>
+                ))}
+              </div>
+
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as CodeLanguage)}
@@ -267,7 +321,13 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
               </select>
 
               <span className="text-[11px] text-slate-400">
-                {language === 'JAVA' ? 'Main.java · 类名必须是 Main，从 stdin 读入' : 'main.py · 从 stdin 读入'}
+                {isFunction
+                  ? language === 'JAVA'
+                    ? 'Solution.java · 只写 class Solution，不用 main'
+                    : 'solution.py · 只写 class Solution，不用 main'
+                  : language === 'JAVA'
+                    ? 'Main.java · 类名必须是 Main，从 stdin 读入'
+                    : 'main.py · 从 stdin 读入'}
               </span>
 
               <div className="ml-auto flex items-center gap-2">
@@ -333,6 +393,24 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
       )}
     </div>
   )
+}
+
+function codeKey(mode: CodeMode, language: CodeLanguage) {
+  return `${mode}:${language}`
+}
+
+/** 该模式下的初始代码,力扣模式取 starterCodeFunction */
+function starterFor(detail: CodingDetail, mode: CodeMode) {
+  return mode === 'LEETCODE' ? detail.starterCodeFunction : detail.starterCode
+}
+
+/** 把某个模式的两种语言初始代码展开成 codeKey 索引 */
+function starterCodes(detail: CodingDetail, mode: CodeMode): Record<string, string> {
+  const starter = starterFor(detail, mode)
+  return {
+    [codeKey(mode, 'JAVA')]: starter.JAVA ?? '',
+    [codeKey(mode, 'PYTHON')]: starter.PYTHON ?? '',
+  }
 }
 
 function RunResultView({ result }: { result: CodeRunResult }) {

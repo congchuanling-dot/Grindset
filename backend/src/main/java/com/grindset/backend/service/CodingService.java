@@ -22,7 +22,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -46,6 +49,11 @@ public class CodingService {
     private static final int TIME_LIMIT_DEFAULT = 2000;
     private static final int MEMORY_LIMIT_DEFAULT = 256;
     private static final int HISTORY_LIMIT = 20;
+
+    /** 支持的编程模式,顺序决定详情接口 codeModes 的顺序 */
+    private static final List<String> MODES = List.of("ACM", "LEETCODE");
+    private static final String CODE_MODE_ACM = "ACM";
+    private static final String CODE_MODE_LEETCODE = "LEETCODE";
 
     private final QuestionBankService questionBankService;
     private final QuestionTestCaseMapper testCaseMapper;
@@ -77,14 +85,26 @@ public class CodingService {
 
     // ---------- 题目 ----------
 
-    /** 编程题详情:只下发例题,隐藏用例不出库 */
+    /** 编程题详情:两种模式的初始代码与例题,隐藏用例不出库 */
     public CodingDetail detail(long userId, long id) {
         QuestionBank question = questionBankService.requireCodingQuestion(id);
-        List<QuestionTestCase> samples = sampleCases(id);
-        List<CodingDetail.SampleCase> views = samples.stream()
-                .map(item -> new CodingDetail.SampleCase(nullToEmpty(item.getInput()),
-                        nullToEmpty(item.getExpectedOutput()), item.getSort() == null ? 0 : item.getSort()))
-                .toList();
+        List<QuestionTestCase> cases = allCases(id);
+
+        Map<String, List<CodingDetail.SampleCase>> samples = new LinkedHashMap<>();
+        List<String> modes = new ArrayList<>();
+        for (String mode : MODES) {
+            List<CodingDetail.SampleCase> views = cases.stream()
+                    .filter(item -> mode.equals(caseMode(item)) && intValue(item.getIsSample()) == 1)
+                    .map(item -> new CodingDetail.SampleCase(nullToEmpty(item.getInput()),
+                            nullToEmpty(item.getExpectedOutput()), intValue(item.getSort())))
+                    .toList();
+            samples.put(mode, views);
+            boolean hasCases = cases.stream().anyMatch(item -> mode.equals(caseMode(item)));
+            if (hasCases) {
+                modes.add(mode);
+            }
+        }
+
         long submissionCount = submissionMapper.selectCount(new QueryWrapper<QuestionSubmission>()
                 .eq("user_id", userId)
                 .eq("question_id", id));
@@ -101,13 +121,42 @@ public class CodingService {
                 question.getDifficulty() == null ? 2 : question.getDifficulty(),
                 question.getDomain(),
                 question.getKpNames() == null ? List.of() : question.getKpNames(),
-                question.getStarterCode() == null ? java.util.Map.of() : question.getStarterCode(),
+                modes.isEmpty() ? List.of(CODE_MODE_ACM) : modes,
+                question.getStarterCode() == null ? Map.of() : question.getStarterCode(),
+                question.getStarterCodeFunction() == null ? Map.of() : question.getStarterCodeFunction(),
                 positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
                 positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT),
-                views,
+                samples,
                 questionBankService.progressStatus(userId, id),
                 (int) submissionCount,
-                acceptedCount > 0);
+                acceptedCount > 0,
+                question.getFunctionName(),
+                question.getParamTypes() == null ? List.of() : question.getParamTypes(),
+                question.getReturnType());
+    }
+
+    /** 用例所属模式,历史数据没有值时按 ACM 处理 */
+    private static String caseMode(QuestionTestCase testCase) {
+        return CODE_MODE_LEETCODE.equalsIgnoreCase(testCase.getCaseMode()) ? CODE_MODE_LEETCODE : CODE_MODE_ACM;
+    }
+
+    /** 解析请求里的模式:没传就用题目的默认模式,非编程题一律 ACM */
+    private static String resolveMode(QuestionBank question, CodeRunRequest request) {
+        String raw = request == null ? null : request.codeMode();
+        if (raw != null && !raw.isBlank()) {
+            String upper = raw.strip().toUpperCase(Locale.ROOT);
+            if (MODES.contains(upper)) {
+                return upper;
+            }
+            throw new BizException(ErrorCode.BAD_REQUEST, "不支持的编程模式：" + raw);
+        }
+        return CODE_MODE_LEETCODE.equalsIgnoreCase(question.getCodeMode()) ? CODE_MODE_LEETCODE : CODE_MODE_ACM;
+    }
+
+    /** 函数模式下把题目的签名整理成判题器需要的结构 */
+    private static JudgeService.FunctionSpec functionSpec(QuestionBank question) {
+        List<String> params = question.getParamTypes() == null ? List.of() : question.getParamTypes();
+        return new JudgeService.FunctionSpec(question.getFunctionName(), params, question.getReturnType());
     }
 
     // ---------- 运行样例 ----------
@@ -115,20 +164,25 @@ public class CodingService {
     /** 运行例题,同步返回逐用例结果,不写提交历史 */
     public CodeRunResult run(long userId, long id, CodeRunRequest request) {
         QuestionBank question = questionBankService.requireCodingQuestion(id);
+        String mode = resolveMode(question, request);
         JudgeLanguage language = requireLanguage(request);
         String code = requireCode(request);
 
-        List<QuestionTestCase> samples = sampleCases(id);
+        List<QuestionTestCase> samples = sampleCases(id, mode);
         if (samples.isEmpty()) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "这道题还没有配置例题用例");
+            throw new BizException(ErrorCode.BAD_REQUEST, "这道题还没有配置该模式的例题用例");
         }
         if (!activeUsers.add(userId)) {
             throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "上一次运行还没结束，请稍候");
         }
         try {
-            JudgeService.JudgeOutcome outcome = judgeService.judge(language, code, samples,
-                    positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
-                    positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT));
+            int timeLimit = positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT);
+            int memoryLimit = positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT);
+            // 函数题走注入驱动的判题,ACM 题直接跑标准输入输出
+            JudgeService.JudgeOutcome outcome = CODE_MODE_LEETCODE.equals(mode)
+                    ? judgeService.judgeFunction(language, code, functionSpec(question), samples,
+                            timeLimit, memoryLimit)
+                    : judgeService.judge(language, code, samples, timeLimit, memoryLimit);
             List<CodeRunResult.CaseResult> cases = outcome.cases().stream()
                     .map(item -> new CodeRunResult.CaseResult(item.index(), nullToEmpty(item.input()),
                             nullToEmpty(item.expectedOutput()), nullToEmpty(item.actualOutput()),
@@ -146,12 +200,13 @@ public class CodingService {
     /** 提交代码:落库后异步判题,返回 PENDING 记录供前端轮询 */
     public CodingSubmissionView submit(long userId, long id, CodeRunRequest request) {
         QuestionBank question = questionBankService.requireCodingQuestion(id);
+        String mode = resolveMode(question, request);
         JudgeLanguage language = requireLanguage(request);
         String code = requireCode(request);
 
-        List<QuestionTestCase> cases = allCases(id);
+        List<QuestionTestCase> cases = allCases(id, mode);
         if (cases.isEmpty()) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "这道题还没有配置测试用例");
+            throw new BizException(ErrorCode.BAD_REQUEST, "这道题还没有配置该模式的测试用例");
         }
         if (!activeUsers.add(userId)) {
             throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "上一次运行还没结束，请稍候");
@@ -170,21 +225,26 @@ public class CodingService {
         submissionMapper.insert(submission);
 
         long submissionId = submission.getId();
-        executor.submit(() -> judgeAsync(submissionId, userId, question, language, code, cases));
+        executor.submit(() -> judgeAsync(submissionId, userId, question, language, code, cases, mode));
         return toView(submission);
     }
 
     private void judgeAsync(long submissionId, long userId, QuestionBank question,
-                            JudgeLanguage language, String code, List<QuestionTestCase> cases) {
+                            JudgeLanguage language, String code, List<QuestionTestCase> cases,
+                            String mode) {
         try {
             QuestionSubmission running = new QuestionSubmission();
             running.setId(submissionId);
             running.setStatus(SubmissionStatus.RUNNING);
             submissionMapper.updateById(running);
 
-            JudgeService.JudgeOutcome outcome = judgeService.judge(language, code, cases,
-                    positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
-                    positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT));
+            JudgeService.JudgeOutcome outcome = CODE_MODE_LEETCODE.equals(mode)
+                    ? judgeService.judgeFunction(language, code, functionSpec(question), cases,
+                            positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
+                            positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT))
+                    : judgeService.judge(language, code, cases,
+                            positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
+                            positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT));
 
             QuestionSubmission finished = new QuestionSubmission();
             finished.setId(submissionId);
@@ -238,17 +298,29 @@ public class CodingService {
 
     // ---------- 工具 ----------
 
-    private List<QuestionTestCase> sampleCases(long id) {
+    private List<QuestionTestCase> sampleCases(long id, String mode) {
         return testCaseMapper.selectList(new QueryWrapper<QuestionTestCase>()
                 .eq("question_id", id)
+                .eq("case_mode", mode)
                 .eq("is_sample", 1)
                 .orderByAsc("sort")
                 .orderByAsc("id"));
     }
 
+    private List<QuestionTestCase> allCases(long id, String mode) {
+        return testCaseMapper.selectList(new QueryWrapper<QuestionTestCase>()
+                .eq("question_id", id)
+                .eq("case_mode", mode)
+                .orderByAsc("is_sample")
+                .orderByAsc("sort")
+                .orderByAsc("id"));
+    }
+
+    /** 两种模式的全部用例,详情页用来按模式分组 */
     private List<QuestionTestCase> allCases(long id) {
         return testCaseMapper.selectList(new QueryWrapper<QuestionTestCase>()
                 .eq("question_id", id)
+                .orderByAsc("case_mode")
                 .orderByAsc("is_sample")
                 .orderByAsc("sort")
                 .orderByAsc("id"));
@@ -290,6 +362,10 @@ public class CodingService {
 
     private static int positive(Integer value, int fallback) {
         return value == null || value <= 0 ? fallback : value;
+    }
+
+    private static int intValue(Integer value) {
+        return value == null ? 0 : value;
     }
 
     private static String nullToEmpty(String value) {

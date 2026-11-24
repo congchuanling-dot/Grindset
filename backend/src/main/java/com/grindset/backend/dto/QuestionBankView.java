@@ -27,6 +27,7 @@ public record QuestionBankView(
             String preview,
             String type,
             String judgeMode,
+            String codeMode,
             int difficulty,
             String domain,
             List<String> knowledgePoints,

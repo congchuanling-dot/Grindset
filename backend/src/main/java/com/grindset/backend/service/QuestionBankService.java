@@ -505,6 +505,7 @@ public class QuestionBankService {
                 preview(question.getContent(), MAX_PREVIEW_CHARS),
                 enumName(question.getType()),
                 question.getJudgeMode() == null ? JudgeMode.TEXT.name() : question.getJudgeMode().name(),
+                question.getCodeMode(),
                 intValue(question.getDifficulty()),
                 question.getDomain(),
                 names(question.getKpNames()),

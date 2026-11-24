@@ -18,6 +18,9 @@ public class QuestionTestCase {
 
     private Long questionId;
 
+    /** ACM 标准输入 / LEETCODE JSON 参数 */
+    private String caseMode;
+
     private String input;
 
     private String expectedOutput;
@@ -43,6 +46,14 @@ public class QuestionTestCase {
 
     public void setQuestionId(Long questionId) {
         this.questionId = questionId;
+    }
+
+    public String getCaseMode() {
+        return caseMode;
+    }
+
+    public void setCaseMode(String caseMode) {
+        this.caseMode = caseMode;
     }
 
     public String getInput() {

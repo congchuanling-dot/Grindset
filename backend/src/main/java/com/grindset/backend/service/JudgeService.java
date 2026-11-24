@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,6 +56,321 @@ public class JudgeService {
             e=$(date +%s%N)
             echo "__ELAPSED__$(( (e - s) / 1000000 ))" >&2
             exit $rc
+            """;
+
+    /**
+     * 函数模式注入到用户代码旁边的 JSON 工具类。
+     * 全部用字符码写引号/反斜杠,避免模板本身的转义歧义。
+     */
+    private static final String JSON_HELPER = """
+            class Json {
+                private final String s;
+                private int i;
+
+                private Json(String s) {
+                    this.s = s;
+                }
+
+                @SuppressWarnings("unchecked")
+                static List<Object> parse(String text) {
+                    Json p = new Json(text);
+                    p.ws();
+                    return (List<Object>) p.value();
+                }
+
+                private void ws() {
+                    while (i < s.length() && Character.isWhitespace(s.charAt(i))) {
+                        i++;
+                    }
+                }
+
+                private Object value() {
+                    ws();
+                    char c = s.charAt(i);
+                    if (c == '[') {
+                        i++;
+                        List<Object> list = new ArrayList<>();
+                        ws();
+                        if (i < s.length() && s.charAt(i) == ']') {
+                            i++;
+                            return list;
+                        }
+                        while (true) {
+                            list.add(value());
+                            ws();
+                            if (s.charAt(i++) == ']') {
+                                return list;
+                            }
+                        }
+                    }
+                    if (c == '"') {
+                        return text();
+                    }
+                    if (c == 't') {
+                        i += 4;
+                        return Boolean.TRUE;
+                    }
+                    if (c == 'f') {
+                        i += 5;
+                        return Boolean.FALSE;
+                    }
+                    if (c == 'n') {
+                        i += 4;
+                        return null;
+                    }
+                    int start = i;
+                    while (i < s.length() && "+-.eE0123456789".indexOf(s.charAt(i)) >= 0) {
+                        i++;
+                    }
+                    return Double.valueOf(s.substring(start, i));
+                }
+
+                private String text() {
+                    i++;
+                    StringBuilder b = new StringBuilder();
+                    while (true) {
+                        char c = s.charAt(i++);
+                        if (c == '"') {
+                            return b.toString();
+                        }
+                        if (c != (char) 92) {
+                            b.append(c);
+                            continue;
+                        }
+                        char e = s.charAt(i++);
+                        if (e == 'u') {
+                            b.append((char) Integer.parseInt(s.substring(i, i + 4), 16));
+                            i += 4;
+                        } else if (e == 'n') {
+                            b.append((char) 10);
+                        } else if (e == 't') {
+                            b.append((char) 9);
+                        } else if (e == 'r') {
+                            b.append((char) 13);
+                        } else if (e == 'b') {
+                            b.append((char) 8);
+                        } else if (e == 'f') {
+                            b.append((char) 12);
+                        } else {
+                            b.append(e);
+                        }
+                    }
+                }
+
+                static int num(Object o) {
+                    return ((Number) o).intValue();
+                }
+
+                static long lng(Object o) {
+                    return ((Number) o).longValue();
+                }
+
+                static double dbl(Object o) {
+                    return ((Number) o).doubleValue();
+                }
+
+                static boolean bool(Object o) {
+                    return Boolean.TRUE.equals(o);
+                }
+
+                static String str(Object o) {
+                    return o == null ? null : String.valueOf(o);
+                }
+
+                static char chr(Object o) {
+                    String v = str(o);
+                    return v == null || v.isEmpty() ? ' ' : v.charAt(0);
+                }
+
+                @SuppressWarnings("unchecked")
+                static int[] ints(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    int[] r = new int[l.size()];
+                    for (int k = 0; k < r.length; k++) {
+                        r[k] = num(l.get(k));
+                    }
+                    return r;
+                }
+
+                @SuppressWarnings("unchecked")
+                static long[] longs(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    long[] r = new long[l.size()];
+                    for (int k = 0; k < r.length; k++) {
+                        r[k] = lng(l.get(k));
+                    }
+                    return r;
+                }
+
+                @SuppressWarnings("unchecked")
+                static double[] doubles(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    double[] r = new double[l.size()];
+                    for (int k = 0; k < r.length; k++) {
+                        r[k] = dbl(l.get(k));
+                    }
+                    return r;
+                }
+
+                @SuppressWarnings("unchecked")
+                static boolean[] bools(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    boolean[] r = new boolean[l.size()];
+                    for (int k = 0; k < r.length; k++) {
+                        r[k] = bool(l.get(k));
+                    }
+                    return r;
+                }
+
+                static char[] chars(Object o) {
+                    String v = str(o);
+                    return v == null ? new char[0] : v.toCharArray();
+                }
+
+                @SuppressWarnings("unchecked")
+                static String[] strs(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    String[] r = new String[l.size()];
+                    for (int k = 0; k < r.length; k++) {
+                        r[k] = str(l.get(k));
+                    }
+                    return r;
+                }
+
+                @SuppressWarnings("unchecked")
+                static int[][] ints2(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    int[][] r = new int[l.size()][];
+                    for (int k = 0; k < r.length; k++) {
+                        r[k] = ints(l.get(k));
+                    }
+                    return r;
+                }
+
+                @SuppressWarnings("unchecked")
+                static char[][] chars2(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    char[][] r = new char[l.size()][];
+                    for (int k = 0; k < r.length; k++) {
+                        r[k] = chars(l.get(k));
+                    }
+                    return r;
+                }
+
+                @SuppressWarnings("unchecked")
+                static String[][] strs2(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    String[][] r = new String[l.size()][];
+                    for (int k = 0; k < r.length; k++) {
+                        r[k] = strs(l.get(k));
+                    }
+                    return r;
+                }
+
+                @SuppressWarnings("unchecked")
+                static List<Integer> intList(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    List<Integer> r = new ArrayList<>();
+                    for (Object item : l) {
+                        r.add(num(item));
+                    }
+                    return r;
+                }
+
+                @SuppressWarnings("unchecked")
+                static List<String> strList(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    List<String> r = new ArrayList<>();
+                    for (Object item : l) {
+                        r.add(str(item));
+                    }
+                    return r;
+                }
+
+                @SuppressWarnings("unchecked")
+                static List<List<Integer>> intList2(Object o) {
+                    List<Object> l = (List<Object>) o;
+                    List<List<Integer>> r = new ArrayList<>();
+                    for (Object item : l) {
+                        r.add(intList(item));
+                    }
+                    return r;
+                }
+
+                static String toJson(Object o) {
+                    if (o == null) {
+                        return "null";
+                    }
+                    if (o instanceof Boolean || o instanceof Integer || o instanceof Long
+                            || o instanceof Short || o instanceof Byte) {
+                        return o.toString();
+                    }
+                    if (o instanceof Double || o instanceof Float) {
+                        double d = ((Number) o).doubleValue();
+                        if (!Double.isInfinite(d) && !Double.isNaN(d) && d == Math.rint(d)) {
+                            return String.valueOf((long) d);
+                        }
+                        return String.valueOf(d);
+                    }
+                    if (o instanceof Number) {
+                        return o.toString();
+                    }
+                    if (o instanceof Character) {
+                        return quote(o.toString());
+                    }
+                    if (o instanceof String) {
+                        return quote((String) o);
+                    }
+                    if (o instanceof char[]) {
+                        return quote(new String((char[]) o));
+                    }
+                    if (o.getClass().isArray()) {
+                        int n = java.lang.reflect.Array.getLength(o);
+                        StringBuilder b = new StringBuilder("[");
+                        for (int k = 0; k < n; k++) {
+                            if (k > 0) {
+                                b.append(',');
+                            }
+                            b.append(toJson(java.lang.reflect.Array.get(o, k)));
+                        }
+                        return b.append(']').toString();
+                    }
+                    if (o instanceof Collection) {
+                        StringBuilder b = new StringBuilder("[");
+                        boolean first = true;
+                        for (Object item : (Collection<?>) o) {
+                            if (!first) {
+                                b.append(',');
+                            }
+                            first = false;
+                            b.append(toJson(item));
+                        }
+                        return b.append(']').toString();
+                    }
+                    return quote(String.valueOf(o));
+                }
+
+                private static String quote(String v) {
+                    StringBuilder b = new StringBuilder();
+                    b.append((char) 34);
+                    for (int k = 0; k < v.length(); k++) {
+                        char c = v.charAt(k);
+                        if (c == (char) 34 || c == (char) 92) {
+                            b.append((char) 92).append(c);
+                        } else if (c == (char) 10) {
+                            b.append((char) 92).append('n');
+                        } else if (c == (char) 13) {
+                            b.append((char) 92).append('r');
+                        } else if (c == (char) 9) {
+                            b.append((char) 92).append('t');
+                        } else {
+                            b.append(c);
+                        }
+                    }
+                    b.append((char) 34);
+                    return b.toString();
+                }
+            }
             """;
 
     /** 判题镜像可配置:国内网络建议先按镜像站地址 pull,再在这里填对应镜像名 */
@@ -174,16 +490,239 @@ public class JudgeService {
         }
     }
 
+    // ---------- 力扣模式:函数签名 ----------
+
+    /** 函数题签名:方法名、参数类型(按顺序)、返回值类型 */
+    public record FunctionSpec(String method, List<String> paramTypes, String returnType) {
+    }
+
+    /**
+     * 函数模式判题:用户只写 Solution 类,这里生成一个测试驱动读入 JSON 参数、
+     * 调用目标方法并把返回值按 JSON 打印,再与期望输出逐字节比较。
+     */
+    public JudgeOutcome judgeFunction(JudgeLanguage lang, String code, FunctionSpec spec,
+                                      List<QuestionTestCase> cases, int timeLimitMs, int memoryLimitMb) {
+        if (lang == null) {
+            return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
+                    "暂不支持的语言", List.of());
+        }
+        if (spec == null || spec.method() == null || spec.method().isBlank()) {
+            return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
+                    "这道函数题还没有配置函数签名", List.of());
+        }
+        for (String type : spec.paramTypes()) {
+            if (!SUPPORTED_TYPES.contains(type)) {
+                return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
+                        "暂不支持参数类型 " + type, List.of());
+            }
+        }
+        if (code == null || code.isBlank()) {
+            return new JudgeOutcome(SubmissionStatus.COMPILE_ERROR, 0, cases.size(), 0, "代码不能为空", List.of());
+        }
+        if (code.length() > MAX_CODE_LENGTH) {
+            return new JudgeOutcome(SubmissionStatus.COMPILE_ERROR, 0, cases.size(), 0,
+                    "代码不能超过 " + MAX_CODE_LENGTH + " 字符", List.of());
+        }
+
+        String image = lang == JudgeLanguage.JAVA ? javaImage : pythonImage;
+        if (!dockerImageExists(image)) {
+            log.error("判题镜像不存在 image={}", image);
+            return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
+                    "判题环境未就绪，缺少镜像 " + image + "，请先执行 docker pull " + image, List.of());
+        }
+
+        Path workspace = null;
+        try {
+            workspace = Files.createTempDirectory("grindset-judge-");
+            Files.writeString(workspace.resolve("runner.sh"), RUNNER_SCRIPT, StandardCharsets.UTF_8);
+
+            List<String> program;
+            if (lang == JudgeLanguage.JAVA) {
+                Files.writeString(workspace.resolve("Solution.java"), code, StandardCharsets.UTF_8);
+                Files.writeString(workspace.resolve("Runner.java"), javaRunner(spec), StandardCharsets.UTF_8);
+                ExecResult compile = exec(dockerRun(workspace, image, memoryLimitMb,
+                                List.of("sh", "-c", "javac -encoding UTF-8 -d out Solution.java Runner.java")),
+                        COMPILE_TIMEOUT_MS);
+                if (!compile.ok()) {
+                    return new JudgeOutcome(SubmissionStatus.COMPILE_ERROR, 0, cases.size(), 0,
+                            firstNonBlank(limit(compile.stderr(), MAX_FEEDBACK_LENGTH),
+                                    limit(compile.stdout(), MAX_FEEDBACK_LENGTH)),
+                            List.of());
+                }
+                program = List.of("java", "-Xmx" + heapMb(memoryLimitMb) + "m", "-Xss16m", "-cp", "out", "Runner");
+            } else {
+                Files.writeString(workspace.resolve("solution.py"), code, StandardCharsets.UTF_8);
+                Files.writeString(workspace.resolve("runner.py"), pythonRunner(spec), StandardCharsets.UTF_8);
+                // 函数模式要 import 同目录的 solution,不能用 -I 隔离模式
+                program = List.of("python3", "-B", "runner.py");
+            }
+
+            List<CaseOutcome> outcomes = new ArrayList<>();
+            int passed = 0;
+            int totalRuntime = 0;
+            SubmissionStatus overallStatus = SubmissionStatus.ACCEPTED;
+            String errorMessage = null;
+            int index = 0;
+            for (QuestionTestCase testCase : cases) {
+                index++;
+                ExecResult run = runCaseWith(lang, workspace, image, memoryLimitMb, timeLimitMs,
+                        testCase, program);
+                totalRuntime += run.elapsedMs();
+                String actual = limit(run.stdout(), OUTPUT_LIMIT);
+
+                if (run.timedOut()) {
+                    outcomes.add(new CaseOutcome(index, testCase.getInput(), testCase.getExpectedOutput(),
+                            actual, false, "超出时间限制"));
+                    overallStatus = SubmissionStatus.TIME_LIMIT_EXCEEDED;
+                    errorMessage = "用例 " + index + " 运行超时（限制 " + timeLimitMs + "ms）";
+                    break;
+                }
+                if (run.exitCode() != 0) {
+                    outcomes.add(new CaseOutcome(index, testCase.getInput(), testCase.getExpectedOutput(),
+                            actual, false, "运行出错"));
+                    overallStatus = SubmissionStatus.RUNTIME_ERROR;
+                    errorMessage = "用例 " + index + " 运行出错："
+                            + limit(firstNonBlank(run.stderr(), run.stdout()), MAX_FEEDBACK_LENGTH);
+                    break;
+                }
+                boolean ok = sameJson(actual, testCase.getExpectedOutput());
+                outcomes.add(new CaseOutcome(index, testCase.getInput(), testCase.getExpectedOutput(),
+                        actual, ok, ok ? "通过" : "输出与期望不一致"));
+                if (ok) {
+                    passed++;
+                } else if (overallStatus == SubmissionStatus.ACCEPTED) {
+                    overallStatus = SubmissionStatus.WRONG_ANSWER;
+                    errorMessage = "用例 " + index + " 输出与期望不一致";
+                }
+            }
+            return new JudgeOutcome(overallStatus, passed, cases.size(), totalRuntime, errorMessage, outcomes);
+        } catch (IOException e) {
+            log.error("函数题判题失败 language={}", lang, e);
+            return new JudgeOutcome(SubmissionStatus.SYSTEM_ERROR, 0, cases.size(), 0,
+                    "判题服务异常：" + e.getMessage(), List.of());
+        } finally {
+            deleteQuietly(workspace);
+        }
+    }
+
+    /** Java 测试驱动:读 JSON 参数 -> 调 Solution -> 打印 JSON 结果 */
+    private static String javaRunner(FunctionSpec spec) {
+        StringBuilder decls = new StringBuilder();
+        StringBuilder args = new StringBuilder();
+        List<String> types = spec.paramTypes();
+        for (int i = 0; i < types.size(); i++) {
+            String type = types.get(i);
+            decls.append("        ").append(type).append(" p").append(i)
+                    .append(" = Json.").append(reader(type)).append("(argv.get(").append(i).append("));\n");
+            if (i > 0) {
+                args.append(", ");
+            }
+            args.append('p').append(i);
+        }
+        return """
+                import java.util.*;
+
+                public class Runner {
+                    @SuppressWarnings("unchecked")
+                    public static void main(String[] args) throws Exception {
+                        Scanner sc = new Scanner(System.in);
+                        StringBuilder sb = new StringBuilder();
+                        while (sc.hasNextLine()) {
+                            sb.append(sc.nextLine()).append('\\n');
+                        }
+                        String raw = sb.toString().trim();
+                        List<Object> argv = raw.isEmpty() ? new ArrayList<>() : Json.parse(raw);
+                %s        Object result = new Solution().%s(%s);
+                        System.out.println(Json.toJson(result));
+                    }
+                }
+
+                %s
+                """.formatted(decls.toString(), spec.method(), args.toString(), JSON_HELPER);
+    }
+
+    /** Python 测试驱动:json.loads 参数 -> 调 Solution 方法 -> json.dumps 输出 */
+    private static String pythonRunner(FunctionSpec spec) {
+        return """
+                import json
+                import sys
+
+                from solution import Solution
+
+                args = json.loads(sys.stdin.read().strip() or '[]')
+                result = Solution().%s(*args)
+                if isinstance(result, bool):
+                    print('true' if result else 'false')
+                else:
+                    print(json.dumps(result, ensure_ascii=False, separators=(',', ':')))
+                """.formatted(spec.method());
+    }
+
+    /** 类型 -> Json 读取方法名 */
+    private static String reader(String type) {
+        return switch (type) {
+            case "int" -> "num";
+            case "long" -> "lng";
+            case "double" -> "dbl";
+            case "boolean" -> "bool";
+            case "char" -> "chr";
+            case "String" -> "str";
+            case "int[]" -> "ints";
+            case "long[]" -> "longs";
+            case "double[]" -> "doubles";
+            case "boolean[]" -> "bools";
+            case "char[]" -> "chars";
+            case "String[]" -> "strs";
+            case "int[][]" -> "ints2";
+            case "char[][]" -> "chars2";
+            case "String[][]" -> "strs2";
+            case "List<Integer>" -> "intList";
+            case "List<String>" -> "strList";
+            case "List<List<Integer>>" -> "intList2";
+            default -> "unsupported";
+        };
+    }
+
+    /** 函数模式支持的基础类型,新增类型时同步 reader() 与 JSON_HELPER */
+    private static final Set<String> SUPPORTED_TYPES = Set.of(
+            "int", "long", "double", "boolean", "char", "String",
+            "int[]", "long[]", "double[]", "boolean[]", "char[]", "String[]",
+            "int[][]", "char[][]", "String[][]",
+            "List<Integer>", "List<String>", "List<List<Integer>>");
+
+    /** 比对函数返回值:优先按 JSON 语义比较,退化为文本归一化比较 */
+    static boolean sameJson(String actual, String expected) {
+        String a = normalize(actual);
+        String b = normalize(expected);
+        if (a.equals(b)) {
+            return true;
+        }
+        String compactA = a.replaceAll("\\s+", "");
+        String compactB = b.replaceAll("\\s+", "");
+        return compactA.equals(compactB);
+    }
+
     /** 运行单个用例;超时用容器内 timeout 命令,宿主侧再做兜底 kill */
     private ExecResult runCase(JudgeLanguage lang, Path workspace, String image, int memoryLimitMb,
                                int timeLimitMs, QuestionTestCase testCase) throws IOException {
+        return runCaseWith(lang, workspace, image, memoryLimitMb, timeLimitMs, testCase,
+                defaultProgram(lang, memoryLimitMb));
+    }
+
+    private List<String> defaultProgram(JudgeLanguage lang, int memoryLimitMb) {
+        return lang == JudgeLanguage.JAVA
+                ? List.of("java", "-Xmx" + heapMb(memoryLimitMb) + "m", "-Xss16m", "-cp", "out", "Main")
+                : List.of("python3", "-I", "-B", "main.py");
+    }
+
+    /** 用给定程序命令跑一个用例,input 来自用例的 input.txt */
+    private ExecResult runCaseWith(JudgeLanguage lang, Path workspace, String image, int memoryLimitMb,
+                                   int timeLimitMs, QuestionTestCase testCase, List<String> program)
+            throws IOException {
         int seconds = Math.max(1, (timeLimitMs + 999) / 1000);
         Files.writeString(workspace.resolve("input.txt"),
                 testCase.getInput() == null ? "" : testCase.getInput(), StandardCharsets.UTF_8);
 
-        List<String> program = lang == JudgeLanguage.JAVA
-                ? List.of("java", "-Xmx" + heapMb(memoryLimitMb) + "m", "-Xss16m", "-cp", "out", "Main")
-                : List.of("python3", "-I", "-B", "main.py");
         List<String> args = new ArrayList<>(List.of("sh", "/workspace/runner.sh", String.valueOf(seconds)));
         args.addAll(program);
         return exec(dockerRun(workspace, image, memoryLimitMb, args), timeLimitMs + HOST_GRACE_MS);

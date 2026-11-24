@@ -80,7 +80,7 @@ function CodingListPage() {
             编程题
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            在线写 Java / Python，运行样例或提交判题；未通过会自动进入错题本。
+            每道题都能切换 ACM（标准输入输出）或力扣（只写函数）两种模式；未通过会自动进入错题本。
           </p>
         </div>
         <div className="text-xs text-slate-400">
@@ -112,6 +112,7 @@ function CodingListPage() {
               <span className="w-10 shrink-0">#</span>
               <span className="flex-1">题目</span>
               <span className="w-24 shrink-0">领域</span>
+              <span className="w-14 shrink-0 text-center">模式</span>
               <span className="w-16 shrink-0 text-center">难度</span>
               <span className="w-20 shrink-0 text-center">状态</span>
               <span className="w-28 shrink-0 text-right">提交</span>
@@ -173,6 +174,9 @@ function CodingRow({ item, index }: { item: QuestionBankItem; index: number }) {
         )}
       </div>
       <span className="w-24 shrink-0 truncate text-xs text-slate-500">{item.domain}</span>
+      <span className="flex w-14 shrink-0 justify-center">
+        <ModeTag />
+      </span>
       <span className="flex w-16 shrink-0 justify-center">
         <DifficultyBadge difficulty={item.difficulty} />
       </span>
@@ -202,6 +206,7 @@ function CodingCard({ item, index }: { item: QuestionBankItem; index: number }) 
       </div>
       <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">{item.preview}</p>
       <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px]">
+        <ModeTag />
         <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">{item.domain}</span>
         <DifficultyBadge difficulty={item.difficulty} />
         <span className="text-slate-400">
@@ -209,6 +214,12 @@ function CodingCard({ item, index }: { item: QuestionBankItem; index: number }) 
         </span>
       </div>
     </Link>
+  )
+}
+
+function ModeTag() {
+  return (
+    <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[11px] text-indigo-700">双模式</span>
   )
 }
 

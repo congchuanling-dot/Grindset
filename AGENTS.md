@@ -300,9 +300,16 @@ npm run dev
 
 ### 6.6 编程题判题
 
+- 每道编程题**同时支持两种模式**，前端在工作台顶部切换，提交时用 `codeMode` 指定：
+  - `ACM`：用户写 `Main` / `main()`，从标准输入读、向标准输出写；用例存 `case_mode='ACM'` 的 stdin 文本
+  - `LEETCODE`：用户只写 `class Solution` 的函数；判题器生成驱动读 JSON 参数、调函数、按 JSON 比较返回值；用例存 `case_mode='LEETCODE'` 的 JSON 参数
+- 函数签名存在 `question_bank.function_name` / `param_types`(JSON) / `return_type`；`starter_code` 是 ACM 初始代码，`starter_code_function` 是力扣初始代码
+- 支持类型：`int` `long` `double` `boolean` `char` `String`、对应一维数组、`int[][]` `char[][]` `String[][]`、`List<Integer>` `List<String>` `List<List<Integer>>`
+- 提交异步：先落 `PENDING` 再进单线程判题队列，前端轮询 `GET /api/questions/submissions/{id}`
+
 `CodingService → JudgeService`
 
-- 语言：`JAVA`（`Main.java`，从 stdin 读、stdout 写，先编译再逐用例运行）/ `PYTHON`（`main.py`）
+- 语言：`JAVA` / `PYTHON`；ACM 模式固定 `Main.java` / `main.py`，函数模式固定 `Solution.java` / `solution.py` 加自动生成的驱动
 - 每次运行起一次性 Docker 容器，断网，限制 CPU/内存/PID，超时即杀
 - `POST /{id}/run` 同步运行**例题**（不写历史）；`POST /{id}/submissions` 异步判题并立即返回 `PENDING`
 - `GET /api/questions/submissions/{submissionId}` 前端轮询
@@ -387,9 +394,9 @@ npm run dev
 | GET | `/{id}/neighbors` | 同一模式（问答题/编程题）下的前后相邻题 |
 | GET | `/{id}/attempts` | 某题作答历史 |
 | POST | `/{id}/attempts` | 提交问答题 `{answer}`，AI 评分 |
-| GET | `/{id}/coding` | 编程题详情（题面 + 例题 + 初始代码 + 时限） |
-| POST | `/{id}/run` | 运行例题 `{language, code}`，同步返回逐用例结果 |
-| POST | `/{id}/submissions` | 提交判题 `{language, code}`，返回 PENDING |
+| GET | `/{id}/coding` | 编程题详情（题面 + 例题 + 初始代码 + 时限 + 判题模式与函数签名） |
+| POST | `/{id}/run` | 运行例题 `{language, code, codeMode}`，同步返回逐用例结果 |
+| POST | `/{id}/submissions` | 提交判题 `{language, code, codeMode}`，返回 PENDING |
 | GET | `/submissions/{submissionId}` | 轮询判题结果 |
 | GET | `/{id}/submissions` | 我的提交历史 |
 | GET | `/images?key=` | 公开。题库配图代理，从 OSS `questions/` 前缀流式读取 |
