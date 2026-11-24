@@ -108,6 +108,7 @@ export async function getQuestions(params: {
   difficulty?: number
   status?: QuestionStatus
   keyword?: string
+  judgeMode?: JudgeMode
   page?: number
   size?: number
 } = {}): Promise<QuestionBankList> {
@@ -117,12 +118,22 @@ export async function getQuestions(params: {
   if (params.difficulty) search.set('difficulty', String(params.difficulty))
   if (params.status) search.set('status', params.status)
   if (params.keyword) search.set('keyword', params.keyword)
+  if (params.judgeMode) search.set('judgeMode', params.judgeMode)
   if (params.page) search.set('page', String(params.page))
   if (params.size) search.set('size', String(params.size))
   const query = search.toString()
 
   const res = await request(`/api/questions${query ? `?${query}` : ''}`)
   return unwrapJson<QuestionBankList>(res, '加载题库失败')
+}
+
+/** 只取做题统计;judgeMode 可把问答题和编程题分开统计 */
+export async function getQuestionStats(judgeMode?: JudgeMode): Promise<QuestionBankSummary> {
+  const search = new URLSearchParams()
+  if (judgeMode) search.set('judgeMode', judgeMode)
+  const query = search.toString()
+  const res = await request(`/api/questions/stats${query ? `?${query}` : ''}`)
+  return unwrapJson<QuestionBankSummary>(res, '加载做题统计失败')
 }
 
 export async function getQuestionDetail(id: string): Promise<QuestionBankDetail> {
@@ -140,9 +151,12 @@ export interface QuestionBankFacets {
   types: QuestionFacet[]
 }
 
-/** 领域与题型的动态筛选项,计数只统计已上架题目 */
-export async function getQuestionFacets(): Promise<QuestionBankFacets> {
-  const res = await request('/api/questions/facets')
+/** 领域与题型的动态筛选项,计数只统计已上架题目;按 judgeMode 分开 */
+export async function getQuestionFacets(judgeMode?: JudgeMode): Promise<QuestionBankFacets> {
+  const search = new URLSearchParams()
+  if (judgeMode) search.set('judgeMode', judgeMode)
+  const query = search.toString()
+  const res = await request(`/api/questions/facets${query ? `?${query}` : ''}`)
   return unwrapJson<QuestionBankFacets>(res, '加载筛选项失败')
 }
 
@@ -157,10 +171,11 @@ export async function getQuestionNeighbors(id: string): Promise<QuestionNeighbor
   return unwrapJson<QuestionNeighbors>(res, '加载相邻题目失败')
 }
 
-/** 随机一题,可排除当前题 */
-export async function getRandomQuestionId(excludeId?: string): Promise<string> {
+/** 随机一题,可排除当前题;judgeMode 限定问答题或编程题 */
+export async function getRandomQuestionId(excludeId?: string, judgeMode?: JudgeMode): Promise<string> {
   const search = new URLSearchParams()
   if (excludeId) search.set('excludeId', excludeId)
+  if (judgeMode) search.set('judgeMode', judgeMode)
   const query = search.toString()
   const res = await request(`/api/questions/random${query ? `?${query}` : ''}`)
   return unwrapJson<string>(res, '随机选题失败')

@@ -8,8 +8,11 @@ import InterviewRecordsPage from './pages/InterviewRecordsPage'
 import InterviewSessionPage from './pages/InterviewSessionPage'
 import KnowledgePage from './pages/KnowledgePage'
 import LoginPage from './pages/LoginPage'
-import QuestionBankPage from './pages/QuestionBankPage'
 import QuestionDetailPage from './pages/QuestionDetailPage'
+import CodingListPage from './pages/questions/CodingListPage'
+import CodingWorkspacePage from './pages/questions/CodingWorkspacePage'
+import QuestionBankLayout from './pages/questions/QuestionBankLayout'
+import QuestionOverview from './pages/questions/QuestionOverview'
 import ResumePage from './pages/ResumePage'
 import WrongQuestionsPage from './pages/WrongQuestionsPage'
 
@@ -35,9 +38,14 @@ function App() {
         {/* 简历上传解析 */}
         <Route path="/resume" element={<ResumePage />} />
 
-        {/* 题库列表 + 题目作答详情 */}
-        <Route path="/questions" element={<QuestionBankPage />} />
-        <Route path="/questions/:id" element={<QuestionDetailPage />} />
+        {/* 题库:左侧题目列表 + 右侧详情,编程题是独立子模块 */}
+        <Route path="/questions" element={<QuestionBankLayout />}>
+          <Route index element={<QuestionOverview />} />
+          <Route path=":id" element={<QuestionDetailPage />} />
+          <Route path="coding" element={<CodingListPage />} />
+        </Route>
+        {/* 编程题工作台占满右侧,不显示题库左侧列表 */}
+        <Route path="/questions/coding/:id" element={<CodingWorkspacePage />} />
         {/* AI 面试:入口配置 + 面试对话页 */}
         <Route path="/interview" element={<InterviewPage />} />
         <Route path="/interview/:sessionId" element={<InterviewSessionPage />} />

@@ -27,7 +27,7 @@ import {
   type CodingStatus,
   type CodingSubmission,
 } from '../api/questionBank'
-import { difficultyClass, difficultyLabel } from './QuestionBankPage'
+import { difficultyClass, difficultyLabel } from '../components/questions/QuestionBadges'
 
 // 用本地打包的 monaco，避免编辑器依赖外部 CDN
 self.MonacoEnvironment = { getWorker: () => new editorWorker() }
@@ -165,11 +165,11 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
       <header className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5 md:px-6">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/questions/coding')}
           className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
         >
           <ArrowLeft size={14} />
-          返回题库
+          返回编程题
         </button>
         {detail && (
           <div className="ml-1 flex min-w-0 flex-wrap items-center gap-1.5">
@@ -202,10 +202,10 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
           <p className="text-sm text-slate-600">{loadError || '题目不存在或已下架'}</p>
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/questions/coding')}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600"
           >
-            返回题库
+            返回编程题
           </button>
         </div>
       ) : (

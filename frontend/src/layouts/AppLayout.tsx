@@ -16,7 +16,7 @@ import { getSession, setSession } from '../auth/authStore'
 const navItems = [
   { to: '/', label: 'AI 助手', icon: MessageSquare, end: true },
   { to: '/resume', label: '上传简历', icon: FileUp },
-  { to: '/questions', label: '题库列表', icon: Library },
+  { to: '/questions', label: '题库', icon: Library },
   { to: '/interview', label: 'AI 面试', icon: Mic },
   { to: '/records', label: '面试记录', icon: History },
   { to: '/knowledge', label: '掌握度画像', icon: BrainCircuit },

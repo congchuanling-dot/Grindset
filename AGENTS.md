@@ -217,8 +217,10 @@ npm run dev
 | `/login` | `LoginPage` | 登录/注册 |
 | `/` | `ChatPage` | AI 助手对话（SSE 流式） |
 | `/resume` | `ResumePage` | 上传简历、列表、预览 |
-| `/questions` | `QuestionBankPage` | 题库列表 + 筛选 + 统计 |
-| `/questions/:id` | `QuestionDetailPage` | 题目详情：问答题作答 / 编程题 IDE |
+| `/questions` | `QuestionBankLayout` | 题库工作台：左侧题目列表 + 右侧详情（问答题） |
+| `/questions/:id` | `QuestionDetailPage` | 问答题详情（右侧内容区） |
+| `/questions/coding` | `CodingListPage` | 编程题列表（左筛选 + 右表格） |
+| `/questions/coding/:id` | `CodingWorkspace` | 编程题工作台：题面 + 编辑器左右分栏 |
 | `/interview` | `InterviewPage` | 面试配置入口（简历、岗位、轮次、风格、题数） |
 | `/interview/:sessionId` | `InterviewSessionPage` | 面试对话、复盘报告 |
 | `/records` | `InterviewRecordsPage` | 面试记录列表、按简历筛选、删除 |
@@ -377,12 +379,12 @@ npm run dev
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| GET | `/` | 列表 + 统计；可选 `domain`、`type`、`difficulty`、`status`、`keyword`、`page`、`size` |
-| GET | `/stats` | 只取做题统计 |
-| GET | `/facets` | 领域与题型的动态筛选项，带题目数量 |
-| GET | `/random` | 随机一题，可选 `excludeId` 排除当前题 |
-| GET | `/{id}` | 题目详情 + 我的作答历史（含默认排序下的题号 `seq`） |
-| GET | `/{id}/neighbors` | 默认排序下当前题的前后相邻题（连续刷题） |
+| GET | `/` | 列表 + 统计；可选 `domain`、`type`、`difficulty`、`status`、`keyword`、`judgeMode`、`page`、`size` |
+| GET | `/stats` | 只取做题统计；可选 `judgeMode=TEXT/CODING` |
+| GET | `/facets` | 领域与题型的动态筛选项，带题目数量；可选 `judgeMode` |
+| GET | `/random` | 随机一题，可选 `excludeId` 与 `judgeMode` |
+| GET | `/{id}` | 题目详情 + 我的作答历史（含所属模式的题号 `seq`） |
+| GET | `/{id}/neighbors` | 同一模式（问答题/编程题）下的前后相邻题 |
 | GET | `/{id}/attempts` | 某题作答历史 |
 | POST | `/{id}/attempts` | 提交问答题 `{answer}`，AI 评分 |
 | GET | `/{id}/coding` | 编程题详情（题面 + 例题 + 初始代码 + 时限） |

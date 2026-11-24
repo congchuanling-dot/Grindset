@@ -1,7 +1,6 @@
 import { errMessage } from '../utils/error'
 import {
   AlertCircle,
-  ArrowLeft,
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
@@ -15,7 +14,13 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import {
+  Link,
+  Navigate,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom'
 import {
   getQuestionDetail,
   getQuestionNeighbors,
@@ -27,15 +32,13 @@ import {
   type QuestionNeighbors,
 } from '../api/questionBank'
 import MarkdownContent from '../components/MarkdownContent'
-import CodingWorkspace from './CodingWorkspace'
-import { StatusBadge, difficultyClass, difficultyLabel } from './QuestionBankPage'
-
-const TYPE_LABELS: Record<string, string> = {
-  BASICS: '八股',
-  SCENARIO: '场景',
-  PROJECT: '项目',
-  CODE: '编程',
-}
+import VoiceInputButton from '../components/VoiceInputButton'
+import {
+  DifficultyBadge,
+  StatusBadge,
+  TYPE_LABELS,
+} from '../components/questions/QuestionBadges'
+import { useVoiceInput } from '../hooks/useVoiceInput'
 
 const MAX_ANSWER_LENGTH = 4000
 
@@ -44,13 +47,14 @@ function draftKey(id: string) {
 }
 
 /**
- * 题库题目详情:看题、作答、AI 评分结果与历史作答。
- * 题干、参考答案和点评统一走 Markdown;桌面端有面包屑和上一题/下一题导航,
- * 作答草稿按题目自动保存在本地,刷新不丢。
+ * 问答题详情(右侧内容区):题干、作答、AI 评分与历史。
+ * 页面外壳和左侧列表由 QuestionBankLayout 提供,这里只负责当前题目。
  */
 function QuestionDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const search = searchParams.toString()
 
   const [detail, setDetail] = useState<QuestionBankDetail | null>(null)
   const [neighbors, setNeighbors] = useState<QuestionNeighbors | null>(null)
@@ -64,12 +68,29 @@ function QuestionDetailPage() {
   const [showReference, setShowReference] = useState(false)
   const [randomizing, setRandomizing] = useState(false)
   const [draftSaved, setDraftSaved] = useState(false)
+  const [voiceError, setVoiceError] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const skipSaveRef = useRef(true)
+  const voiceBaseRef = useRef('')
+
+  // 语音结果整段覆盖追加:录音前记下已有草稿,识别过程中在它后面追加
+  const voice = useVoiceInput({
+    maxSeconds: 180,
+    onPartial: (text) => setAnswer((voiceBaseRef.current + text).slice(0, MAX_ANSWER_LENGTH)),
+    onFinal: (text) => {
+      setAnswer((voiceBaseRef.current + text).slice(0, MAX_ANSWER_LENGTH))
+      textareaRef.current?.focus()
+    },
+    onError: setVoiceError,
+  })
+  const voiceRef = useRef(voice)
+  voiceRef.current = voice
 
   useEffect(() => {
     if (!id) return
     let cancelled = false
+    // 切题时停止正在进行的录音,避免识别结果写进下一题
+    voiceRef.current.cancel()
     skipSaveRef.current = true
     setLoading(true)
     setLoadError(null)
@@ -121,11 +142,24 @@ function QuestionDetailPage() {
     return () => window.clearTimeout(timer)
   }, [answer, id])
 
+  function handleVoiceToggle() {
+    if (voice.state === 'idle') {
+      setVoiceError('')
+      voiceBaseRef.current = answer
+      void voice.start()
+    } else if (voice.state === 'recording') {
+      void voice.stop()
+    }
+  }
+
   async function submit() {
     if (!id) return
     const text = answer.trim()
     if (text.length < 10 || submitting) return
 
+    // 提交时停止录音,避免识别结果回填到已经提交的内容里
+    voice.cancel()
+    setVoiceError('')
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -149,6 +183,7 @@ function QuestionDetailPage() {
   }
 
   function again() {
+    voice.cancel()
     setResult(null)
     setAnswer('')
     setSubmitError(null)
@@ -158,11 +193,15 @@ function QuestionDetailPage() {
     setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
+  function questionLink(questionId: string) {
+    return `/questions/${questionId}${search ? `?${search}` : ''}`
+  }
+
   async function openRandom() {
     if (randomizing) return
     setRandomizing(true)
     try {
-      navigate(`/questions/${await getRandomQuestionId(id)}`)
+      navigate(questionLink(await getRandomQuestionId(id, 'TEXT')))
     } catch (e) {
       setLoadError(errMessage(e))
     } finally {
@@ -170,310 +209,314 @@ function QuestionDetailPage() {
     }
   }
 
-  // 编程题走独立的工作台（编辑器 + 判题），这里只负责加载与分流
+  // 编程题有独立的左右分栏工作台,这里直接跳过去
   if (!loading && !loadError && detail?.judgeMode === 'CODING') {
-    return <CodingWorkspace questionId={detail.id} />
+    return <Navigate to={`/questions/coding/${detail.id}`} replace />
   }
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur md:px-6">
-        <div className="mx-auto flex max-w-4xl items-center gap-3">
-          <Link
-            to="/questions"
-            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-          >
-            <ArrowLeft size={14} />
-            题库
-          </Link>
-          <nav className="min-w-0 flex-1 truncate text-xs text-slate-400">
-            {detail ? (
-              <span>
-                {detail.domain} · 第 {detail.seq} 题
-              </span>
-            ) : (
-              <span>题目详情</span>
-            )}
-          </nav>
-          <button
-            type="button"
-            onClick={() => void openRandom()}
-            disabled={randomizing}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-100 disabled:opacity-60"
-          >
-            {randomizing ? <Loader2 size={13} className="animate-spin" /> : <Shuffle size={13} />}
-            随机一题
-          </button>
-        </div>
-      </header>
+    <div className="mx-auto max-w-4xl px-4 py-5 md:px-6">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <nav className="min-w-0 truncate text-xs text-slate-400">
+          {detail ? (
+            <span>
+              {detail.domain} · 第 {detail.seq} 题
+            </span>
+          ) : (
+            <span>题目详情</span>
+          )}
+        </nav>
+        <button
+          type="button"
+          onClick={() => void openRandom()}
+          disabled={randomizing}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-teal-200 bg-white px-2.5 py-1 text-xs font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-50 disabled:opacity-60"
+        >
+          {randomizing ? <Loader2 size={13} className="animate-spin" /> : <Shuffle size={13} />}
+          随机一题
+        </button>
+      </div>
 
-      <div className="flex-1 px-4 py-4 md:px-6">
-        <div className="mx-auto max-w-4xl">
-          {loading ? (
-            <div className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400">
-              <Loader2 size={14} className="animate-spin" />
-              加载中…
+      {loading ? (
+        <div className="mt-10 flex items-center justify-center gap-2 text-xs text-slate-400">
+          <Loader2 size={14} className="animate-spin" />
+          加载中…
+        </div>
+      ) : loadError || !detail ? (
+        <div className="mt-10 flex flex-col items-center gap-3 text-center">
+          <AlertCircle size={22} className="text-rose-500" />
+          <p className="text-sm text-slate-600">{loadError || '题目不存在或已下架'}</p>
+          <Link
+            to={`/questions${search ? `?${search}` : ''}`}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600"
+          >
+            返回题库
+          </Link>
+        </div>
+      ) : (
+        <>
+          <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="border-b border-slate-100 px-4 py-4 md:px-5">
+              <h1 className="text-lg font-semibold leading-7 text-slate-800">{detail.title}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
+                  {TYPE_LABELS[detail.type as keyof typeof TYPE_LABELS] ?? detail.type}
+                </span>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
+                  {detail.domain}
+                </span>
+                <DifficultyBadge difficulty={detail.difficulty} />
+                <StatusBadge status={detail.status} />
+                {detail.knowledgePoints.map((point) => (
+                  <span key={point} className="rounded-full bg-teal-50 px-2 py-0.5 text-teal-700">
+                    {point}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+                <span>已作答 {detail.attemptCount} 次</span>
+                {detail.bestScore != null && <span>最高 {detail.bestScore} 分</span>}
+                {detail.lastScore != null && <span>上次 {detail.lastScore} 分</span>}
+                {detail.lastAttemptAt && <span>最近 {detail.lastAttemptAt}</span>}
+              </div>
             </div>
-          ) : loadError || !detail ? (
-            <div className="mt-8 flex flex-col items-center gap-3 text-center">
-              <AlertCircle size={22} className="text-rose-500" />
-              <p className="text-sm text-slate-600">{loadError || '题目不存在或已下架'}</p>
-              <Link
-                to="/questions"
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600"
-              >
-                返回题库
-              </Link>
+            <div className="px-4 py-4 md:px-5">
+              <MarkdownContent content={detail.content} />
+            </div>
+          </article>
+
+          {result ? (
+            <div className="mt-4 space-y-3">
+              <section className="rounded-xl border border-slate-200 bg-white px-4 py-4 md:px-5">
+                <div className="flex items-center gap-3">
+                  <span className={`text-4xl font-semibold leading-none ${scoreClass(result.score)}`}>
+                    {result.score}
+                  </span>
+                  <span className="text-xs text-slate-400">/ 5 分</span>
+                  <span
+                    className={`ml-auto rounded-full px-2 py-0.5 text-xs ${
+                      result.status === 'WRONG'
+                        ? 'bg-rose-50 text-rose-600'
+                        : 'bg-teal-50 text-teal-700'
+                    }`}
+                  >
+                    {result.status === 'WRONG' ? '已收入错题本' : '已掌握'}
+                  </span>
+                </div>
+
+                {result.comment && (
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-slate-500">点评</p>
+                    <MarkdownContent content={result.comment} className="mt-0.5" />
+                  </div>
+                )}
+                {result.suggestion && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-slate-500">建议</p>
+                    <MarkdownContent content={result.suggestion} className="mt-0.5" />
+                  </div>
+                )}
+
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <PointList
+                    title="命中的要点"
+                    points={result.hitPoints}
+                    tone="teal"
+                    empty="这次没有识别到明显命中的要点"
+                  />
+                  <PointList
+                    title="遗漏的要点"
+                    points={result.missedPoints}
+                    tone="amber"
+                    empty="没有明显遗漏，继续保持"
+                  />
+                </div>
+              </section>
+
+              <ReferenceCard
+                referenceAnswer={result.referenceAnswer}
+                keyPoints={result.keyPoints}
+                open={showReference}
+                onToggle={() => setShowReference((prev) => !prev)}
+              />
+
+              <div className="flex justify-end gap-2">
+                <Link
+                  to={`/questions${search ? `?${search}` : ''}`}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50"
+                >
+                  返回题库
+                </Link>
+                <button
+                  type="button"
+                  onClick={again}
+                  className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-teal-700"
+                >
+                  再答一次
+                </button>
+              </div>
             </div>
           ) : (
-            <>
-              <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                <div className="border-b border-slate-100 px-4 py-4 md:px-5">
-                  <h1 className="text-lg font-semibold leading-7 text-slate-800">{detail.title}</h1>
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
-                      {TYPE_LABELS[detail.type] ?? detail.type}
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
-                      {detail.domain}
-                    </span>
-                    <span className={`rounded-full px-2 py-0.5 ${difficultyClass(detail.difficulty)}`}>
-                      {difficultyLabel(detail.difficulty)}
-                    </span>
-                    <StatusBadge status={detail.status} />
-                    {detail.knowledgePoints.map((point) => (
-                      <span key={point} className="rounded-full bg-teal-50 px-2 py-0.5 text-teal-700">
-                        {point}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
-                    <span>已作答 {detail.attemptCount} 次</span>
-                    {detail.bestScore != null && <span>最高 {detail.bestScore} 分</span>}
-                    {detail.lastScore != null && <span>上次 {detail.lastScore} 分</span>}
-                    {detail.lastAttemptAt && <span>最近 {detail.lastAttemptAt}</span>}
-                  </div>
-                </div>
-                <div className="px-4 py-4 md:px-5">
-                  <MarkdownContent content={detail.content} />
-                </div>
-              </article>
-
-              {result ? (
-                <div className="mt-4 space-y-3">
-                  <section className="rounded-xl border border-slate-200 bg-white px-4 py-4 md:px-5">
-                    <div className="flex items-center gap-3">
-                      <span className={`text-4xl font-semibold leading-none ${scoreClass(result.score)}`}>
-                        {result.score}
-                      </span>
-                      <span className="text-xs text-slate-400">/ 5 分</span>
-                      <span
-                        className={`ml-auto rounded-full px-2 py-0.5 text-xs ${
-                          result.status === 'WRONG'
-                            ? 'bg-rose-50 text-rose-600'
-                            : 'bg-teal-50 text-teal-700'
-                        }`}
-                      >
-                        {result.status === 'WRONG' ? '已收入错题本' : '已掌握'}
-                      </span>
-                    </div>
-
-                    {result.comment && (
-                      <div className="mt-3">
-                        <p className="text-xs font-medium text-slate-500">点评</p>
-                        <MarkdownContent content={result.comment} className="mt-0.5" />
-                      </div>
-                    )}
-                    {result.suggestion && (
-                      <div className="mt-2">
-                        <p className="text-xs font-medium text-slate-500">建议</p>
-                        <MarkdownContent content={result.suggestion} className="mt-0.5" />
-                      </div>
-                    )}
-
-                    <div className="mt-3 grid gap-3 md:grid-cols-2">
-                      <PointList
-                        title="命中的要点"
-                        points={result.hitPoints}
-                        tone="teal"
-                        empty="这次没有识别到明显命中的要点"
-                      />
-                      <PointList
-                        title="遗漏的要点"
-                        points={result.missedPoints}
-                        tone="amber"
-                        empty="没有明显遗漏，继续保持"
-                      />
-                    </div>
-                  </section>
-
+            <section className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
+              {detail.referenceAnswer && (
+                <div className="px-4 pt-4 md:px-5">
                   <ReferenceCard
-                    referenceAnswer={result.referenceAnswer}
-                    keyPoints={result.keyPoints}
+                    referenceAnswer={detail.referenceAnswer}
+                    keyPoints={detail.keyPoints}
                     open={showReference}
                     onToggle={() => setShowReference((prev) => !prev)}
                   />
+                </div>
+              )}
 
-                  <div className="flex justify-end gap-2">
-                    <Link
-                      to="/questions"
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50"
-                    >
-                      返回题库
-                    </Link>
+              <div className="flex items-center justify-between gap-2 px-4 py-2.5 md:px-5">
+                <p className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                  <Sparkles size={15} className="text-teal-600" />
+                  我的回答
+                </p>
+                <div className="flex items-center gap-2">
+                  {voice.state === 'recording' && (
+                    <span className="hidden text-xs text-rose-500 sm:inline">正在听你说…</span>
+                  )}
+                  <span className="text-xs tabular-nums text-slate-400">
+                    {answer.length} / {MAX_ANSWER_LENGTH}
+                  </span>
+                  <VoiceInputButton
+                    state={voice.state}
+                    seconds={voice.seconds}
+                    disabled={submitting}
+                    onClick={handleVoiceToggle}
+                  />
+                </div>
+              </div>
+
+              <div className="px-4 pb-4 md:px-5">
+                <p className="text-xs text-slate-400">
+                  按自己的理解写完整，也可以点麦克风直接说，提交后 AI 对照参考答案给出评分和命中/遗漏要点。
+                </p>
+
+                {voiceError && <p className="mt-1 text-xs text-rose-600">{voiceError}</p>}
+
+                {submitError && (
+                  <div className="mt-2 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                    <span>{submitError}</span>
+                  </div>
+                )}
+
+                <textarea
+                  ref={textareaRef}
+                  value={answer}
+                  maxLength={MAX_ANSWER_LENGTH}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                      e.preventDefault()
+                      void submit()
+                    }
+                  }}
+                  rows={10}
+                  className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm leading-6 text-slate-700 outline-none transition focus:border-teal-400"
+                  placeholder={
+                    voice.state === 'recording'
+                      ? '正在听你说…'
+                      : '先讲核心结论，再补充原理和细节…'
+                  }
+                />
+
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs text-slate-400">
+                    至少 10 字 · Ctrl / ⌘ + Enter 提交 ·{' '}
+                    {draftSaved ? (
+                      <span className="text-teal-600">草稿已保存</span>
+                    ) : (
+                      '草稿自动保存'
+                    )}
+                  </span>
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={again}
-                      className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-teal-700"
+                      onClick={() => {
+                        voice.cancel()
+                        setAnswer('')
+                        setDraftSaved(false)
+                        setVoiceError('')
+                        if (id) localStorage.removeItem(draftKey(id))
+                        textareaRef.current?.focus()
+                      }}
+                      disabled={!answer}
+                      className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
                     >
-                      再答一次
+                      <Trash2 size={13} />
+                      清空
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void submit()}
+                      disabled={answer.trim().length < 10 || submitting}
+                      className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                    >
+                      {submitting ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Send size={14} />
+                      )}
+                      {submitting ? 'AI 批改中…' : '提交作答'}
                     </button>
                   </div>
                 </div>
-              ) : (
-                <section className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                  {detail.referenceAnswer && (
-                    <div className="px-4 pt-4 md:px-5">
-                      <ReferenceCard
-                        referenceAnswer={detail.referenceAnswer}
-                        keyPoints={detail.keyPoints}
-                        open={showReference}
-                        onToggle={() => setShowReference((prev) => !prev)}
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between px-4 py-3 md:px-5">
-                    <p className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                      <Sparkles size={15} className="text-teal-600" />
-                      我的回答
-                    </p>
-                    <span className="text-xs tabular-nums text-slate-400">
-                      {answer.length} / {MAX_ANSWER_LENGTH}
-                    </span>
-                  </div>
-
-                  <div className="px-4 pb-4 md:px-5">
-                    <p className="text-xs text-slate-400">
-                      按自己的理解写完整，提交后 AI 对照参考答案给出评分和命中/遗漏要点。
-                    </p>
-
-                    {submitError && (
-                      <div className="mt-2 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
-                        <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                        <span>{submitError}</span>
-                      </div>
-                    )}
-
-                    <textarea
-                      ref={textareaRef}
-                      value={answer}
-                      maxLength={MAX_ANSWER_LENGTH}
-                      onChange={(e) => setAnswer(e.target.value)}
-                      onKeyDown={(e) => {
-                        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-                          e.preventDefault()
-                          void submit()
-                        }
-                      }}
-                      rows={10}
-                      className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm leading-6 text-slate-700 outline-none transition focus:border-teal-400"
-                      placeholder="先讲核心结论，再补充原理和细节…"
-                    />
-
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs text-slate-400">
-                        至少 10 字 · Ctrl / ⌘ + Enter 提交 ·{' '}
-                        {draftSaved ? (
-                          <span className="text-teal-600">草稿已保存</span>
-                        ) : (
-                          '草稿自动保存'
-                        )}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAnswer('')
-                            setDraftSaved(false)
-                            if (id) localStorage.removeItem(draftKey(id))
-                            textareaRef.current?.focus()
-                          }}
-                          disabled={!answer}
-                          className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
-                        >
-                          <Trash2 size={13} />
-                          清空
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void submit()}
-                          disabled={answer.trim().length < 10 || submitting}
-                          className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                        >
-                          {submitting ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <Send size={14} />
-                          )}
-                          {submitting ? 'AI 批改中…' : '提交作答'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {detail.attempts.length > 0 && (
-                <section className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 md:px-5">
-                  <p className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                    <Clock size={15} className="text-slate-400" />
-                    历史作答（最近 {detail.attempts.length} 次）
-                  </p>
-                  <div className="mt-2 space-y-2">
-                    {detail.attempts.map((attempt) => (
-                      <AttemptCard key={attempt.id} attempt={attempt} />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              <nav className="mt-4 flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (neighbors?.prevId) navigate(`/questions/${neighbors.prevId}`)
-                  }}
-                  disabled={!neighbors?.prevId}
-                  className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
-                >
-                  <ChevronLeft size={15} />
-                  上一题
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void openRandom()}
-                  className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-50"
-                >
-                  <Shuffle size={14} />
-                  随机一题
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (neighbors?.nextId) navigate(`/questions/${neighbors.nextId}`)
-                  }}
-                  disabled={!neighbors?.nextId}
-                  className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
-                >
-                  下一题
-                  <ChevronRight size={15} />
-                </button>
-              </nav>
-            </>
+              </div>
+            </section>
           )}
-        </div>
-      </div>
+
+          {detail.attempts.length > 0 && (
+            <section className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 md:px-5">
+              <p className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                <Clock size={15} className="text-slate-400" />
+                历史作答（最近 {detail.attempts.length} 次）
+              </p>
+              <div className="mt-2 space-y-2">
+                {detail.attempts.map((attempt) => (
+                  <AttemptCard key={attempt.id} attempt={attempt} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <nav className="mt-4 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (neighbors?.prevId) navigate(questionLink(neighbors.prevId))
+              }}
+              disabled={!neighbors?.prevId}
+              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
+            >
+              <ChevronLeft size={15} />
+              上一题
+            </button>
+            <button
+              type="button"
+              onClick={() => void openRandom()}
+              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-50"
+            >
+              <Shuffle size={14} />
+              随机一题
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (neighbors?.nextId) navigate(questionLink(neighbors.nextId))
+              }}
+              disabled={!neighbors?.nextId}
+              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
+            >
+              下一题
+              <ChevronRight size={15} />
+            </button>
+          </nav>
+        </>
+      )}
     </div>
   )
 }

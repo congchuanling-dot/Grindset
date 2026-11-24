@@ -62,25 +62,28 @@ public class QuestionBankController {
                                               @RequestParam(required = false) Integer difficulty,
                                               @RequestParam(required = false) String status,
                                               @RequestParam(required = false) String keyword,
+                                              @RequestParam(required = false) String judgeMode,
                                               @RequestParam(defaultValue = "1") int page,
                                               @RequestParam(defaultValue = "20") int size) {
         return ApiResponse.ok(questionBankService.list(userId(loginUser), domain, type, difficulty,
-                status, keyword, page, size));
+                status, keyword, judgeMode, page, size));
     }
 
     @GetMapping("/stats")
-    public ApiResponse<QuestionBankView.Summary> stats(@AuthenticationPrincipal LoginUser loginUser) {
-        return ApiResponse.ok(questionBankService.stats(userId(loginUser)));
+    public ApiResponse<QuestionBankView.Summary> stats(@AuthenticationPrincipal LoginUser loginUser,
+                                                       @RequestParam(required = false) String judgeMode) {
+        return ApiResponse.ok(questionBankService.stats(userId(loginUser), judgeMode));
     }
 
     @GetMapping("/facets")
-    public ApiResponse<QuestionBankFacets> facets() {
-        return ApiResponse.ok(questionBankService.facets());
+    public ApiResponse<QuestionBankFacets> facets(@RequestParam(required = false) String judgeMode) {
+        return ApiResponse.ok(questionBankService.facets(judgeMode));
     }
 
     @GetMapping("/random")
-    public ApiResponse<String> random(@RequestParam(required = false) Long excludeId) {
-        return ApiResponse.ok(questionBankService.randomQuestionId(excludeId));
+    public ApiResponse<String> random(@RequestParam(required = false) Long excludeId,
+                                      @RequestParam(required = false) String judgeMode) {
+        return ApiResponse.ok(questionBankService.randomQuestionId(excludeId, judgeMode));
     }
 
     @GetMapping("/{id}")

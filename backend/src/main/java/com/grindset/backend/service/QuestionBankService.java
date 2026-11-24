@@ -103,12 +103,14 @@ public class QuestionBankService {
 
     // ---------- 列表与统计 ----------
 
-    /** 题库列表;summary 全量统计,items 按领域/题型/难度/状态/关键词筛选后分页 */
+    /** 题库列表;summary 按当前模式统计,items 按领域/题型/难度/状态/关键词筛选后分页 */
     public QuestionBankView list(long userId, String domain, String type, Integer difficulty, String status,
-                                 String keyword, int page, int size) {
+                                 String keyword, String judgeMode, int page, int size) {
         List<QuestionBank> all = allQuestions();
+        JudgeMode modeFilter = normalizeJudgeMode(judgeMode);
+        List<QuestionBank> scoped = scopeByMode(all, modeFilter);
         Map<Long, UserQuestionProgress> progress = loadProgress(userId);
-        QuestionBankView.Summary summary = summarize(all, progress);
+        QuestionBankView.Summary summary = summarize(scoped, progress);
 
         String domainFilter = Texts.blankToNull(domain);
         QuestionType typeFilter = normalizeType(type);
@@ -116,7 +118,7 @@ public class QuestionBankService {
         String statusFilter = normalizeStatus(status);
         String keywordFilter = Texts.blankToNull(keyword);
 
-        List<QuestionBank> matched = all.stream()
+        List<QuestionBank> matched = scoped.stream()
                 .filter(q -> domainFilter == null || matchesDomain(q, domainFilter))
                 .filter(q -> typeFilter == null || typeFilter == q.getType())
                 .filter(q -> difficultyFilter == null || difficultyFilter.equals(q.getDifficulty()))
@@ -141,13 +143,15 @@ public class QuestionBankService {
     }
 
     /** 做题统计:只返回 summary,前端刷新进度时用 */
-    public QuestionBankView.Summary stats(long userId) {
-        return summarize(allQuestions(), loadProgress(userId));
+    public QuestionBankView.Summary stats(long userId, String judgeMode) {
+        JudgeMode modeFilter = normalizeJudgeMode(judgeMode);
+        return summarize(scopeByMode(allQuestions(), modeFilter), loadProgress(userId));
     }
 
     /** 筛选项:领域与题型的动态列表,附带题目数量,避免前端硬编码 */
-    public QuestionBankFacets facets() {
-        List<QuestionBank> all = allQuestions();
+    public QuestionBankFacets facets(String judgeMode) {
+        JudgeMode modeFilter = normalizeJudgeMode(judgeMode);
+        List<QuestionBank> all = scopeByMode(allQuestions(), modeFilter);
 
         Map<String, Integer> domainCounts = new LinkedHashMap<>();
         for (QuestionBank question : all) {
@@ -195,7 +199,7 @@ public class QuestionBankService {
 
         return new QuestionBankDetail(
                 String.valueOf(question.getId()),
-                seqOf(id),
+                seqOf(question),
                 question.getTitle(),
                 question.getContent(),
                 enumName(question.getType()),
@@ -213,20 +217,21 @@ public class QuestionBankService {
                 attempts);
     }
 
-    /** 详情页连续刷题:返回默认排序下当前题的前后相邻题 */
+    /** 详情页连续刷题:只在同一模式(问答题/编程题)内找前后相邻题 */
     public QuestionNeighbors neighbors(long id) {
-        requireOn(id);
-        List<QuestionBank> all = allQuestions();
-        int index = indexOf(all, id);
-        String prevId = index > 0 ? String.valueOf(all.get(index - 1).getId()) : null;
-        String nextId = index >= 0 && index + 1 < all.size()
-                ? String.valueOf(all.get(index + 1).getId()) : null;
+        QuestionBank question = requireOn(id);
+        List<QuestionBank> scoped = scopeByMode(allQuestions(), modeOf(question));
+        int index = indexOf(scoped, id);
+        String prevId = index > 0 ? String.valueOf(scoped.get(index - 1).getId()) : null;
+        String nextId = index >= 0 && index + 1 < scoped.size()
+                ? String.valueOf(scoped.get(index + 1).getId()) : null;
         return new QuestionNeighbors(prevId, nextId);
     }
 
-    /** 随机一题,可排除当前题,避免"随机"还是同一道 */
-    public String randomQuestionId(Long excludeId) {
-        List<QuestionBank> pool = allQuestions().stream()
+    /** 随机一题,可排除当前题,并限定在问答题/编程题内 */
+    public String randomQuestionId(Long excludeId, String judgeMode) {
+        JudgeMode modeFilter = normalizeJudgeMode(judgeMode);
+        List<QuestionBank> pool = scopeByMode(allQuestions(), modeFilter).stream()
                 .filter(q -> excludeId == null || !excludeId.equals(q.getId()))
                 .toList();
         if (pool.isEmpty()) {
@@ -561,10 +566,33 @@ public class QuestionBankService {
         return status == WRONG ? "WRONG" : "DONE";
     }
 
-    /** 题目在默认排序中的序号(从 1 开始),用于详情页"第 N 题"和相邻题定位 */
-    private int seqOf(long id) {
-        int index = indexOf(allQuestions(), id);
+    /** 题目在所属模式(问答题/编程题)默认排序中的序号,从 1 开始 */
+    private int seqOf(QuestionBank question) {
+        int index = indexOf(scopeByMode(allQuestions(), modeOf(question)), question.getId());
         return index < 0 ? 0 : index + 1;
+    }
+
+    private static JudgeMode modeOf(QuestionBank question) {
+        return question.getJudgeMode() == null ? JudgeMode.TEXT : question.getJudgeMode();
+    }
+
+    private static List<QuestionBank> scopeByMode(List<QuestionBank> questions, JudgeMode mode) {
+        if (mode == null) {
+            return questions;
+        }
+        return questions.stream().filter(q -> modeOf(q) == mode).toList();
+    }
+
+    private static JudgeMode normalizeJudgeMode(String raw) {
+        String value = Texts.blankToNull(raw);
+        if (value == null) {
+            return null;
+        }
+        try {
+            return JudgeMode.valueOf(value.strip().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private static int indexOf(List<QuestionBank> questions, long id) {
