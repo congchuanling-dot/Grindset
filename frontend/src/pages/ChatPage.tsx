@@ -271,14 +271,14 @@ function ChatPage() {
     )
   }
 
-  async function send(text: string) {
+  async function send(text: string, displayText?: string) {
     if (streaming || !selection || detailLoading) return
 
     const [provider, model] = selection.split('::')
     const assistantId = nextId()
     setMessages((prev) => [
       ...prev,
-      { id: nextId(), role: 'user', content: text },
+      { id: nextId(), role: 'user', content: displayText ?? text },
       { id: assistantId, role: 'assistant', content: '' },
     ])
     setInput('')
@@ -294,7 +294,13 @@ function ChatPage() {
 
     try {
       await streamAgentChat(
-        { conversationId: activeId ?? undefined, provider, model, message: text },
+        {
+          conversationId: activeId ?? undefined,
+          provider,
+          model,
+          message: text,
+          displayMessage: displayText,
+        },
         {
           onConversation: (id, title) => {
             // 新会话立刻出现在侧边栏,并把 URL 指过去;已有会话只更新标题
@@ -315,8 +321,8 @@ function ChatPage() {
           },
           onStatus: (status) => updateMessage(assistantId, { status }),
           onToolCall: (step) => appendStep(assistantId, step),
-          onToolResult: (id, ok, summary) =>
-            updateStep(assistantId, id, { status: ok ? 'done' : 'failed', summary }),
+          onToolResult: (id, ok, summary, data) =>
+            updateStep(assistantId, id, { status: ok ? 'done' : 'failed', summary, data }),
           onDelta: (delta) => appendDelta(assistantId, delta),
           onError: (message) =>
             updateMessage(assistantId, { content: message, error: true, status: undefined }),
@@ -641,6 +647,9 @@ function ChatPage() {
             <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6">
               {messages.map((message) => {
                 const steps = message.steps ?? []
+                // 选择卡片放在回答正文之后:先让用户看到现状说明,再看到可选项
+                const toolSteps = steps.filter((step) => !isSelectorStep(step))
+                const selectorSteps = steps.filter(isSelectorStep)
                 const pending =
                   message.role === 'assistant'
                   && !message.content
@@ -656,9 +665,9 @@ function ChatPage() {
                         message.role === 'user' ? 'max-w-[80%] items-end' : 'max-w-[85%] items-start'
                       }`}
                     >
-                      {steps.length > 0 && (
+                      {toolSteps.length > 0 && (
                         <div className="w-full space-y-1.5">
-                          {steps.map((step) => (
+                          {toolSteps.map((step) => (
                             <AgentToolCard key={step.id} step={step} />
                           ))}
                         </div>
@@ -679,6 +688,22 @@ function ChatPage() {
                           ) : (
                             message.content
                           )}
+                        </div>
+                      )}
+
+                      {selectorSteps.length > 0 && (
+                        <div className="w-full space-y-1.5">
+                          {selectorSteps.map((step) => (
+                            <AgentToolCard
+                              key={step.id}
+                              step={step}
+                              onSelect={
+                                streaming
+                                  ? undefined
+                                  : (prompt, display) => void send(prompt, display)
+                              }
+                            />
+                          ))}
                         </div>
                       )}
 
@@ -809,6 +834,11 @@ function ChatPage() {
   )
 }
 
+/** 带选择卡片数据的工具步骤单独渲染到回答下方 */
+function isSelectorStep(step: AgentToolStep): boolean {
+  return step.data?.card === 'selector'
+}
+
 /** 把后端的展示消息转成页面内部的 Message */
 function toMessage(message: AgentHistoryMessage): Message {
   return {
@@ -824,6 +854,7 @@ function toMessage(message: AgentHistoryMessage): Message {
       args: step.args,
       status: step.ok ? 'done' : 'failed',
       summary: step.summary,
+      data: step.data,
     })),
   }
 }

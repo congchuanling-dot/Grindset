@@ -130,13 +130,20 @@ public class AgentConversationService {
             throw new BizException(ErrorCode.BAD_REQUEST,
                     "单条消息不能超过 " + CHAT_MAX_MESSAGE_LENGTH + " 字");
         }
+        // 展示文案只影响落库和标题,模型仍然拿到完整问题(可能带内部 ID)
+        String display = Texts.strip(request.getDisplayMessage());
+        if (display.isEmpty()) {
+            display = question;
+        } else if (display.length() > CHAT_MAX_MESSAGE_LENGTH) {
+            display = display.substring(0, CHAT_MAX_MESSAGE_LENGTH);
+        }
 
         // 先校验模型是否可用,避免把用户提问落库后才发现模型配错
         String model = Texts.strip(request.getModel());
         List<LlmTarget> targets = catalog.requireTargets(Texts.strip(request.getProvider()), model);
 
         AgentConversation conversation = resolveConversation(
-                userId, Texts.strip(request.getConversationId()), question);
+                userId, Texts.strip(request.getConversationId()), display);
 
         ReentrantLock lock = lockOf(conversation.getId());
         if (!lock.tryLock()) {
@@ -156,12 +163,12 @@ public class AgentConversationService {
             List<ChatMessage> history = loadHistory(conversation.getId());
             history.add(new ChatMessage(ChatMessage.ROLE_USER, question));
 
-            appendUserMessage(conversation, question);
+            appendUserMessage(conversation, display);
             sink.conversation(String.valueOf(conversation.getId()), conversation.getTitle());
 
             // 标题和回答并行生成,回答结束时标题通常已经好了
             CompletableFuture<String> titleFuture = firstTurn
-                    ? titleService.generateAsync(targets, model, question, conversation.getTitle())
+                    ? titleService.generateAsync(targets, model, display, conversation.getTitle())
                     : CompletableFuture.completedFuture(conversation.getTitle());
 
             RecordingSink recorder = new RecordingSink(sink);
@@ -576,7 +583,8 @@ public class AgentConversationService {
                 stringValue(meta.get("label")),
                 mapValue(meta.get("args")),
                 Boolean.TRUE.equals(meta.get("ok")),
-                stringValue(meta.get("summary")));
+                stringValue(meta.get("summary")),
+                mapValue(meta.get("data")));
     }
 
     // ------------------------------------------------------------------
@@ -690,17 +698,25 @@ public class AgentConversationService {
 
         @Override
         public void toolCall(String id, String name, String label, Map<String, Object> args) {
-            tools.put(id, new ToolMeta(name, label, args == null ? Map.of() : args, false, null));
+            tools.put(id, new ToolMeta(name, label, args == null ? Map.of() : args, false, null, Map.of()));
             delegate.toolCall(id, name, label, args);
         }
 
         @Override
-        public void toolResult(String id, String name, boolean ok, String summary) {
+        public void toolResult(String id, String name, boolean ok, String summary, Object data) {
             // 先记录再转发:转发可能因为客户端断开直接抛异常,记录不能丢
             ToolMeta previous = tools.get(id);
             tools.put(id, new ToolMeta(name, previous == null ? name : previous.label(),
-                    previous == null ? Map.of() : previous.args(), ok, summary));
-            delegate.toolResult(id, name, ok, summary);
+                    previous == null ? Map.of() : previous.args(), ok, summary, cardData(data)));
+            delegate.toolResult(id, name, ok, summary, data);
+        }
+
+        /** 只持久化卡片数据,避免把简历正文这类大体量结果在 tool_meta 里再存一份 */
+        private static Object cardData(Object data) {
+            if (data instanceof Map<?, ?> map && map.containsKey("card")) {
+                return data;
+            }
+            return Map.of();
         }
 
         @Override
@@ -717,11 +733,12 @@ public class AgentConversationService {
             map.put("args", meta == null ? Map.of() : meta.args());
             map.put("ok", meta != null && meta.ok());
             map.put("summary", meta == null ? "" : nullToEmpty(meta.summary()));
+            map.put("data", meta == null ? Map.of() : meta.data());
             return map;
         }
 
         private record ToolMeta(String name, String label, Map<String, Object> args,
-                                boolean ok, String summary) {
+                                boolean ok, String summary, Object data) {
         }
     }
 }

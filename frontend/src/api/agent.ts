@@ -12,6 +12,8 @@ export interface AgentToolStep {
   status: 'running' | 'done' | 'failed'
   /** 工具执行完成后的一行结论 */
   summary?: string
+  /** 工具返回的结构化数据,选择型工具用它渲染卡片 */
+  data?: Record<string, unknown>
 }
 
 /** 侧边栏的会话列表项 */
@@ -31,6 +33,7 @@ export interface AgentHistoryStep {
   args: Record<string, unknown>
   ok: boolean
   summary: string
+  data?: Record<string, unknown>
 }
 
 /** 历史消息:后端已经把一轮工具调用合并成一个助手气泡 */
@@ -59,7 +62,12 @@ export interface AgentStreamHandlers {
   /** 阶段提示,如"正在分析你的问题…" */
   onStatus: (text: string) => void
   onToolCall: (step: AgentToolStep) => void
-  onToolResult: (id: string, ok: boolean, summary: string) => void
+  onToolResult: (
+    id: string,
+    ok: boolean,
+    summary: string,
+    data?: Record<string, unknown>,
+  ) => void
   onDelta: (text: string) => void
   onError: (message: string) => void
   /** 结束时回传会话 ID 和最新标题 */
@@ -93,7 +101,14 @@ export async function deleteAgentConversation(id: string): Promise<void> {
  * 有 conversationId 时后端从库里读历史,前端只需要传本次提问。
  */
 export async function streamAgentChat(
-  params: { conversationId?: string; provider: string; model: string; message: string },
+  params: {
+    conversationId?: string
+    provider: string
+    model: string
+    message: string
+    /** 气泡展示文案,不含内部 ID;为空时展示 message */
+    displayMessage?: string
+  },
   handlers: AgentStreamHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -147,7 +162,12 @@ export async function streamAgentChat(
       // 按 id 更新对应卡片,不依赖事件到达顺序
       const id = readString(payload, 'id')
       if (!id) return
-      handlers.onToolResult(id, payload.ok === true, readString(payload, 'summary'))
+      handlers.onToolResult(
+        id,
+        payload.ok === true,
+        readString(payload, 'summary'),
+        isRecord(payload.data) ? payload.data : undefined,
+      )
     } else if (event === 'delta') {
       // 最终回答的增量文本
       const text = readString(payload, 'text')

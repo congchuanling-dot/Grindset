@@ -27,6 +27,9 @@ public final class AgentDtos {
         /** 本次用户提问 */
         private String message;
 
+        /** 给用户看的展示文案;为空时直接用 message。点击卡片选择时用它隐藏内部 ID */
+        private String displayMessage;
+
         public String getConversationId() {
             return conversationId;
         }
@@ -57,6 +60,14 @@ public final class AgentDtos {
 
         public void setMessage(String message) {
             this.message = message;
+        }
+
+        public String getDisplayMessage() {
+            return displayMessage;
+        }
+
+        public void setDisplayMessage(String displayMessage) {
+            this.displayMessage = displayMessage;
         }
     }
 
@@ -103,7 +114,8 @@ public final class AgentDtos {
             String label,
             Map<String, Object> args,
             boolean ok,
-            String summary) {
+            String summary,
+            Map<String, Object> data) {
     }
 
     /** 重命名会话请求 */

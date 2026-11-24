@@ -179,12 +179,13 @@ public class AgentController {
         }
 
         @Override
-        public void toolResult(String id, String name, boolean ok, String summary) {
+        public void toolResult(String id, String name, boolean ok, String summary, Object result) {
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("id", id);
             data.put("name", name);
             data.put("ok", ok);
             data.put("summary", summary);
+            data.put("data", result == null ? Map.of() : result);
             send(emitter, "tool_result", data);
         }
 

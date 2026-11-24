@@ -17,8 +17,8 @@ public interface AgentStreamSink {
     /** 模型决定调用某个工具 */
     void toolCall(String id, String name, String label, Map<String, Object> args);
 
-    /** 工具执行完成 */
-    void toolResult(String id, String name, boolean ok, String summary);
+    /** 工具执行完成;data 是结构化结果,前端可据此渲染选择卡片 */
+    void toolResult(String id, String name, boolean ok, String summary, Object data);
 
     /** 最终回答的增量文本 */
     void delta(String text);

@@ -120,7 +120,7 @@ public class AgentService {
                         result = new AgentToolResult(false, "查询失败",
                                 Map.of("error", "工具执行异常,请如实告知用户暂时查不到"));
                     }
-                    sink.toolResult(call.id(), tool.name(), result.ok(), result.summary());
+                    sink.toolResult(call.id(), tool.name(), result.ok(), result.summary(), result.data());
                     ChatMessage toolMessage = ChatMessage.toolResult(call.id(), toJson(result.data()));
                     messages.add(toolMessage);
                     turnMessages.add(toolMessage);
@@ -158,8 +158,6 @@ public class AgentService {
                 2. 一次可以调用多个工具;不要用相同参数重复查询。
                 3. 信息足够就直接回答,不要再调用工具。
                 4. 纯闲聊或通用概念直接回答。
-                5. 需要站外事实(最新版本、官方文档、报错原因、技术方案)时,先 web_search;
-                   搜到链接后如需细读,再用 fetch_url 读一两条最相关的页面。
                 """);
         // 用户画像暂未接入,为空时整段跳过
         String profile = profileSection();
@@ -183,9 +181,8 @@ public class AgentService {
                 2. 中文、先给结论再给依据,建议要具体可执行。
                 3. 不要提"工具""接口"这类实现细节。
                 4. 不要用 Markdown 标题(#)和加粗(**),用短段落和"- "列表表达层次。
-                5. 引用网页资料要用自己的话概括,并在末尾用"- 参考:<链接>"列出实际用到的链接,
-                   不要整段抄录,也不要虚构没出现过的链接。
-                6. 区分"你的学习数据"和"网上资料",不要混为一谈。
+                5. 工具结果已经用卡片列出选项时,正文只用一两句话说明现状并引导用户选择,
+                   不要重复罗列清单内容。
                 """;
     }
 
