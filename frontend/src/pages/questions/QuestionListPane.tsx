@@ -122,8 +122,11 @@ function QuestionListPane() {
   }
 
   function questionLink(id: string) {
-    const search = params.toString()
-    return `/questions/${id}${search ? `?${search}` : ''}`
+    const search = new URLSearchParams(params)
+    // 换题时回到「作答」Tab,不把上一题的 tab 带过去
+    search.delete('tab')
+    const query = search.toString()
+    return `/questions/${id}${query ? `?${query}` : ''}`
   }
 
   const summary = data?.summary

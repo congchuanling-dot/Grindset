@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Clock,
   Loader2,
   Send,
   Shuffle,
@@ -42,19 +41,30 @@ import { useVoiceInput } from '../hooks/useVoiceInput'
 
 const MAX_ANSWER_LENGTH = 4000
 
+type DetailTab = 'answer' | 'history' | 'comments' | 'similar'
+
 function draftKey(id: string) {
   return `grindset:question-draft:${id}`
 }
 
 /**
- * 问答题详情(右侧内容区):题干、作答、AI 评分与历史。
- * 页面外壳和左侧列表由 QuestionBankLayout 提供,这里只负责当前题目。
+ * 问答题详情(右侧内容区):题目头 + Tab。
+ * 作答、提交历史、评论、相似题各自独立,避免长页面一路往下堆。
  */
 function QuestionDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const search = searchParams.toString()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const filterParams = new URLSearchParams(searchParams)
+  filterParams.delete('tab')
+  const filterSearch = filterParams.toString()
+
+  const tabParam = searchParams.get('tab')
+  const tab: DetailTab =
+    tabParam === 'history' || tabParam === 'comments' || tabParam === 'similar'
+      ? tabParam
+      : 'answer'
 
   const [detail, setDetail] = useState<QuestionBankDetail | null>(null)
   const [neighbors, setNeighbors] = useState<QuestionNeighbors | null>(null)
@@ -142,6 +152,16 @@ function QuestionDetailPage() {
     return () => window.clearTimeout(timer)
   }, [answer, id])
 
+  function changeTab(next: DetailTab) {
+    const nextParams = new URLSearchParams(searchParams)
+    if (next === 'answer') {
+      nextParams.delete('tab')
+    } else {
+      nextParams.set('tab', next)
+    }
+    setSearchParams(nextParams, { replace: true })
+  }
+
   function handleVoiceToggle() {
     if (voice.state === 'idle') {
       setVoiceError('')
@@ -193,8 +213,13 @@ function QuestionDetailPage() {
     setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
+  function startAgain() {
+    again()
+    changeTab('answer')
+  }
+
   function questionLink(questionId: string) {
-    return `/questions/${questionId}${search ? `?${search}` : ''}`
+    return `/questions/${questionId}${filterSearch ? `?${filterSearch}` : ''}`
   }
 
   async function openRandom() {
@@ -215,7 +240,7 @@ function QuestionDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-5 md:px-6">
+    <div className="mx-auto max-w-4xl px-4 pb-6 pt-5 md:px-6">
       <div className="mb-3 flex items-center justify-between gap-2">
         <nav className="min-w-0 truncate text-xs text-slate-400">
           {detail ? (
@@ -247,7 +272,7 @@ function QuestionDetailPage() {
           <AlertCircle size={22} className="text-rose-500" />
           <p className="text-sm text-slate-600">{loadError || '题目不存在或已下架'}</p>
           <Link
-            to={`/questions${search ? `?${search}` : ''}`}
+            to={`/questions${filterSearch ? `?${filterSearch}` : ''}`}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600"
           >
             返回题库
@@ -256,7 +281,7 @@ function QuestionDetailPage() {
       ) : (
         <>
           <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <div className="border-b border-slate-100 px-4 py-4 md:px-5">
+            <div className="px-4 py-4 md:px-5">
               <h1 className="text-lg font-semibold leading-7 text-slate-800">{detail.title}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
@@ -280,208 +305,211 @@ function QuestionDetailPage() {
                 {detail.lastAttemptAt && <span>最近 {detail.lastAttemptAt}</span>}
               </div>
             </div>
-            <div className="px-4 py-4 md:px-5">
-              <MarkdownContent content={detail.content} />
-            </div>
           </article>
 
-          {result ? (
-            <div className="mt-4 space-y-3">
-              <section className="rounded-xl border border-slate-200 bg-white px-4 py-4 md:px-5">
-                <div className="flex items-center gap-3">
-                  <span className={`text-4xl font-semibold leading-none ${scoreClass(result.score)}`}>
-                    {result.score}
-                  </span>
-                  <span className="text-xs text-slate-400">/ 5 分</span>
-                  <span
-                    className={`ml-auto rounded-full px-2 py-0.5 text-xs ${
-                      result.status === 'WRONG'
-                        ? 'bg-rose-50 text-rose-600'
-                        : 'bg-teal-50 text-teal-700'
-                    }`}
-                  >
-                    {result.status === 'WRONG' ? '已收入错题本' : '已掌握'}
-                  </span>
-                </div>
-
-                {result.comment && (
-                  <div className="mt-3">
-                    <p className="text-xs font-medium text-slate-500">点评</p>
-                    <MarkdownContent content={result.comment} className="mt-0.5" />
-                  </div>
-                )}
-                {result.suggestion && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-slate-500">建议</p>
-                    <MarkdownContent content={result.suggestion} className="mt-0.5" />
-                  </div>
-                )}
-
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  <PointList
-                    title="命中的要点"
-                    points={result.hitPoints}
-                    tone="teal"
-                    empty="这次没有识别到明显命中的要点"
-                  />
-                  <PointList
-                    title="遗漏的要点"
-                    points={result.missedPoints}
-                    tone="amber"
-                    empty="没有明显遗漏，继续保持"
-                  />
-                </div>
-              </section>
-
-              <ReferenceCard
-                referenceAnswer={result.referenceAnswer}
-                keyPoints={result.keyPoints}
-                open={showReference}
-                onToggle={() => setShowReference((prev) => !prev)}
-              />
-
-              <div className="flex justify-end gap-2">
-                <Link
-                  to={`/questions${search ? `?${search}` : ''}`}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50"
-                >
-                  返回题库
-                </Link>
-                <button
-                  type="button"
-                  onClick={again}
-                  className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-teal-700"
-                >
-                  再答一次
-                </button>
-              </div>
+          <div className="sticky top-0 z-10 -mx-4 mt-3 border-b border-slate-200 bg-slate-50/95 px-4 backdrop-blur md:-mx-6 md:px-6">
+            <div className="flex gap-1 overflow-x-auto">
+              <DetailTabs tab={tab} attemptCount={detail.attemptCount} onChange={changeTab} />
             </div>
-          ) : (
-            <section className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
-              {detail.referenceAnswer && (
-                <div className="px-4 pt-4 md:px-5">
-                  <ReferenceCard
-                    referenceAnswer={detail.referenceAnswer}
-                    keyPoints={detail.keyPoints}
-                    open={showReference}
-                    onToggle={() => setShowReference((prev) => !prev)}
-                  />
-                </div>
-              )}
+          </div>
 
-              <div className="flex items-center justify-between gap-2 px-4 py-2.5 md:px-5">
-                <p className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                  <Sparkles size={15} className="text-teal-600" />
-                  我的回答
-                </p>
-                <div className="flex items-center gap-2">
-                  {voice.state === 'recording' && (
-                    <span className="hidden text-xs text-rose-500 sm:inline">正在听你说…</span>
-                  )}
-                  <span className="text-xs tabular-nums text-slate-400">
-                    {answer.length} / {MAX_ANSWER_LENGTH}
-                  </span>
-                  <VoiceInputButton
-                    state={voice.state}
-                    seconds={voice.seconds}
-                    disabled={submitting}
-                    onClick={handleVoiceToggle}
-                  />
-                </div>
-              </div>
+          <div className="mt-4">
+            {tab === 'answer' && (
+              <>
+                <section className="rounded-xl border border-slate-200 bg-white px-4 py-4 md:px-5">
+                  <MarkdownContent content={detail.content} />
+                </section>
 
-              <div className="px-4 pb-4 md:px-5">
-                <p className="text-xs text-slate-400">
-                  按自己的理解写完整，也可以点麦克风直接说，提交后 AI 对照参考答案给出评分和命中/遗漏要点。
-                </p>
+                {result ? (
+                  <div className="mt-3 space-y-3">
+                    <section className="rounded-xl border border-slate-200 bg-white px-4 py-4 md:px-5">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-4xl font-semibold leading-none ${scoreClass(result.score)}`}>
+                          {result.score}
+                        </span>
+                        <span className="text-xs text-slate-400">/ 5 分</span>
+                        <span
+                          className={`ml-auto rounded-full px-2 py-0.5 text-xs ${
+                            result.status === 'WRONG'
+                              ? 'bg-rose-50 text-rose-600'
+                              : 'bg-teal-50 text-teal-700'
+                          }`}
+                        >
+                          {result.status === 'WRONG' ? '已收入错题本' : '已掌握'}
+                        </span>
+                      </div>
 
-                {voiceError && <p className="mt-1 text-xs text-rose-600">{voiceError}</p>}
-
-                {submitError && (
-                  <div className="mt-2 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
-                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                    <span>{submitError}</span>
-                  </div>
-                )}
-
-                <textarea
-                  ref={textareaRef}
-                  value={answer}
-                  maxLength={MAX_ANSWER_LENGTH}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  onKeyDown={(e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-                      e.preventDefault()
-                      void submit()
-                    }
-                  }}
-                  rows={10}
-                  className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm leading-6 text-slate-700 outline-none transition focus:border-teal-400"
-                  placeholder={
-                    voice.state === 'recording'
-                      ? '正在听你说…'
-                      : '先讲核心结论，再补充原理和细节…'
-                  }
-                />
-
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs text-slate-400">
-                    至少 10 字 · Ctrl / ⌘ + Enter 提交 ·{' '}
-                    {draftSaved ? (
-                      <span className="text-teal-600">草稿已保存</span>
-                    ) : (
-                      '草稿自动保存'
-                    )}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        voice.cancel()
-                        setAnswer('')
-                        setDraftSaved(false)
-                        setVoiceError('')
-                        if (id) localStorage.removeItem(draftKey(id))
-                        textareaRef.current?.focus()
-                      }}
-                      disabled={!answer}
-                      className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
-                    >
-                      <Trash2 size={13} />
-                      清空
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void submit()}
-                      disabled={answer.trim().length < 10 || submitting}
-                      className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                    >
-                      {submitting ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <Send size={14} />
+                      {result.comment && (
+                        <div className="mt-3">
+                          <p className="text-xs font-medium text-slate-500">点评</p>
+                          <MarkdownContent content={result.comment} className="mt-0.5" />
+                        </div>
                       )}
-                      {submitting ? 'AI 批改中…' : '提交作答'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
+                      {result.suggestion && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-slate-500">建议</p>
+                          <MarkdownContent content={result.suggestion} className="mt-0.5" />
+                        </div>
+                      )}
 
-          {detail.attempts.length > 0 && (
-            <section className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 md:px-5">
-              <p className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                <Clock size={15} className="text-slate-400" />
-                历史作答（最近 {detail.attempts.length} 次）
-              </p>
-              <div className="mt-2 space-y-2">
-                {detail.attempts.map((attempt) => (
-                  <AttemptCard key={attempt.id} attempt={attempt} />
-                ))}
-              </div>
-            </section>
-          )}
+                      <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        <PointList
+                          title="命中的要点"
+                          points={result.hitPoints}
+                          tone="teal"
+                          empty="这次没有识别到明显命中的要点"
+                        />
+                        <PointList
+                          title="遗漏的要点"
+                          points={result.missedPoints}
+                          tone="amber"
+                          empty="没有明显遗漏，继续保持"
+                        />
+                      </div>
+                    </section>
+
+                    <ReferenceCard
+                      referenceAnswer={result.referenceAnswer}
+                      keyPoints={result.keyPoints}
+                      open={showReference}
+                      onToggle={() => setShowReference((prev) => !prev)}
+                    />
+
+                    <div className="flex justify-end gap-2">
+                      <Link
+                        to={`/questions${filterSearch ? `?${filterSearch}` : ''}`}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50"
+                      >
+                        返回题库
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={again}
+                        className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-teal-700"
+                      >
+                        再答一次
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <section className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    {detail.referenceAnswer && (
+                      <div className="px-4 pt-4 md:px-5">
+                        <ReferenceCard
+                          referenceAnswer={detail.referenceAnswer}
+                          keyPoints={detail.keyPoints}
+                          open={showReference}
+                          onToggle={() => setShowReference((prev) => !prev)}
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between gap-2 px-4 py-2.5 md:px-5">
+                      <p className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                        <Sparkles size={15} className="text-teal-600" />
+                        我的回答
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {voice.state === 'recording' && (
+                          <span className="hidden text-xs text-rose-500 sm:inline">正在听你说…</span>
+                        )}
+                        <span className="text-xs tabular-nums text-slate-400">
+                          {answer.length} / {MAX_ANSWER_LENGTH}
+                        </span>
+                        <VoiceInputButton
+                          state={voice.state}
+                          seconds={voice.seconds}
+                          disabled={submitting}
+                          onClick={handleVoiceToggle}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="px-4 pb-4 md:px-5">
+                      <p className="text-xs text-slate-400">
+                        按自己的理解写完整，也可以点麦克风直接说，提交后 AI 对照参考答案给出评分和命中/遗漏要点。
+                      </p>
+
+                      {voiceError && <p className="mt-1 text-xs text-rose-600">{voiceError}</p>}
+
+                      {submitError && (
+                        <div className="mt-2 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                          <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                          <span>{submitError}</span>
+                        </div>
+                      )}
+
+                      <textarea
+                        ref={textareaRef}
+                        value={answer}
+                        maxLength={MAX_ANSWER_LENGTH}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        onKeyDown={(e) => {
+                          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                            e.preventDefault()
+                            void submit()
+                          }
+                        }}
+                        rows={10}
+                        className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm leading-6 text-slate-700 outline-none transition focus:border-teal-400"
+                        placeholder={
+                          voice.state === 'recording'
+                            ? '正在听你说…'
+                            : '先讲核心结论，再补充原理和细节…'
+                        }
+                      />
+
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs text-slate-400">
+                          至少 10 字 · Ctrl / ⌘ + Enter 提交 ·{' '}
+                          {draftSaved ? (
+                            <span className="text-teal-600">草稿已保存</span>
+                          ) : (
+                            '草稿自动保存'
+                          )}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              voice.cancel()
+                              setAnswer('')
+                              setDraftSaved(false)
+                              setVoiceError('')
+                              if (id) localStorage.removeItem(draftKey(id))
+                              textareaRef.current?.focus()
+                            }}
+                            disabled={!answer}
+                            className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
+                          >
+                            <Trash2 size={13} />
+                            清空
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void submit()}
+                            disabled={answer.trim().length < 10 || submitting}
+                            className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                          >
+                            {submitting ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Send size={14} />
+                            )}
+                            {submitting ? 'AI 批改中…' : '提交作答'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+              </>
+            )}
+
+            {tab === 'history' && <HistoryTab detail={detail} onAgain={startAgain} />}
+            {tab === 'comments' && <CommentsTab />}
+            {tab === 'similar' && <SimilarTab />}
+          </div>
 
           <nav className="mt-4 flex items-center justify-between gap-2">
             <button
@@ -521,32 +549,219 @@ function QuestionDetailPage() {
   )
 }
 
-function AttemptCard({ attempt }: { attempt: QuestionAttemptView }) {
+function DetailTabs({
+  tab,
+  attemptCount,
+  onChange,
+}: {
+  tab: DetailTab
+  attemptCount: number
+  onChange: (tab: DetailTab) => void
+}) {
+  const tabs: { key: DetailTab; label: string; badge: number | null }[] = [
+    { key: 'answer', label: '作答', badge: null },
+    { key: 'history', label: '提交历史', badge: attemptCount },
+    { key: 'comments', label: '评论', badge: 0 },
+    { key: 'similar', label: '相似题', badge: null },
+  ]
   return (
-    <details className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-      <summary className="flex cursor-pointer list-none items-center gap-2 text-xs text-slate-600">
-        <span className={`font-semibold ${scoreClass(attempt.score)}`}>{attempt.score} / 5</span>
-        <span className="text-xs text-slate-400">{attempt.createdAt ?? ''}</span>
-        {attempt.comment && (
-          <span className="min-w-0 flex-1 truncate text-xs text-slate-500">{attempt.comment}</span>
-        )}
-      </summary>
-      <div className="mt-2 space-y-2 border-t border-slate-200 pt-2">
-        <div>
-          <p className="text-xs text-slate-400">我的回答</p>
-          <p className="mt-0.5 whitespace-pre-wrap text-xs leading-5 text-slate-600">{attempt.answer}</p>
+    <>
+      {tabs.map((item) => {
+        const active = tab === item.key
+        return (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onChange(item.key)}
+            className={`relative flex shrink-0 items-center gap-1 px-3 py-2.5 text-sm transition ${
+              active ? 'font-medium text-teal-700' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {item.label}
+            {item.badge != null && (
+              <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">
+                {item.badge}
+              </span>
+            )}
+            {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-teal-500" />}
+          </button>
+        )
+      })}
+    </>
+  )
+}
+
+function HistoryTab({ detail, onAgain }: { detail: QuestionBankDetail; onAgain: () => void }) {
+  if (detail.attempts.length === 0) {
+    return (
+      <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white px-6 py-12 text-center">
+        <p className="text-sm font-medium text-slate-700">还没有提交记录</p>
+        <p className="mt-1 text-xs text-slate-400">
+          完成第一次作答后，这里会按时间线保留每次回答和 AI 评分。
+        </p>
+        <button
+          type="button"
+          onClick={onAgain}
+          className="mt-4 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
+        >
+          去作答
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+          <span>
+            作答 <span className="font-semibold text-slate-800">{detail.attemptCount}</span> 次
+          </span>
+          {detail.bestScore != null && <span>最高 {detail.bestScore} 分</span>}
+          {detail.lastScore != null && <span>最近 {detail.lastScore} 分</span>}
+          {detail.lastAttemptAt && <span>最近时间 {detail.lastAttemptAt}</span>}
+          <button
+            type="button"
+            onClick={onAgain}
+            className="ml-auto rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700 transition hover:bg-teal-100"
+          >
+            再答一次
+          </button>
         </div>
-        {attempt.hitPoints.length > 0 && (
-          <PointLine title="命中" points={attempt.hitPoints} tone="teal" />
+      </div>
+
+      <div className="mt-4">
+        {detail.attempts.map((attempt, index) => (
+          <HistoryItem
+            key={attempt.id}
+            attempt={attempt}
+            ordinal={detail.attemptCount - index}
+            latest={index === 0}
+            last={index === detail.attempts.length - 1}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function HistoryItem({
+  attempt,
+  ordinal,
+  latest,
+  last,
+}: {
+  attempt: QuestionAttemptView
+  ordinal: number
+  latest: boolean
+  last: boolean
+}) {
+  const [expanded, setExpanded] = useState(latest)
+  return (
+    <div className="relative flex gap-3">
+      <div className="flex w-3 flex-col items-center">
+        <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${scoreDotClass(attempt.score)}`} />
+        {!last && <span className="mt-1 w-px flex-1 bg-slate-200" />}
+      </div>
+
+      <div className={`min-w-0 flex-1 ${last ? '' : 'pb-5'}`}>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-medium text-slate-700">第 {ordinal} 次</span>
+          <span className={`font-semibold ${scoreClass(attempt.score)}`}>{attempt.score} 分</span>
+          <span className="text-slate-400">{attempt.createdAt ?? ''}</span>
+          <span
+            className={`ml-auto rounded-full px-2 py-0.5 ${
+              attempt.score <= 2 ? 'bg-rose-50 text-rose-600' : 'bg-teal-50 text-teal-700'
+            }`}
+          >
+            {attempt.score <= 2 ? '已收入错题本' : '已掌握'}
+          </span>
+        </div>
+
+        {attempt.comment && (
+          <p className="mt-1 text-sm leading-6 text-slate-600">点评：{attempt.comment}</p>
         )}
-        {attempt.missedPoints.length > 0 && (
-          <PointLine title="遗漏" points={attempt.missedPoints} tone="amber" />
-        )}
-        {attempt.suggestion && (
-          <p className="text-xs leading-5 text-slate-500">建议：{attempt.suggestion}</p>
+
+        <button
+          type="button"
+          onClick={() => setExpanded((prev) => !prev)}
+          className="mt-1 text-xs font-medium text-teal-700 hover:text-teal-800"
+        >
+          {expanded ? '收起' : '展开我的回答与 AI 结果'}
+        </button>
+
+        {expanded && (
+          <div className="mt-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <div>
+              <p className="text-xs text-slate-400">我的回答</p>
+              <p className="mt-0.5 whitespace-pre-wrap text-xs leading-5 text-slate-600">
+                {attempt.answer}
+              </p>
+            </div>
+            {attempt.hitPoints.length > 0 && (
+              <PointLine title="命中" points={attempt.hitPoints} tone="teal" />
+            )}
+            {attempt.missedPoints.length > 0 && (
+              <PointLine title="遗漏" points={attempt.missedPoints} tone="amber" />
+            )}
+            {attempt.suggestion && (
+              <p className="text-xs leading-5 text-slate-500">建议：{attempt.suggestion}</p>
+            )}
+          </div>
         )}
       </div>
-    </details>
+    </div>
+  )
+}
+
+function CommentsTab() {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 md:px-5">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-slate-700">评论</p>
+        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">开发中</span>
+      </div>
+
+      <div className="mt-3 flex gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-400">
+          我
+        </div>
+        <div className="flex-1">
+          <textarea
+            disabled
+            rows={3}
+            placeholder="评论功能开发中，先占个位…"
+            className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400 outline-none"
+          />
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-[11px] text-slate-400">后续支持多用户评论和回复</span>
+            <button
+              type="button"
+              disabled
+              className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs text-slate-400"
+            >
+              发布
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center">
+        <p className="text-sm text-slate-500">还没有评论</p>
+        <p className="mt-1 text-xs text-slate-400">评论功能上线后，这里会按时间展示大家的讨论。</p>
+      </div>
+    </div>
+  )
+}
+
+function SimilarTab() {
+  return (
+    <div className="rounded-xl border border-dashed border-slate-200 bg-white px-5 py-10 text-center">
+      <p className="text-sm font-medium text-slate-600">相似题推荐</p>
+      <p className="mt-1 text-xs text-slate-400">
+        后续会按知识点/领域返回一组相似题，数量不固定，先占个位。
+      </p>
+    </div>
   )
 }
 
@@ -648,6 +863,12 @@ function scoreClass(score: number): string {
   if (score >= 4) return 'text-teal-700'
   if (score === 3) return 'text-amber-600'
   return 'text-rose-600'
+}
+
+function scoreDotClass(score: number): string {
+  if (score >= 4) return 'bg-teal-500'
+  if (score === 3) return 'bg-amber-500'
+  return 'bg-rose-500'
 }
 
 export default QuestionDetailPage
