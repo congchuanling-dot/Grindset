@@ -39,6 +39,7 @@ const DIFFICULTY_OPTIONS = [
 ]
 
 const PAGE_SIZE = 12
+const PAGE_SIZES = [12, 20, 50]
 
 const TYPE_LABELS: Record<QuestionType, string> = {
   BASICS: '八股',
@@ -68,6 +69,7 @@ function QuestionBankPage() {
   const [keywordInput, setKeywordInput] = useState('')
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(PAGE_SIZE)
 
   // 筛选项只需要加载一次;失败时退回只有搜索/难度,不阻塞列表
   useEffect(() => {
@@ -95,7 +97,7 @@ function QuestionBankPage() {
       status: status === 'ALL' ? undefined : status,
       keyword: keyword || undefined,
       page,
-      size: PAGE_SIZE,
+      size: pageSize,
     })
       .then((result) => {
         if (!cancelled) setData(result)
@@ -109,7 +111,7 @@ function QuestionBankPage() {
     return () => {
       cancelled = true
     }
-  }, [domain, type, difficulty, status, keyword, page])
+  }, [domain, type, difficulty, status, keyword, page, pageSize])
 
   function changeDomain(next: string) {
     setDomain(next === domain ? '' : next)
@@ -118,6 +120,11 @@ function QuestionBankPage() {
 
   function changeStatus(next: QuestionStatus | 'ALL') {
     setStatus(next)
+    setPage(1)
+  }
+
+  function changePageSize(next: number) {
+    setPageSize(next)
     setPage(1)
   }
 
@@ -416,11 +423,29 @@ function QuestionBankPage() {
         )}
 
         {data && data.filteredTotal > 0 && (
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-            <span>
-              共 {data.filteredTotal} 道 · 第 {data.page} / {totalPages} 页
-            </span>
-            <div className="flex items-center gap-2">
+          <div className="mt-3 flex flex-col gap-2 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>
+                共 {data.filteredTotal} 道 · 第 {data.page} / {totalPages} 页
+              </span>
+              <span className="text-slate-400">默认未做优先</span>
+              <label className="flex items-center gap-1.5">
+                每页
+                <select
+                  value={pageSize}
+                  onChange={(e) => changePageSize(Number(e.target.value))}
+                  className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 outline-none transition focus:border-teal-400"
+                >
+                  {PAGE_SIZES.map((size) => (
+                    <option key={size} value={size}>
+                      {size} 条
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1">
               <button
                 type="button"
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
@@ -430,6 +455,29 @@ function QuestionBankPage() {
                 <ChevronLeft size={13} />
                 上一页
               </button>
+
+              {pageItems(data.page, totalPages).map((item, index) =>
+                item === 'ellipsis' ? (
+                  <span key={`ellipsis-${index}`} className="px-1 text-slate-300">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setPage(item)}
+                    disabled={item === data.page || loading}
+                    className={`min-w-7 rounded-lg border px-2 py-1.5 transition ${
+                      item === data.page
+                        ? 'border-teal-300 bg-teal-50 font-medium text-teal-700'
+                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 disabled:cursor-not-allowed'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ),
+              )}
+
               <button
                 type="button"
                 onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
@@ -546,6 +594,23 @@ function ScoreCell({ item }: { item: QuestionBankItem }) {
       <p className="mt-0.5 text-[11px] text-slate-400">已答 {item.attemptCount} 次</p>
     </div>
   )
+}
+
+/** 生成翻页按钮:首尾页固定,当前页附近展开,其余用省略号 */
+function pageItems(current: number, total: number): (number | 'ellipsis')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, index) => index + 1)
+  }
+  const items: (number | 'ellipsis')[] = [1]
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+  if (start > 2) items.push('ellipsis')
+  for (let page = start; page <= end; page += 1) {
+    items.push(page)
+  }
+  if (end < total - 1) items.push('ellipsis')
+  items.push(total)
+  return items
 }
 
 function ListSkeleton() {

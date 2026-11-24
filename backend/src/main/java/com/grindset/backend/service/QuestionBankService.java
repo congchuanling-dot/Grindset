@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import static com.grindset.backend.common.constant.DisplayLimits.MAX_PREVIEW_CHARS;
 import static com.grindset.backend.common.constant.InputLimits.MAX_ANSWER_LENGTH;
@@ -122,7 +123,10 @@ public class QuestionBankService {
                 .filter(q -> keywordFilter == null || matchesKeyword(q, keywordFilter))
                 .filter(q -> statusFilter == null
                         || statusFilter.equals(statusLabel(progress.get(q.getId()))))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        // 默认排序:未做优先,其次错题,最后已做;同组内保持领域/难度/题号的原顺序
+        matched.sort(Comparator.comparingInt(q -> statusRank(progress.get(q.getId()))));
 
         int pageSize = size <= 0 ? PAGE_SIZE_DEFAULT : Math.min(size, PAGE_SIZE_MAX);
         int pageNo = Math.max(page, 1);
@@ -535,6 +539,15 @@ public class QuestionBankService {
 
     private static boolean containsIgnoreCase(String value, String lowerKeyword) {
         return value != null && value.toLowerCase(Locale.ROOT).contains(lowerKeyword);
+    }
+
+    /** 默认排序权重:未做 0、错题 1、已做 2 */
+    private static int statusRank(UserQuestionProgress progress) {
+        String status = statusLabel(progress);
+        if ("TODO".equals(status)) {
+            return 0;
+        }
+        return "WRONG".equals(status) ? 1 : 2;
     }
 
     private static String statusLabel(UserQuestionProgress progress) {

@@ -63,6 +63,7 @@ function QuestionDetailPage() {
   const [result, setResult] = useState<QuestionAttemptResult | null>(null)
   const [showReference, setShowReference] = useState(false)
   const [randomizing, setRandomizing] = useState(false)
+  const [draftSaved, setDraftSaved] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const skipSaveRef = useRef(true)
 
@@ -76,6 +77,7 @@ function QuestionDetailPage() {
     setSubmitError(null)
     setShowReference(false)
     setNeighbors(null)
+    setDraftSaved(false)
     setAnswer(localStorage.getItem(draftKey(id)) ?? '')
 
     Promise.all([
@@ -106,11 +108,14 @@ function QuestionDetailPage() {
 
   useEffect(() => {
     if (!id || skipSaveRef.current) return
+    setDraftSaved(false)
     const timer = window.setTimeout(() => {
       if (answer.trim()) {
         localStorage.setItem(draftKey(id), answer)
+        setDraftSaved(true)
       } else {
         localStorage.removeItem(draftKey(id))
+        setDraftSaved(false)
       }
     }, 400)
     return () => window.clearTimeout(timer)
@@ -128,6 +133,7 @@ function QuestionDetailPage() {
       setResult(submitted)
       setShowReference(true)
       setAnswer('')
+      setDraftSaved(false)
       localStorage.removeItem(draftKey(id))
       // 刷新详情以更新做题进度和历史作答
       try {
@@ -147,6 +153,7 @@ function QuestionDetailPage() {
     setAnswer('')
     setSubmitError(null)
     setShowReference(false)
+    setDraftSaved(false)
     if (id) localStorage.removeItem(draftKey(id))
     setTimeout(() => textareaRef.current?.focus(), 0)
   }
@@ -376,13 +383,19 @@ function QuestionDetailPage() {
 
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs text-slate-400">
-                        至少 10 字 · Ctrl / ⌘ + Enter 提交 · 草稿自动保存
+                        至少 10 字 · Ctrl / ⌘ + Enter 提交 ·{' '}
+                        {draftSaved ? (
+                          <span className="text-teal-600">草稿已保存</span>
+                        ) : (
+                          '草稿自动保存'
+                        )}
                       </span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => {
                             setAnswer('')
+                            setDraftSaved(false)
                             if (id) localStorage.removeItem(draftKey(id))
                             textareaRef.current?.focus()
                           }}
