@@ -7,6 +7,7 @@ import java.util.List;
  */
 public record QuestionBankDetail(
         String id,
+        int seq,
         String title,
         String content,
         String type,

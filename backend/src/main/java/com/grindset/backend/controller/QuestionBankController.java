@@ -10,7 +10,9 @@ import com.grindset.backend.dto.CodingSubmissionView;
 import com.grindset.backend.dto.QuestionAnswerRequest;
 import com.grindset.backend.dto.QuestionAttemptResult;
 import com.grindset.backend.dto.QuestionBankDetail;
+import com.grindset.backend.dto.QuestionBankFacets;
 import com.grindset.backend.dto.QuestionBankView;
+import com.grindset.backend.dto.QuestionNeighbors;
 import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.service.CodingService;
 import com.grindset.backend.service.QuestionBankService;
@@ -27,9 +29,12 @@ import java.util.List;
 
 /**
  * 题库接口。
- * GET  /api/questions                题目列表（领域/难度/状态/关键词/分页）+ 全量统计
+ * GET  /api/questions                题目列表（领域/题型/难度/状态/关键词/分页）+ 全量统计
  * GET  /api/questions/stats          只取做题统计
+ * GET  /api/questions/facets         领域与题型的动态筛选项（带数量）
+ * GET  /api/questions/random         随机一题，可排除当前题
  * GET  /api/questions/{id}           题目详情 + 我的作答历史
+ * GET  /api/questions/{id}/neighbors 默认排序下的前后相邻题
  * GET  /api/questions/{id}/attempts  某道题的作答历史
  * POST /api/questions/{id}/attempts  提交作答，AI 评分
  * GET  /api/questions/{id}/coding    编程题详情（题面 + 例题 + 初始代码）
@@ -53,12 +58,13 @@ public class QuestionBankController {
     @GetMapping
     public ApiResponse<QuestionBankView> list(@AuthenticationPrincipal LoginUser loginUser,
                                               @RequestParam(required = false) String domain,
+                                              @RequestParam(required = false) String type,
                                               @RequestParam(required = false) Integer difficulty,
                                               @RequestParam(required = false) String status,
                                               @RequestParam(required = false) String keyword,
                                               @RequestParam(defaultValue = "1") int page,
                                               @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(questionBankService.list(userId(loginUser), domain, difficulty,
+        return ApiResponse.ok(questionBankService.list(userId(loginUser), domain, type, difficulty,
                 status, keyword, page, size));
     }
 
@@ -67,10 +73,25 @@ public class QuestionBankController {
         return ApiResponse.ok(questionBankService.stats(userId(loginUser)));
     }
 
+    @GetMapping("/facets")
+    public ApiResponse<QuestionBankFacets> facets() {
+        return ApiResponse.ok(questionBankService.facets());
+    }
+
+    @GetMapping("/random")
+    public ApiResponse<String> random(@RequestParam(required = false) Long excludeId) {
+        return ApiResponse.ok(questionBankService.randomQuestionId(excludeId));
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<QuestionBankDetail> detail(@AuthenticationPrincipal LoginUser loginUser,
                                                   @PathVariable long id) {
         return ApiResponse.ok(questionBankService.detail(userId(loginUser), id));
+    }
+
+    @GetMapping("/{id}/neighbors")
+    public ApiResponse<QuestionNeighbors> neighbors(@PathVariable long id) {
+        return ApiResponse.ok(questionBankService.neighbors(id));
     }
 
     @GetMapping("/{id}/attempts")

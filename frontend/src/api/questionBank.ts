@@ -60,6 +60,7 @@ export interface QuestionAttemptView {
 
 export interface QuestionBankDetail {
   id: string
+  seq: number
   title: string
   content: string
   type: QuestionType
@@ -103,6 +104,7 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
 /** 题库列表;summary 始终按用户全量统计,items 按筛选条件分页 */
 export async function getQuestions(params: {
   domain?: string
+  type?: QuestionType
   difficulty?: number
   status?: QuestionStatus
   keyword?: string
@@ -111,6 +113,7 @@ export async function getQuestions(params: {
 } = {}): Promise<QuestionBankList> {
   const search = new URLSearchParams()
   if (params.domain) search.set('domain', params.domain)
+  if (params.type) search.set('type', params.type)
   if (params.difficulty) search.set('difficulty', String(params.difficulty))
   if (params.status) search.set('status', params.status)
   if (params.keyword) search.set('keyword', params.keyword)
@@ -125,6 +128,42 @@ export async function getQuestions(params: {
 export async function getQuestionDetail(id: string): Promise<QuestionBankDetail> {
   const res = await request(`/api/questions/${id}`)
   return unwrapJson<QuestionBankDetail>(res, '加载题目失败')
+}
+
+export interface QuestionFacet {
+  value: string
+  count: number
+}
+
+export interface QuestionBankFacets {
+  domains: QuestionFacet[]
+  types: QuestionFacet[]
+}
+
+/** 领域与题型的动态筛选项,计数只统计已上架题目 */
+export async function getQuestionFacets(): Promise<QuestionBankFacets> {
+  const res = await request('/api/questions/facets')
+  return unwrapJson<QuestionBankFacets>(res, '加载筛选项失败')
+}
+
+export interface QuestionNeighbors {
+  prevId: string | null
+  nextId: string | null
+}
+
+/** 默认排序下当前题的前后相邻题,用于连续刷题 */
+export async function getQuestionNeighbors(id: string): Promise<QuestionNeighbors> {
+  const res = await request(`/api/questions/${id}/neighbors`)
+  return unwrapJson<QuestionNeighbors>(res, '加载相邻题目失败')
+}
+
+/** 随机一题,可排除当前题 */
+export async function getRandomQuestionId(excludeId?: string): Promise<string> {
+  const search = new URLSearchParams()
+  if (excludeId) search.set('excludeId', excludeId)
+  const query = search.toString()
+  const res = await request(`/api/questions/random${query ? `?${query}` : ''}`)
+  return unwrapJson<string>(res, '随机选题失败')
 }
 
 export async function submitQuestionAnswer(id: string, answer: string): Promise<QuestionAttemptResult> {

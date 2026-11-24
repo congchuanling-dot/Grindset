@@ -11,9 +11,11 @@ import com.grindset.backend.common.Texts;
 import com.grindset.backend.dto.BankEvaluation;
 import com.grindset.backend.dto.QuestionAttemptResult;
 import com.grindset.backend.dto.QuestionBankDetail;
+import com.grindset.backend.dto.QuestionBankFacets;
 import com.grindset.backend.dto.QuestionBankImportRequest;
 import com.grindset.backend.dto.QuestionBankImportResult;
 import com.grindset.backend.dto.QuestionBankView;
+import com.grindset.backend.dto.QuestionNeighbors;
 import com.grindset.backend.entity.QuestionAttempt;
 import com.grindset.backend.entity.QuestionBank;
 import com.grindset.backend.entity.UserQuestionProgress;
@@ -31,12 +33,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.grindset.backend.common.constant.DisplayLimits.MAX_PREVIEW_CHARS;
@@ -98,20 +102,22 @@ public class QuestionBankService {
 
     // ---------- 列表与统计 ----------
 
-    /** 题库列表;summary 全量统计,items 按领域/难度/状态/关键词筛选后分页 */
-    public QuestionBankView list(long userId, String domain, Integer difficulty, String status,
+    /** 题库列表;summary 全量统计,items 按领域/题型/难度/状态/关键词筛选后分页 */
+    public QuestionBankView list(long userId, String domain, String type, Integer difficulty, String status,
                                  String keyword, int page, int size) {
         List<QuestionBank> all = allQuestions();
         Map<Long, UserQuestionProgress> progress = loadProgress(userId);
         QuestionBankView.Summary summary = summarize(all, progress);
 
         String domainFilter = Texts.blankToNull(domain);
+        QuestionType typeFilter = normalizeType(type);
         Integer difficultyFilter = difficulty == null ? null : clamp(difficulty, 1, 3);
         String statusFilter = normalizeStatus(status);
         String keywordFilter = Texts.blankToNull(keyword);
 
         List<QuestionBank> matched = all.stream()
-                .filter(q -> domainFilter == null || domainFilter.equals(q.getDomain()))
+                .filter(q -> domainFilter == null || matchesDomain(q, domainFilter))
+                .filter(q -> typeFilter == null || typeFilter == q.getType())
                 .filter(q -> difficultyFilter == null || difficultyFilter.equals(q.getDifficulty()))
                 .filter(q -> keywordFilter == null || matchesKeyword(q, keywordFilter))
                 .filter(q -> statusFilter == null
@@ -135,6 +141,37 @@ public class QuestionBankService {
         return summarize(allQuestions(), loadProgress(userId));
     }
 
+    /** 筛选项:领域与题型的动态列表,附带题目数量,避免前端硬编码 */
+    public QuestionBankFacets facets() {
+        List<QuestionBank> all = allQuestions();
+
+        Map<String, Integer> domainCounts = new LinkedHashMap<>();
+        for (QuestionBank question : all) {
+            String domain = Texts.blankToNull(question.getDomain());
+            domainCounts.merge(domain == null ? "其他" : domain, 1, Integer::sum);
+        }
+        List<QuestionBankFacets.Count> domains = domainCounts.entrySet().stream()
+                .map(entry -> new QuestionBankFacets.Count(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparingInt(QuestionBankFacets.Count::count).reversed()
+                        .thenComparing(QuestionBankFacets.Count::value))
+                .toList();
+
+        Map<QuestionType, Integer> typeCounts = new LinkedHashMap<>();
+        for (QuestionType type : QuestionType.values()) {
+            typeCounts.put(type, 0);
+        }
+        for (QuestionBank question : all) {
+            QuestionType type = question.getType() == null ? QuestionType.BASICS : question.getType();
+            typeCounts.merge(type, 1, Integer::sum);
+        }
+        List<QuestionBankFacets.Count> types = typeCounts.entrySet().stream()
+                .filter(entry -> entry.getValue() > 0)
+                .map(entry -> new QuestionBankFacets.Count(entry.getKey().name(), entry.getValue()))
+                .toList();
+
+        return new QuestionBankFacets(domains, types);
+    }
+
     // ---------- 详情 ----------
 
     /** 题目详情;首次作答前隐藏参考答案和关键要点 */
@@ -154,6 +191,7 @@ public class QuestionBankService {
 
         return new QuestionBankDetail(
                 String.valueOf(question.getId()),
+                seqOf(id),
                 question.getTitle(),
                 question.getContent(),
                 enumName(question.getType()),
@@ -169,6 +207,28 @@ public class QuestionBankService {
                 progress == null ? null : progress.getLastScore(),
                 progress == null ? null : format(progress.getLastAttemptAt()),
                 attempts);
+    }
+
+    /** 详情页连续刷题:返回默认排序下当前题的前后相邻题 */
+    public QuestionNeighbors neighbors(long id) {
+        requireOn(id);
+        List<QuestionBank> all = allQuestions();
+        int index = indexOf(all, id);
+        String prevId = index > 0 ? String.valueOf(all.get(index - 1).getId()) : null;
+        String nextId = index >= 0 && index + 1 < all.size()
+                ? String.valueOf(all.get(index + 1).getId()) : null;
+        return new QuestionNeighbors(prevId, nextId);
+    }
+
+    /** 随机一题,可排除当前题,避免"随机"还是同一道 */
+    public String randomQuestionId(Long excludeId) {
+        List<QuestionBank> pool = allQuestions().stream()
+                .filter(q -> excludeId == null || !excludeId.equals(q.getId()))
+                .toList();
+        if (pool.isEmpty()) {
+            throw new BizException(ErrorCode.NOT_FOUND, "题库暂时为空");
+        }
+        return String.valueOf(pool.get(ThreadLocalRandom.current().nextInt(pool.size())).getId());
     }
 
     /** 某道题的作答历史,最新在前 */
@@ -458,6 +518,15 @@ public class QuestionBankService {
                 format(attempt.getCreatedAt()));
     }
 
+    /** 领域筛选:"其他"同时匹配空领域,避免 facets 里的"其他"点进去查不到题 */
+    private static boolean matchesDomain(QuestionBank question, String filter) {
+        String domain = Texts.blankToNull(question.getDomain());
+        if ("其他".equals(filter)) {
+            return domain == null || "其他".equals(domain);
+        }
+        return filter.equals(domain);
+    }
+
     private static boolean matchesKeyword(QuestionBank question, String keyword) {
         String lower = keyword.toLowerCase(Locale.ROOT);
         return containsIgnoreCase(question.getTitle(), lower)
@@ -477,6 +546,34 @@ public class QuestionBankService {
 
     private static String capabilityStatus(int status) {
         return status == WRONG ? "WRONG" : "DONE";
+    }
+
+    /** 题目在默认排序中的序号(从 1 开始),用于详情页"第 N 题"和相邻题定位 */
+    private int seqOf(long id) {
+        int index = indexOf(allQuestions(), id);
+        return index < 0 ? 0 : index + 1;
+    }
+
+    private static int indexOf(List<QuestionBank> questions, long id) {
+        for (int i = 0; i < questions.size(); i++) {
+            Long current = questions.get(i).getId();
+            if (current != null && current == id) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static QuestionType normalizeType(String type) {
+        String value = Texts.blankToNull(type);
+        if (value == null) {
+            return null;
+        }
+        try {
+            return QuestionType.valueOf(value.strip().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private static String normalizeStatus(String status) {
