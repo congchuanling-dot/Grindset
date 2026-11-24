@@ -390,6 +390,7 @@ npm run dev
 | POST | `/{id}/submissions` | 提交判题 `{language, code}`，返回 PENDING |
 | GET | `/submissions/{submissionId}` | 轮询判题结果 |
 | GET | `/{id}/submissions` | 我的提交历史 |
+| GET | `/images?key=` | 公开。题库配图代理，从 OSS `questions/` 前缀流式读取 |
 
 ### 错题本 `/api/wrong-questions`
 
@@ -411,6 +412,7 @@ npm run dev
 | POST | `/api/admin/knowledge/rebuild?userId=` | 按用户重建掌握度画像 |
 | POST | `/api/admin/wrong-questions/rebuild?userId=` | 按用户回填历史错题 |
 | POST | `/api/admin/questions/import` | JSON 批量导入题库，按内容哈希幂等 |
+| POST | `/api/admin/questions/images` | 上传题库配图到 OSS `questions/`，返回代理 URL |
 | GET | `/api/admin/storage/oss` | 查看简历原件 OSS 配置（AccessKey 只返回掩码） |
 | PUT | `/api/admin/storage/oss` | 新增/更新 OSS 配置（AK/SK 加密入库；不传则保留原密文） |
 

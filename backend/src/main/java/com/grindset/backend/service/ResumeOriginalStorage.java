@@ -68,6 +68,30 @@ public class ResumeOriginalStorage {
     }
 
     /**
+     * 通用对象上传,用于题库配图等非简历文件。对象 key 由调用方给出,
+     * 失败返回 null,由调用方按"图片未上传"降级处理。
+     */
+    public String uploadObject(String objectKey, InputStream in, long size, String contentType) {
+        if (objectKey == null || objectKey.isBlank() || in == null || size <= 0) {
+            return null;
+        }
+        StorageConfigService.ResolvedOss config = configService.resolve();
+        if (config == null) {
+            return null;
+        }
+        try {
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(size);
+            metadata.setContentType(contentType == null ? "application/octet-stream" : contentType);
+            client(config).putObject(config.bucket(), objectKey, in, metadata);
+            return objectKey;
+        } catch (Exception e) {
+            log.warn("OSS 对象上传失败 key={}", objectKey, e);
+            return null;
+        }
+    }
+
+    /**
      * 把 OSS 原件下载到本地临时文件,供解析线程抽取文本。
      *
      * @return 成功返回 true;未配置、对象不存在或网络失败返回 false
