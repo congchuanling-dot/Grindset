@@ -141,6 +141,21 @@
   color: #334155;
 }
 
+.markdown-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.75rem auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+/* 题面配图可点击放大 */
+.markdown-body img.markdown-zoomable {
+  cursor: zoom-in;
+}
+
 /* 右上角轻提示的入场动画 */
 @keyframes toast-in {
   from {

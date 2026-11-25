@@ -18,9 +18,11 @@ import com.grindset.backend.dto.QuestionBankView;
 import com.grindset.backend.dto.QuestionNeighbors;
 import com.grindset.backend.entity.QuestionAttempt;
 import com.grindset.backend.entity.QuestionBank;
+import com.grindset.backend.entity.QuestionTestCase;
 import com.grindset.backend.entity.UserQuestionProgress;
 import com.grindset.backend.mapper.QuestionAttemptMapper;
 import com.grindset.backend.mapper.QuestionBankMapper;
+import com.grindset.backend.mapper.QuestionTestCaseMapper;
 import com.grindset.backend.mapper.UserQuestionProgressMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +74,7 @@ public class QuestionBankService {
     private static final Set<String> STATUS_FILTERS = Set.of("TODO", "DONE", "WRONG");
 
     private final QuestionBankMapper bankMapper;
+    private final QuestionTestCaseMapper testCaseMapper;
     private final UserQuestionProgressMapper progressMapper;
     private final QuestionAttemptMapper attemptMapper;
     private final InterviewLlmService llmService;
@@ -84,6 +87,7 @@ public class QuestionBankService {
     private final ConcurrentHashMap<String, ReentrantLock> locks = new ConcurrentHashMap<>();
 
     public QuestionBankService(QuestionBankMapper bankMapper,
+                               QuestionTestCaseMapper testCaseMapper,
                                UserQuestionProgressMapper progressMapper,
                                QuestionAttemptMapper attemptMapper,
                                InterviewLlmService llmService,
@@ -92,6 +96,7 @@ public class QuestionBankService {
                                SnowflakeIdGenerator idGenerator,
                                TransactionTemplate transactionTemplate) {
         this.bankMapper = bankMapper;
+        this.testCaseMapper = testCaseMapper;
         this.progressMapper = progressMapper;
         this.attemptMapper = attemptMapper;
         this.llmService = llmService;
@@ -415,12 +420,20 @@ public class QuestionBankService {
                 continue;
             }
 
+            boolean coding = JudgeMode.CODING.name().equalsIgnoreCase(item.judgeMode());
+            List<QuestionBankImportRequest.TestCaseItem> cases = coding
+                    ? validCases(item.testCases()) : List.of();
+            // 编程题没有用例就无法运行/判题,直接跳过,避免导入后是坏数据
+            if (coding && cases.isEmpty()) {
+                skipped++;
+                continue;
+            }
+
             QuestionBank question = new QuestionBank();
             question.setId(idGenerator.nextId());
             question.setTitle(clampTitle(Texts.blankToNull(item.title()) == null
                     ? preview(content, TITLE_MAX) : item.title().strip()));
             question.setContent(content);
-            question.setType(QuestionType.from(item.type()));
             question.setDifficulty(item.difficulty() == null ? 2 : clamp(item.difficulty(), 1, 3));
             question.setDomain(Texts.blankToNull(item.domain()) == null ? "其他" : item.domain().strip());
             question.setReferenceAnswer(Texts.blankToNull(item.referenceAnswer()));
@@ -432,14 +445,95 @@ public class QuestionBankService {
             question.setSourceUrl(Texts.blankToNull(item.sourceUrl()));
             question.setContentHash(hash);
             question.setStatus(ONLINE);
+            if (coding) {
+                fillCoding(question, item, cases);
+            } else {
+                question.setType(QuestionType.from(item.type()));
+                question.setJudgeMode(JudgeMode.TEXT);
+            }
+
+            // 题库里同一道编程题只保留一份:标题已存在时跳过,避免导入与历史种子重复
+            if (coding) {
+                Long sameTitle = bankMapper.selectCount(new QueryWrapper<QuestionBank>()
+                        .eq("title", question.getTitle()));
+                if (sameTitle != null && sameTitle > 0) {
+                    skipped++;
+                    continue;
+                }
+            }
+
             try {
-                bankMapper.insert(question);
+                transactionTemplate.executeWithoutResult(status -> {
+                    bankMapper.insert(question);
+                    for (QuestionBankImportRequest.TestCaseItem testCase : cases) {
+                        testCaseMapper.insert(toEntity(question.getId(), testCase));
+                    }
+                });
                 imported++;
             } catch (DuplicateKeyException e) {
                 skipped++;
             }
         }
         return new QuestionBankImportResult(imported, skipped);
+    }
+
+    /** 编程题的判题配置:题型、模式、函数签名、初始代码、时限 */
+    private static void fillCoding(QuestionBank question, QuestionBankImportRequest.Item item,
+                                   List<QuestionBankImportRequest.TestCaseItem> cases) {
+        question.setType(QuestionType.CODE);
+        question.setJudgeMode(JudgeMode.CODING);
+        String codeMode = Texts.blankToNull(item.codeMode());
+        if (codeMode == null) {
+            codeMode = cases.stream()
+                    .anyMatch(testCase -> "LEETCODE".equalsIgnoreCase(testCase.caseMode()))
+                    ? "LEETCODE" : "ACM";
+        }
+        question.setCodeMode(codeMode.strip().toUpperCase(Locale.ROOT));
+        question.setFunctionName(Texts.blankToNull(item.functionName()));
+        question.setParamTypes(limited(item.paramTypes(), 8, 32));
+        question.setReturnType(Texts.blankToNull(item.returnType()));
+        question.setStarterCode(item.starterCode() == null ? Map.of() : item.starterCode());
+        question.setStarterCodeFunction(item.starterCodeFunction() == null
+                ? Map.of() : item.starterCodeFunction());
+        question.setTimeLimitMs(item.timeLimitMs() == null ? null : clamp(item.timeLimitMs(), 200, 20_000));
+        question.setMemoryLimitMb(item.memoryLimitMb() == null ? null : clamp(item.memoryLimitMb(), 64, 1024));
+    }
+
+    /** 过滤掉没有期望输出的用例,并规范化模式、例题标记与排序 */
+    private static List<QuestionBankImportRequest.TestCaseItem> validCases(
+            List<QuestionBankImportRequest.TestCaseItem> cases) {
+        List<QuestionBankImportRequest.TestCaseItem> result = new ArrayList<>();
+        if (cases == null) {
+            return result;
+        }
+        int index = 0;
+        for (QuestionBankImportRequest.TestCaseItem testCase : cases) {
+            index++;
+            if (testCase == null || Texts.blankToNull(testCase.expectedOutput()) == null) {
+                continue;
+            }
+            String caseMode = "LEETCODE".equalsIgnoreCase(testCase.caseMode()) ? "LEETCODE" : "ACM";
+            int isSample = testCase.isSample() != null && testCase.isSample() == 1 ? 1 : 0;
+            int sort = testCase.sort() == null ? index : testCase.sort();
+            result.add(new QuestionBankImportRequest.TestCaseItem(caseMode, testCase.input(),
+                    testCase.expectedOutput(), isSample, sort));
+            if (result.size() >= 40) {
+                break;
+            }
+        }
+        return result;
+    }
+
+    private QuestionTestCase toEntity(long questionId, QuestionBankImportRequest.TestCaseItem item) {
+        QuestionTestCase testCase = new QuestionTestCase();
+        testCase.setId(idGenerator.nextId());
+        testCase.setQuestionId(questionId);
+        testCase.setCaseMode(item.caseMode());
+        testCase.setInput(item.input());
+        testCase.setExpectedOutput(item.expectedOutput());
+        testCase.setIsSample(item.isSample());
+        testCase.setSort(item.sort());
+        return testCase;
     }
 
     // ---------- 规则与工具 ----------
@@ -649,11 +743,20 @@ public class QuestionBankService {
         return result;
     }
 
+    /** 列表预览:去掉 Markdown 标记,避免每条都显示「## 题目描述」这类符号 */
     private static String preview(String content, int max) {
         if (content == null) {
             return "";
         }
-        String text = content.replaceAll("\\s+", " ").strip();
+        String text = content
+                .replaceAll("```[\\s\\S]*?```", " ")
+                .replaceAll("!\\[[^\\]]*\\]\\([^)]*\\)", " ")
+                .replaceAll("\\[([^\\]]*)\\]\\([^)]*\\)", "$1")
+                .replaceAll("(?m)^\\s{0,3}#{1,6}\\s*", "")
+                .replaceAll("(?m)^\\s{0,3}>\\s*", "")
+                .replaceAll("[*_`|~]", " ")
+                .replaceAll("\\s+", " ")
+                .strip();
         return text.length() <= max ? text : text.substring(0, max);
     }
 

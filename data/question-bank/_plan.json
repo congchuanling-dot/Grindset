@@ -1,0 +1,373 @@
+{
+  "note": "modes: both = 力扣模式 + ACM 都提供；acm = 只提供 ACM（链表/树/原地修改/设计类，力扣函数签名不受判题器支持）。规划已按题目去重，同一道题只出现一次。",
+  "batches": [
+    {
+      "id": "01",
+      "file": "01-hash.json",
+      "domain": "哈希",
+      "problems": [
+        {"title": "两数之和", "slug": "two-sum", "difficulty": 1, "modes": "both"},
+        {"title": "字母异位词分组", "slug": "group-anagrams", "difficulty": 2, "modes": "both"},
+        {"title": "最长连续序列", "slug": "longest-consecutive-sequence", "difficulty": 2, "modes": "both"},
+        {"title": "有效的字母异位词", "slug": "valid-anagram", "difficulty": 1, "modes": "both"},
+        {"title": "快乐数", "slug": "happy-number", "difficulty": 1, "modes": "both"},
+        {"title": "存在重复元素 II", "slug": "contains-duplicate-ii", "difficulty": 1, "modes": "both"},
+        {"title": "同构字符串", "slug": "isomorphic-strings", "difficulty": 1, "modes": "both"},
+        {"title": "单词规律", "slug": "word-pattern", "difficulty": 1, "modes": "both"},
+        {"title": "赎金信", "slug": "ransom-note", "difficulty": 1, "modes": "both"},
+        {"title": "数组中重复的数字（剑指 Offer 03）", "slug": "shu-zu-zhong-zhong-fu-de-shu-zi-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "第一个只出现一次的字符（剑指 Offer 50）", "slug": "di-yi-ge-zhi-chu-xian-yi-ci-de-zi-fu-lcof", "difficulty": 1, "modes": "both"}
+      ]
+    },
+    {
+      "id": "02",
+      "file": "02-two-pointers.json",
+      "domain": "双指针",
+      "problems": [
+        {"title": "移动零", "slug": "move-zeroes", "difficulty": 1, "modes": "acm"},
+        {"title": "盛最多水的容器", "slug": "container-with-most-water", "difficulty": 2, "modes": "both"},
+        {"title": "三数之和", "slug": "3sum", "difficulty": 2, "modes": "both"},
+        {"title": "接雨水", "slug": "trapping-rain-water", "difficulty": 3, "modes": "both"},
+        {"title": "验证回文串", "slug": "valid-palindrome", "difficulty": 1, "modes": "both"},
+        {"title": "判断子序列", "slug": "is-subsequence", "difficulty": 1, "modes": "both"},
+        {"title": "两数之和 II - 输入有序数组", "slug": "two-sum-ii-input-array-is-sorted", "difficulty": 2, "modes": "both"},
+        {"title": "移除元素", "slug": "remove-element", "difficulty": 1, "modes": "acm"},
+        {"title": "删除有序数组中的重复项", "slug": "remove-duplicates-from-sorted-array", "difficulty": 1, "modes": "acm"},
+        {"title": "删除有序数组中的重复项 II", "slug": "remove-duplicates-from-sorted-array-ii", "difficulty": 2, "modes": "acm"},
+        {"title": "合并两个有序数组", "slug": "merge-sorted-array", "difficulty": 1, "modes": "acm"},
+        {"title": "和为 s 的两个数字（剑指 Offer 57）", "slug": "he-wei-sde-liang-ge-shu-zi-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "调整数组顺序使奇数位于偶数前面（剑指 Offer 21）", "slug": "tiao-zheng-shu-zu-shun-xu-shi-qi-shu-wei-yu-ou-shu-qian-mian-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "左旋转字符串（剑指 Offer 58 - II）", "slug": "zuo-xuan-zhuan-zi-fu-chuan-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "反转字符串中的单词", "slug": "reverse-words-in-a-string", "difficulty": 2, "modes": "both"}
+      ]
+    },
+    {
+      "id": "03",
+      "file": "03-sliding-window.json",
+      "domain": "滑动窗口",
+      "problems": [
+        {"title": "无重复字符的最长子串", "slug": "longest-substring-without-repeating-characters", "difficulty": 2, "modes": "both"},
+        {"title": "找到字符串中所有字母异位词", "slug": "find-all-anagrams-in-a-string", "difficulty": 2, "modes": "both"},
+        {"title": "最小覆盖子串", "slug": "minimum-window-substring", "difficulty": 3, "modes": "both"},
+        {"title": "长度最小的子数组", "slug": "minimum-size-subarray-sum", "difficulty": 2, "modes": "both"},
+        {"title": "串联所有单词的子串", "slug": "substring-with-concatenation-of-all-words", "difficulty": 3, "modes": "both"},
+        {"title": "滑动窗口最大值", "slug": "sliding-window-maximum", "difficulty": 3, "modes": "both"}
+      ]
+    },
+    {
+      "id": "04",
+      "file": "04-string.json",
+      "domain": "字符串",
+      "problems": [
+        {"title": "替换空格（剑指 Offer 05）", "slug": "ti-huan-kong-ge-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "表示数值的字符串（剑指 Offer 20）", "slug": "biao-shi-shu-zhi-de-zi-fu-chuan-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "把字符串转换成整数（剑指 Offer 67）", "slug": "ba-zi-fu-chuan-zhuan-huan-cheng-zheng-shu-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "Z 字形变换", "slug": "zigzag-conversion", "difficulty": 2, "modes": "both"},
+        {"title": "最后一个单词的长度", "slug": "length-of-last-word", "difficulty": 1, "modes": "both"},
+        {"title": "最长公共前缀", "slug": "longest-common-prefix", "difficulty": 1, "modes": "both"},
+        {"title": "整数转罗马数字", "slug": "integer-to-roman", "difficulty": 2, "modes": "both"},
+        {"title": "罗马数字转整数", "slug": "roman-to-integer", "difficulty": 1, "modes": "both"},
+        {"title": "找出字符串中第一个匹配项的下标", "slug": "find-the-index-of-the-first-occurrence-in-a-string", "difficulty": 1, "modes": "both"},
+        {"title": "文本左右对齐", "slug": "text-justification", "difficulty": 3, "modes": "both"}
+      ]
+    },
+    {
+      "id": "05",
+      "file": "05-linked-list.json",
+      "domain": "链表",
+      "problems": [
+        {"title": "相交链表", "slug": "intersection-of-two-linked-lists", "difficulty": 1, "modes": "acm"},
+        {"title": "反转链表", "slug": "reverse-linked-list", "difficulty": 1, "modes": "acm"},
+        {"title": "回文链表", "slug": "palindrome-linked-list", "difficulty": 1, "modes": "acm"},
+        {"title": "环形链表", "slug": "linked-list-cycle", "difficulty": 1, "modes": "acm"},
+        {"title": "环形链表 II", "slug": "linked-list-cycle-ii", "difficulty": 2, "modes": "acm"},
+        {"title": "合并两个有序链表", "slug": "merge-two-sorted-lists", "difficulty": 1, "modes": "acm"},
+        {"title": "两数相加", "slug": "add-two-numbers", "difficulty": 2, "modes": "acm"},
+        {"title": "删除链表的倒数第 N 个结点", "slug": "remove-nth-node-from-end-of-list", "difficulty": 2, "modes": "acm"},
+        {"title": "两两交换链表中的节点", "slug": "swap-nodes-in-pairs", "difficulty": 2, "modes": "acm"},
+        {"title": "K 个一组翻转链表", "slug": "reverse-nodes-in-k-group", "difficulty": 3, "modes": "acm"},
+        {"title": "随机链表的复制", "slug": "copy-list-with-random-pointer", "difficulty": 2, "modes": "acm"},
+        {"title": "排序链表", "slug": "sort-list", "difficulty": 2, "modes": "acm"},
+        {"title": "合并 K 个升序链表", "slug": "merge-k-sorted-lists", "difficulty": 3, "modes": "acm"},
+        {"title": "反转链表 II", "slug": "reverse-linked-list-ii", "difficulty": 2, "modes": "acm"},
+        {"title": "删除排序链表中的重复元素 II", "slug": "remove-duplicates-from-sorted-list-ii", "difficulty": 2, "modes": "acm"},
+        {"title": "旋转链表", "slug": "rotate-list", "difficulty": 2, "modes": "acm"},
+        {"title": "分隔链表", "slug": "partition-list", "difficulty": 2, "modes": "acm"},
+        {"title": "从尾到头打印链表（剑指 Offer 06）", "slug": "cong-wei-dao-tou-da-yin-lian-biao-lcof", "difficulty": 1, "modes": "acm"},
+        {"title": "链表中倒数第 k 个节点（剑指 Offer 22）", "slug": "lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof", "difficulty": 1, "modes": "acm"},
+        {"title": "删除链表的节点（剑指 Offer 18）", "slug": "shan-chu-lian-biao-de-jie-dian-lcof", "difficulty": 1, "modes": "acm"}
+      ]
+    },
+    {
+      "id": "06",
+      "file": "06-binary-tree-a.json",
+      "domain": "二叉树",
+      "problems": [
+        {"title": "二叉树的中序遍历", "slug": "binary-tree-inorder-traversal", "difficulty": 1, "modes": "acm"},
+        {"title": "二叉树的最大深度", "slug": "maximum-depth-of-binary-tree", "difficulty": 1, "modes": "acm"},
+        {"title": "翻转二叉树", "slug": "invert-binary-tree", "difficulty": 1, "modes": "acm"},
+        {"title": "对称二叉树", "slug": "symmetric-tree", "difficulty": 1, "modes": "acm"},
+        {"title": "二叉树的直径", "slug": "diameter-of-binary-tree", "difficulty": 1, "modes": "acm"},
+        {"title": "二叉树的层序遍历", "slug": "binary-tree-level-order-traversal", "difficulty": 2, "modes": "acm"},
+        {"title": "将有序数组转换为二叉搜索树", "slug": "convert-sorted-array-to-binary-search-tree", "difficulty": 1, "modes": "acm"},
+        {"title": "验证二叉搜索树", "slug": "validate-binary-search-tree", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉搜索树中第 K 小的元素", "slug": "kth-smallest-element-in-a-bst", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉树的右视图", "slug": "binary-tree-right-side-view", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉树展开为链表", "slug": "flatten-binary-tree-to-linked-list", "difficulty": 2, "modes": "acm"},
+        {"title": "从前序与中序遍历序列构造二叉树", "slug": "construct-binary-tree-from-preorder-and-inorder-traversal", "difficulty": 2, "modes": "acm"},
+        {"title": "路径总和 III", "slug": "path-sum-iii", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉树的最近公共祖先", "slug": "lowest-common-ancestor-of-a-binary-tree", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉树中的最大路径和", "slug": "binary-tree-maximum-path-sum", "difficulty": 3, "modes": "acm"},
+        {"title": "相同的树", "slug": "same-tree", "difficulty": 1, "modes": "acm"},
+        {"title": "从中序与后序遍历序列构造二叉树", "slug": "construct-binary-tree-from-inorder-and-postorder-traversal", "difficulty": 2, "modes": "acm"}
+      ]
+    },
+    {
+      "id": "07",
+      "file": "07-binary-tree-b.json",
+      "domain": "二叉树",
+      "problems": [
+        {"title": "填充每个节点的下一个右侧节点指针 II", "slug": "populating-next-right-pointers-in-each-node-ii", "difficulty": 2, "modes": "acm"},
+        {"title": "路径总和", "slug": "path-sum", "difficulty": 1, "modes": "acm"},
+        {"title": "求根节点到叶节点数字之和", "slug": "sum-root-to-leaf-numbers", "difficulty": 2, "modes": "acm"},
+        {"title": "完全二叉树的节点个数", "slug": "count-complete-tree-nodes", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉树的层平均值", "slug": "average-of-levels-in-binary-tree", "difficulty": 1, "modes": "acm"},
+        {"title": "二叉树的锯齿形层序遍历", "slug": "binary-tree-zigzag-level-order-traversal", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉搜索树的最小绝对差", "slug": "minimum-absolute-difference-in-bst", "difficulty": 1, "modes": "acm"},
+        {"title": "树的子结构（剑指 Offer 26）", "slug": "shu-de-zi-jie-gou-lcof", "difficulty": 2, "modes": "acm"},
+        {"title": "平衡二叉树（剑指 Offer 55 - II）", "slug": "ping-heng-er-cha-shu-lcof", "difficulty": 1, "modes": "acm"},
+        {"title": "二叉树中和为某一值的路径（剑指 Offer 34）", "slug": "er-cha-shu-zhong-he-wei-mou-yi-zhi-de-lu-jing-lcof", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉搜索树与双向链表（剑指 Offer 36）", "slug": "er-cha-sou-suo-shu-yu-shuang-xiang-lian-biao-lcof", "difficulty": 2, "modes": "acm"},
+        {"title": "序列化二叉树（剑指 Offer 37）", "slug": "xu-lie-hua-er-cha-shu-lcof", "difficulty": 3, "modes": "acm"},
+        {"title": "二叉搜索树的后序遍历序列（剑指 Offer 33）", "slug": "er-cha-sou-suo-shu-de-hou-xu-bian-li-xu-lie-lcof", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉搜索树的最近公共祖先（剑指 Offer 68 - I）", "slug": "er-cha-sou-suo-shu-de-zui-jin-gong-gong-zu-xian-lcof", "difficulty": 1, "modes": "acm"},
+        {"title": "二叉搜索树的第 K 大节点（剑指 Offer 54）", "slug": "er-cha-sou-suo-shu-de-di-kda-jie-dian-lcof", "difficulty": 1, "modes": "acm"}
+      ]
+    },
+    {
+      "id": "08",
+      "file": "08-graph.json",
+      "domain": "图论",
+      "problems": [
+        {"title": "岛屿数量", "slug": "number-of-islands", "difficulty": 2, "modes": "both"},
+        {"title": "腐烂的橘子", "slug": "rotting-oranges", "difficulty": 2, "modes": "both"},
+        {"title": "课程表", "slug": "course-schedule", "difficulty": 2, "modes": "both"},
+        {"title": "课程表 II", "slug": "course-schedule-ii", "difficulty": 2, "modes": "both"},
+        {"title": "被围绕的区域", "slug": "surrounded-regions", "difficulty": 2, "modes": "acm"},
+        {"title": "克隆图", "slug": "clone-graph", "difficulty": 2, "modes": "acm"},
+        {"title": "除法求值", "slug": "evaluate-division", "difficulty": 2, "modes": "both"},
+        {"title": "蛇梯棋", "slug": "snakes-and-ladders", "difficulty": 2, "modes": "both"},
+        {"title": "最小基因变化", "slug": "minimum-genetic-mutation", "difficulty": 2, "modes": "both"},
+        {"title": "单词接龙", "slug": "word-ladder", "difficulty": 3, "modes": "both"},
+        {"title": "单词搜索 II", "slug": "word-search-ii", "difficulty": 3, "modes": "both"},
+        {"title": "机器人的运动范围（剑指 Offer 13）", "slug": "ji-qi-ren-de-yun-dong-fan-wei-lcof", "difficulty": 2, "modes": "both"}
+      ]
+    },
+    {
+      "id": "09",
+      "file": "09-backtracking.json",
+      "domain": "回溯",
+      "problems": [
+        {"title": "全排列", "slug": "permutations", "difficulty": 2, "modes": "both"},
+        {"title": "子集", "slug": "subsets", "difficulty": 2, "modes": "both"},
+        {"title": "电话号码的字母组合", "slug": "letter-combinations-of-a-phone-number", "difficulty": 2, "modes": "both"},
+        {"title": "组合总和", "slug": "combination-sum", "difficulty": 2, "modes": "both"},
+        {"title": "括号生成", "slug": "generate-parentheses", "difficulty": 2, "modes": "both"},
+        {"title": "单词搜索", "slug": "word-search", "difficulty": 2, "modes": "both"},
+        {"title": "分割回文串", "slug": "palindrome-partitioning", "difficulty": 2, "modes": "both"},
+        {"title": "N 皇后", "slug": "n-queens", "difficulty": 3, "modes": "both"},
+        {"title": "组合", "slug": "combinations", "difficulty": 2, "modes": "both"},
+        {"title": "N 皇后 II", "slug": "n-queens-ii", "difficulty": 3, "modes": "both"},
+        {"title": "字符串的排列（剑指 Offer 38）", "slug": "zi-fu-chuan-de-pai-lie-lcof", "difficulty": 2, "modes": "both"}
+      ]
+    },
+    {
+      "id": "10",
+      "file": "10-binary-search.json",
+      "domain": "二分查找",
+      "problems": [
+        {"title": "搜索插入位置", "slug": "search-insert-position", "difficulty": 1, "modes": "both"},
+        {"title": "搜索二维矩阵", "slug": "search-a-2d-matrix", "difficulty": 2, "modes": "both"},
+        {"title": "寻找峰值", "slug": "find-peak-element", "difficulty": 2, "modes": "both"},
+        {"title": "搜索旋转排序数组", "slug": "search-in-rotated-sorted-array", "difficulty": 2, "modes": "both"},
+        {"title": "在排序数组中查找元素的第一个和最后一个位置", "slug": "find-first-and-last-position-of-element-in-sorted-array", "difficulty": 2, "modes": "both"},
+        {"title": "寻找旋转排序数组中的最小值", "slug": "find-minimum-in-rotated-sorted-array", "difficulty": 2, "modes": "both"},
+        {"title": "寻找两个正序数组的中位数", "slug": "median-of-two-sorted-arrays", "difficulty": 3, "modes": "both"},
+        {"title": "二维数组中的查找（剑指 Offer 04）", "slug": "er-wei-shu-zu-zhong-de-cha-zhao-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "旋转数组的最小数字（剑指 Offer 11）", "slug": "xuan-zhuan-shu-zu-de-zui-xiao-shu-zi-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "0～n-1 中缺失的数字（剑指 Offer 53 - II）", "slug": "que-shi-de-shu-zi-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "在排序数组中查找数字 I（剑指 Offer 53 - I）", "slug": "zai-pai-xu-shu-zu-zhong-cha-zhao-shu-zi-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "x 的平方根", "slug": "sqrtx", "difficulty": 1, "modes": "acm"},
+        {"title": "Pow(x, n)", "slug": "powx-n", "difficulty": 2, "modes": "acm"}
+      ]
+    },
+    {
+      "id": "11",
+      "file": "11-stack.json",
+      "domain": "栈",
+      "problems": [
+        {"title": "有效的括号", "slug": "valid-parentheses", "difficulty": 1, "modes": "both"},
+        {"title": "字符串解码", "slug": "decode-string", "difficulty": 2, "modes": "both"},
+        {"title": "每日温度", "slug": "daily-temperatures", "difficulty": 2, "modes": "both"},
+        {"title": "柱状图中最大的矩形", "slug": "largest-rectangle-in-histogram", "difficulty": 3, "modes": "both"},
+        {"title": "简化路径", "slug": "simplify-path", "difficulty": 2, "modes": "both"},
+        {"title": "逆波兰表达式求值", "slug": "evaluate-reverse-polish-notation", "difficulty": 2, "modes": "both"},
+        {"title": "基本计算器", "slug": "basic-calculator", "difficulty": 3, "modes": "both"},
+        {"title": "用两个栈实现队列（剑指 Offer 09）", "slug": "yong-liang-ge-zhan-shi-xian-dui-lie-lcof", "difficulty": 1, "modes": "acm"},
+        {"title": "栈的压入、弹出序列（剑指 Offer 31）", "slug": "zhan-de-ya-ru-dan-chu-xu-lie-lcof", "difficulty": 2, "modes": "both"}
+      ]
+    },
+    {
+      "id": "12",
+      "file": "12-heap.json",
+      "domain": "堆",
+      "problems": [
+        {"title": "数组中的第 K 个最大元素", "slug": "kth-largest-element-in-an-array", "difficulty": 2, "modes": "both"},
+        {"title": "前 K 个高频元素", "slug": "top-k-frequent-elements", "difficulty": 2, "modes": "both"},
+        {"title": "最小的 k 个数（剑指 Offer 40）", "slug": "zui-xiao-de-kge-shu-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "IPO", "slug": "ipo", "difficulty": 3, "modes": "both"},
+        {"title": "查找和最小的 K 对数字", "slug": "find-k-pairs-with-smallest-sums", "difficulty": 2, "modes": "both"},
+        {"title": "数组中的逆序对（剑指 Offer 51）", "slug": "shu-zu-zhong-de-ni-xu-dui-lcof", "difficulty": 3, "modes": "both"}
+      ]
+    },
+    {
+      "id": "13",
+      "file": "13-greedy.json",
+      "domain": "贪心",
+      "problems": [
+        {"title": "买卖股票的最佳时机", "slug": "best-time-to-buy-and-sell-stock", "difficulty": 1, "modes": "both"},
+        {"title": "买卖股票的最佳时机 II", "slug": "best-time-to-buy-and-sell-stock-ii", "difficulty": 2, "modes": "both"},
+        {"title": "跳跃游戏", "slug": "jump-game", "difficulty": 2, "modes": "both"},
+        {"title": "跳跃游戏 II", "slug": "jump-game-ii", "difficulty": 2, "modes": "both"},
+        {"title": "加油站", "slug": "gas-station", "difficulty": 2, "modes": "both"},
+        {"title": "分发糖果", "slug": "candy", "difficulty": 3, "modes": "both"},
+        {"title": "用最少数量的箭引爆气球", "slug": "minimum-number-of-arrows-to-burst-balloons", "difficulty": 2, "modes": "both"},
+        {"title": "划分字母区间", "slug": "partition-labels", "difficulty": 2, "modes": "both"},
+        {"title": "H 指数", "slug": "h-index", "difficulty": 2, "modes": "both"}
+      ]
+    },
+    {
+      "id": "14",
+      "file": "14-array.json",
+      "domain": "数组",
+      "problems": [
+        {"title": "最大子数组和", "slug": "maximum-subarray", "difficulty": 2, "modes": "both"},
+        {"title": "合并区间", "slug": "merge-intervals", "difficulty": 2, "modes": "both"},
+        {"title": "轮转数组", "slug": "rotate-array", "difficulty": 2, "modes": "acm"},
+        {"title": "除自身以外数组的乘积", "slug": "product-of-array-except-self", "difficulty": 2, "modes": "both"},
+        {"title": "缺失的第一个正数", "slug": "first-missing-positive", "difficulty": 3, "modes": "both"},
+        {"title": "多数元素", "slug": "majority-element", "difficulty": 1, "modes": "both"},
+        {"title": "汇总区间", "slug": "summary-ranges", "difficulty": 1, "modes": "both"},
+        {"title": "插入区间", "slug": "insert-interval", "difficulty": 2, "modes": "both"},
+        {"title": "颜色分类", "slug": "sort-colors", "difficulty": 2, "modes": "acm"},
+        {"title": "下一个排列", "slug": "next-permutation", "difficulty": 2, "modes": "acm"},
+        {"title": "寻找重复数", "slug": "find-the-duplicate-number", "difficulty": 2, "modes": "both"},
+        {"title": "最长有效括号", "slug": "longest-valid-parentheses", "difficulty": 3, "modes": "both"},
+        {"title": "杨辉三角", "slug": "pascals-triangle", "difficulty": 1, "modes": "both"},
+        {"title": "把数组排成最小的数（剑指 Offer 45）", "slug": "ba-shu-zu-pai-cheng-zui-xiao-de-shu-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "扑克牌中的顺子（剑指 Offer 61）", "slug": "pu-ke-pai-zhong-de-shun-zi-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "打印从 1 到最大的 n 位数（剑指 Offer 17）", "slug": "da-yin-cong-1dao-zui-da-de-nwei-shu-lcof", "difficulty": 1, "modes": "both"}
+      ]
+    },
+    {
+      "id": "15",
+      "file": "15-matrix.json",
+      "domain": "矩阵",
+      "problems": [
+        {"title": "矩阵置零", "slug": "set-matrix-zeroes", "difficulty": 2, "modes": "acm"},
+        {"title": "螺旋矩阵", "slug": "spiral-matrix", "difficulty": 2, "modes": "both"},
+        {"title": "旋转图像", "slug": "rotate-image", "difficulty": 2, "modes": "acm"},
+        {"title": "搜索二维矩阵 II", "slug": "search-a-2d-matrix-ii", "difficulty": 2, "modes": "both"},
+        {"title": "有效的数独", "slug": "valid-sudoku", "difficulty": 2, "modes": "both"},
+        {"title": "生命游戏", "slug": "game-of-life", "difficulty": 2, "modes": "acm"}
+      ]
+    },
+    {
+      "id": "16",
+      "file": "16-dp.json",
+      "domain": "动态规划",
+      "problems": [
+        {"title": "爬楼梯", "slug": "climbing-stairs", "difficulty": 1, "modes": "both"},
+        {"title": "打家劫舍", "slug": "house-robber", "difficulty": 2, "modes": "both"},
+        {"title": "单词拆分", "slug": "word-break", "difficulty": 2, "modes": "both"},
+        {"title": "零钱兑换", "slug": "coin-change", "difficulty": 2, "modes": "both"},
+        {"title": "最长递增子序列", "slug": "longest-increasing-subsequence", "difficulty": 2, "modes": "both"},
+        {"title": "完全平方数", "slug": "perfect-squares", "difficulty": 2, "modes": "both"},
+        {"title": "乘积最大子数组", "slug": "maximum-product-subarray", "difficulty": 2, "modes": "both"},
+        {"title": "分割等和子集", "slug": "partition-equal-subset-sum", "difficulty": 2, "modes": "both"},
+        {"title": "斐波那契数列（剑指 Offer 10 - I）", "slug": "fei-bo-na-qi-shu-lie-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "剪绳子（剑指 Offer 14 - I）", "slug": "jian-sheng-zi-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "剪绳子 II（剑指 Offer 14 - II）", "slug": "jian-sheng-zi-ii-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "把数字翻译成字符串（剑指 Offer 46）", "slug": "ba-shu-zi-fan-yi-cheng-zi-fu-chuan-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "丑数（剑指 Offer 49）", "slug": "chou-shu-lcof", "difficulty": 2, "modes": "both"}
+      ]
+    },
+    {
+      "id": "17",
+      "file": "17-dp-2d.json",
+      "domain": "动态规划",
+      "problems": [
+        {"title": "不同路径", "slug": "unique-paths", "difficulty": 2, "modes": "both"},
+        {"title": "不同路径 II", "slug": "unique-paths-ii", "difficulty": 2, "modes": "both"},
+        {"title": "最小路径和", "slug": "minimum-path-sum", "difficulty": 2, "modes": "both"},
+        {"title": "三角形最小路径和", "slug": "triangle", "difficulty": 2, "modes": "both"},
+        {"title": "最长回文子串", "slug": "longest-palindromic-substring", "difficulty": 2, "modes": "both"},
+        {"title": "最长公共子序列", "slug": "longest-common-subsequence", "difficulty": 2, "modes": "both"},
+        {"title": "编辑距离", "slug": "edit-distance", "difficulty": 3, "modes": "both"},
+        {"title": "交错字符串", "slug": "interleaving-string", "difficulty": 3, "modes": "both"},
+        {"title": "买卖股票的最佳时机 III", "slug": "best-time-to-buy-and-sell-stock-iii", "difficulty": 3, "modes": "both"},
+        {"title": "买卖股票的最佳时机 IV", "slug": "best-time-to-buy-and-sell-stock-iv", "difficulty": 3, "modes": "both"},
+        {"title": "最大正方形", "slug": "maximal-square", "difficulty": 2, "modes": "both"},
+        {"title": "礼物的最大价值（剑指 Offer 47）", "slug": "li-wu-de-zui-da-jie-zhi-lcof", "difficulty": 2, "modes": "both"}
+      ]
+    },
+    {
+      "id": "18",
+      "file": "18-bit.json",
+      "domain": "位运算",
+      "problems": [
+        {"title": "只出现一次的数字", "slug": "single-number", "difficulty": 1, "modes": "both"},
+        {"title": "只出现一次的数字 II", "slug": "single-number-ii", "difficulty": 2, "modes": "both"},
+        {"title": "位 1 的个数", "slug": "number-of-1-bits", "difficulty": 1, "modes": "both"},
+        {"title": "颠倒二进制位", "slug": "reverse-bits", "difficulty": 1, "modes": "both"},
+        {"title": "二进制求和", "slug": "add-binary", "difficulty": 1, "modes": "both"},
+        {"title": "数字范围按位与", "slug": "bitwise-and-of-numbers-range", "difficulty": 2, "modes": "both"},
+        {"title": "二进制中 1 的个数（剑指 Offer 15）", "slug": "er-jin-zhi-zhong-1de-ge-shu-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "数组中数字出现的次数（剑指 Offer 56 - I）", "slug": "shu-zu-zhong-shu-zi-chu-xian-de-ci-shu-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "数组中数字出现的次数 II（剑指 Offer 56 - II）", "slug": "shu-zu-zhong-shu-zi-chu-xian-de-ci-shu-ii-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "不用加减乘除做加法（剑指 Offer 65）", "slug": "bu-yong-jia-jian-cheng-chu-zuo-jia-fa-lcof", "difficulty": 1, "modes": "both"}
+      ]
+    },
+    {
+      "id": "19",
+      "file": "19-math.json",
+      "domain": "数学",
+      "problems": [
+        {"title": "回文数", "slug": "palindrome-number", "difficulty": 1, "modes": "both"},
+        {"title": "加一", "slug": "plus-one", "difficulty": 1, "modes": "both"},
+        {"title": "阶乘后的零", "slug": "factorial-trailing-zeroes", "difficulty": 2, "modes": "both"},
+        {"title": "直线上最多的点数", "slug": "max-points-on-a-line", "difficulty": 3, "modes": "both"},
+        {"title": "数字序列中某一位的数字（剑指 Offer 44）", "slug": "shu-zi-xu-lie-zhong-mou-yi-wei-de-shu-zi-lcof", "difficulty": 2, "modes": "both"},
+        {"title": "圆圈中最后剩下的数字（剑指 Offer 62）", "slug": "yuan-quan-zhong-zui-hou-sheng-xia-de-shu-zi-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "求 1+2+…+n（剑指 Offer 64）", "slug": "qiu-1-2-n-lcof", "difficulty": 1, "modes": "both"},
+        {"title": "1～n 整数中 1 出现的次数（剑指 Offer 43）", "slug": "1nzheng-shu-zhong-1chu-xian-de-ci-shu-lcof", "difficulty": 3, "modes": "both"},
+        {"title": "数值的整数次方（剑指 Offer 16）", "slug": "shu-zhi-de-zheng-shu-ci-fang-lcof", "difficulty": 2, "modes": "acm"}
+      ]
+    },
+    {
+      "id": "20",
+      "file": "20-design.json",
+      "domain": "设计",
+      "problems": [
+        {"title": "LRU 缓存", "slug": "lru-cache", "difficulty": 2, "modes": "acm"},
+        {"title": "最小栈", "slug": "min-stack", "difficulty": 2, "modes": "acm"},
+        {"title": "实现 Trie (前缀树)", "slug": "implement-trie-prefix-tree", "difficulty": 2, "modes": "acm"},
+        {"title": "添加与搜索单词 - 数据结构设计", "slug": "design-add-and-search-words-data-structure", "difficulty": 2, "modes": "acm"},
+        {"title": "数据流的中位数", "slug": "find-median-from-data-stream", "difficulty": 3, "modes": "acm"},
+        {"title": "O(1) 时间插入、删除和获取随机元素", "slug": "insert-delete-getrandom-o1", "difficulty": 2, "modes": "acm"},
+        {"title": "队列的最大值（剑指 Offer 59 - II）", "slug": "dui-lie-de-zui-da-zhi-lcof", "difficulty": 2, "modes": "acm"},
+        {"title": "二叉搜索树迭代器", "slug": "binary-search-tree-iterator", "difficulty": 2, "modes": "acm"}
+      ]
+    }
+  ]
+}

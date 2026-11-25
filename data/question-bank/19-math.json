@@ -1,0 +1,312 @@
+{
+  "questions": [
+    {
+      "title": "回文数",
+      "content": "## 题目描述\n\n给你一个整数 `x`，判断它是不是回文数。回文数指正着读和倒着读完全相同的整数。例如 `121` 是回文数；`-121` 不是，因为负号会让两个方向的读法不同；`10` 也不是，因为倒过来读会丢掉末尾的零。\n\n## 示例\n\n**示例 1**\n\n输入：`x = 121`\n\n输出：`true`\n\n**示例 2**\n\n输入：`x = -121`\n\n输出：`false`\n\n**示例 3**\n\n输入：`x = 10`\n\n输出：`false`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `x`；\n- 输出一行小写 `true` 或 `false`。\n\n## 提示\n\n- `-2^31 <= x <= 2^31 - 1`\n- 负数一定不是回文数\n- 进阶：不把整数转成字符串也能判断\n\n> 力扣模式下只需实现 `isPalindrome` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "数学",
+      "referenceAnswer": "负数直接返回 false。把整数后半部分逐位反转：当反转值大于等于剩余部分时停止，再比较 `x == reversed`（位数为偶数）或 `x == reversed / 10`（位数为奇数）。整个过程不转字符串，时间复杂度 O(log x)，空间复杂度 O(1)。",
+      "keyPoints": ["逐位反转", "不转字符串", "负数判断"],
+      "kpNames": ["数学", "整数处理"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/palindrome-number/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "isPalindrome",
+      "paramTypes": ["int"],
+      "returnType": "boolean",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行一个整数 x\n        // TODO 输出小写 true 或 false\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    x = int(sys.stdin.read().strip())\n    # TODO 输出小写 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public boolean isPalindrome(int x) {\n        // TODO\n        return false;\n    }\n}",
+        "PYTHON": "class Solution:\n    def isPalindrome(self, x: int) -> bool:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[121]", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[-121]", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[10]", "expectedOutput": "false", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "121", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "-121", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "12321", "expectedOutput": "true", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "加一",
+      "content": "## 题目描述\n\n给定一个非空整数数组 `digits`，它按高位到低位的顺序表示一个非负整数，数组每个元素只保存一位数字。请在这个整数上加一，并以同样形式的数组返回结果。\n\n## 示例\n\n**示例 1**\n\n输入：`digits = [1,2,3]`\n\n输出：`[1,2,4]`\n\n解释：数组表示 123，加一后是 124。\n\n**示例 2**\n\n输入：`digits = [9,9]`\n\n输出：`[1,0,0]`\n\n解释：99 加一后变成 100，位数增加一位。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个 `0~9` 的整数，用空格分隔；\n- 输出加一后的结果数组，元素之间用空格分隔（长度可能变成 `n + 1`）。\n\n## 提示\n\n- `1 <= n <= 100`\n- `0 <= digits[i] <= 9`\n- 除数字 0 本身外，数组首位不会为 0\n\n> 力扣模式下只需实现 `plusOne` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "数学",
+      "referenceAnswer": "从数组末尾开始处理进位：末位加一后若小于 10 就直接返回；否则把该位置 0 并继续向前一位处理。如果最高位也发生进位（例如 99），说明结果多了一位，需要新开一个长度为 n+1 的数组，首位填 1，其余为 0。时间复杂度 O(n)，空间复杂度 O(n)（最坏情况）。",
+      "keyPoints": ["末尾进位", "从后往前", "位数增加"],
+      "kpNames": ["数组", "数学"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/plus-one/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "plusOne",
+      "paramTypes": ["int[]"],
+      "returnType": "int[]",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 0-9 的数字\n        // TODO 输出加一后的结果数组，元素用空格分隔\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是每位数字\n    # TODO 输出加一后的结果，元素用空格分隔\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int[] plusOne(int[] digits) {\n        // TODO\n        return digits;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def plusOne(self, digits: List[int]) -> List[int]:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[1,2,3]]", "expectedOutput": "[1,2,4]", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[9,9]]", "expectedOutput": "[1,0,0]", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[4,3,2,1]]", "expectedOutput": "[4,3,2,2]", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "1 2 4", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2\n9 9", "expectedOutput": "1 0 0", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "4\n1 9 9 9", "expectedOutput": "2 0 0 0", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "阶乘后的零",
+      "content": "## 题目描述\n\n给定整数 `n`，返回 `n!`（n 的阶乘）结果末尾连续零的个数。\n\n末尾的零来自因子 10，而 10 由一对 2 和 5 相乘得到。阶乘中因子 2 的数量远多于 5，所以只需统计 `1` 到 `n` 中一共含有多少个因子 5。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 3`\n\n输出：`0`\n\n解释：`3! = 6`，末尾没有零。\n\n**示例 2**\n\n输入：`n = 5`\n\n输出：`1`\n\n解释：`5! = 120`，末尾有一个零。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示 `n!` 末尾零的个数。\n\n## 提示\n\n- `0 <= n <= 10^9`\n- `0! = 1`，末尾零的个数为 0\n- 不要真的去算阶乘，结果会溢出\n\n> 力扣模式下只需实现 `trailingZeroes` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "数学",
+      "referenceAnswer": "阶乘末尾零的个数等于 `1..n` 中因子 5 的总数。统计方法是不断用 n 除以 5 并累加商：`n/5 + n/25 + n/125 + ...`，这样把 25、125 这类含多个因子 5 的贡献分别计入。时间复杂度 O(log n)，空间复杂度 O(1)。",
+      "keyPoints": ["因子 5", "阶乘", "逐层除法"],
+      "kpNames": ["数学", "数论"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/factorial-trailing-zeroes/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "trailingZeroes",
+      "paramTypes": ["int"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行一个整数 n\n        // TODO 输出 n! 末尾零的个数\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    n = int(sys.stdin.read().strip())\n    # TODO 输出 n! 末尾零的个数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int trailingZeroes(int n) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "class Solution:\n    def trailingZeroes(self, n: int) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[3]", "expectedOutput": "0", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[5]", "expectedOutput": "1", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[25]", "expectedOutput": "6", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3", "expectedOutput": "0", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "5", "expectedOutput": "1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "25", "expectedOutput": "6", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "直线上最多的点数",
+      "content": "## 题目描述\n\n平面上有若干个点，用整数坐标 `(x, y)` 表示，同一个位置不会出现两个点。求最多有多少个点落在同一条直线上。\n\n## 示例\n\n**示例 1**\n\n输入：`points = [[1,1],[2,2],[3,3]]`\n\n输出：`3`\n\n解释：三个点都在直线 `y = x` 上。\n\n**示例 2**\n\n输入：`points = [[1,1],[3,2],[5,3],[4,1],[2,3],[1,4]]`\n\n输出：`4`\n\n解释：`(3,2)`、`(4,1)`、`(2,3)`、`(1,4)` 都满足 `x + y = 5`。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `m`，表示点的个数；\n- 接下来 `m` 行，每行两个整数 `x y`；\n- 输出一个整数，表示同一直线上最多的点数。\n\n## 提示\n\n- `1 <= m <= 300`\n- `-10^4 <= x, y <= 10^4`\n- 斜率请用约分后的 `(dx, dy)` 表示，不要用浮点数，否则会有精度问题\n\n> 力扣模式下只需实现 `maxPoints` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 3,
+      "domain": "数学",
+      "referenceAnswer": "枚举每个点作为基准，统计其余点与它的斜率：把 `(dx, dy)` 用最大公约数约分并统一符号，作为哈希表的键；同时单独统计与基准点重合的点数。每个基准下取「同斜率点数 + 重合点数」的最大值。整体 O(n^2)，空间 O(n)。",
+      "keyPoints": ["斜率约分", "重合点单独统计", "枚举基准点"],
+      "kpNames": ["哈希表", "数学"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/max-points-on-a-line/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "maxPoints",
+      "paramTypes": ["int[][]"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行整数 m，表示点的个数；接下来 m 行每行两个整数 x y\n        // TODO 输出同一直线上最多的点数\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 m，之后每两个数表示一个点的 x y\n    # TODO 输出同一直线上最多的点数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int maxPoints(int[][] points) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def maxPoints(self, points: List[List[int]]) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[[1,1],[2,2],[3,3]]]", "expectedOutput": "3", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[[1,1],[3,2],[5,3],[4,1],[2,3],[1,4]]]", "expectedOutput": "4", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[[0,0]]]", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3\n1 1\n2 2\n3 3", "expectedOutput": "3", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "6\n1 1\n3 2\n5 3\n4 1\n2 3\n1 4", "expectedOutput": "4", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1\n0 0", "expectedOutput": "1", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "数字序列中某一位的数字（剑指 Offer 44）",
+      "content": "## 题目描述\n\n把非负整数按 `0,1,2,3,...` 的顺序拼接成一个无限长的数字序列：`012345678910111213...`。给定下标 `n`（从 0 开始计数），返回这个序列中第 `n` 位上的数字。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 3`\n\n输出：`3`\n\n解释：序列的第 3 位是 `3`。\n\n**示例 2**\n\n输入：`n = 11`\n\n输出：`0`\n\n解释：第 10 位是数字 10 的 `1`，第 11 位是它的 `0`。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示序列中第 `n` 位的数字。\n\n## 提示\n\n- `0 <= n <= 2^31 - 1`\n- 下标从 0 开始，序列的第一个字符是 `0`\n- 建议按位数分段定位后再取位，不要逐位生成整个序列\n\n> 力扣模式下只需实现 `findNthDigit` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "数学",
+      "referenceAnswer": "按位数分段：1 位数有 10 个（含 0），之后 d 位数有 `9 * 10^(d-1)` 个、共 `d * 9 * 10^(d-1)` 位。用 n 依次减去每段的总位数，定位到目标所在的那一段，再算出具体是哪个数字以及在该数字中的偏移，最后取出这一位。时间复杂度 O(log n)，空间 O(1)。",
+      "keyPoints": ["数位规律", "分段统计", "偏移定位"],
+      "kpNames": ["数学", "数位"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/shu-zi-xu-lie-zhong-mou-yi-wei-de-shu-zi-lcof/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "findNthDigit",
+      "paramTypes": ["int"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行一个整数 n（下标从 0 开始）\n        // TODO 输出序列中第 n 位的数字\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    n = int(sys.stdin.read().strip())\n    # TODO 输出序列中第 n 位的数字\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int findNthDigit(int n) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "class Solution:\n    def findNthDigit(self, n: int) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[3]", "expectedOutput": "3", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[11]", "expectedOutput": "0", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[15]", "expectedOutput": "2", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3", "expectedOutput": "3", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "11", "expectedOutput": "0", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "15", "expectedOutput": "2", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "圆圈中最后剩下的数字（剑指 Offer 62）",
+      "content": "## 题目描述\n\n`0` 到 `n-1` 这 `n` 个数字排成一个圆圈，从数字 `0` 开始，每次从这个圆圈里删除第 `m` 个数字（当前数字算第 1 个）。删除后从被删数字的下一个数字继续计数，求圆圈里最后剩下的那个数字。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 5, m = 3`\n\n输出：`3`\n\n解释：依次删除 2、0、4、1，最后剩下 3。\n\n**示例 2**\n\n输入：`n = 10, m = 17`\n\n输出：`2`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行两个整数 `n` 和 `m`；\n- 输出最后剩下的数字。\n\n## 提示\n\n- `1 <= n <= 10^5`\n- `1 <= m <= 10^6`\n- 这是经典的约瑟夫环问题，可以递推而不是模拟链表\n\n> 力扣模式下只需实现 `lastRemaining` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "数学",
+      "referenceAnswer": "约瑟夫环递推：只剩一个人时答案下标为 0，之后每增加一个人，答案下标按 `f(i) = (f(i-1) + m) % i` 回推。从 2 递推到 n，最后得到的下标就是答案。时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["约瑟夫环", "递推", "取模回推"],
+      "kpNames": ["数学", "递推"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/yuan-quan-zhong-zui-hou-sheng-xia-de-shu-zi-lcof/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "lastRemaining",
+      "paramTypes": ["int", "int"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行两个整数 n 和 m\n        // TODO 输出最后剩下的数字\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    n, m = map(int, sys.stdin.read().split())\n    # TODO 输出最后剩下的数字\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int lastRemaining(int n, int m) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "class Solution:\n    def lastRemaining(self, n: int, m: int) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[5,3]", "expectedOutput": "3", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[10,17]", "expectedOutput": "2", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[1,1]", "expectedOutput": "0", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "5 3", "expectedOutput": "3", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "10 17", "expectedOutput": "2", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "7 2", "expectedOutput": "6", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "求 1+2+…+n（剑指 Offer 64）",
+      "content": "## 题目描述\n\n求 `1 + 2 + ... + n`，要求不使用乘除法、`for`/`while` 循环、`if`/`else`/`switch`/`case` 等关键字以及条件判断语句（`A ? B : C` 也不行）。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 3`\n\n输出：`6`\n\n**示例 2**\n\n输入：`n = 9`\n\n输出：`45`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示 `1` 到 `n` 的和。\n\n## 提示\n\n- `1 <= n <= 10^4`\n- 可以借助逻辑运算的短路特性来终止递归\n- 判题只校验输出结果\n\n> 力扣模式下只需实现 `sumNums` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "数学",
+      "referenceAnswer": "利用逻辑与的短路特性：`n > 1 && (n += sumNums(n - 1))` 同时承担递归终止和累加。当 n 递减到 1 时前半句为假，后半句不再执行，递归自然结束，因此整个过程不需要 if、循环和乘除法。时间复杂度 O(n)，递归深度 O(n)。",
+      "keyPoints": ["短路求值", "递归", "逻辑运算"],
+      "kpNames": ["递归", "数学"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/qiu-1-2-n-lcof/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "sumNums",
+      "paramTypes": ["int"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行一个整数 n\n        // TODO 输出 1+2+...+n 的和（不要使用循环与乘除法）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    n = int(sys.stdin.read().strip())\n    # TODO 输出 1+2+...+n 的和（不要使用循环与乘除法）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int sumNums(int n) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "class Solution:\n    def sumNums(self, n: int) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[3]", "expectedOutput": "6", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[9]", "expectedOutput": "45", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[100]", "expectedOutput": "5050", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3", "expectedOutput": "6", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "9", "expectedOutput": "45", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "100", "expectedOutput": "5050", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "1～n 整数中 1 出现的次数（剑指 Offer 43）",
+      "content": "## 题目描述\n\n输入一个整数 `n`，求 `1` 到 `n` 这 `n` 个整数的十进制表示中，数字 `1` 一共出现了多少次。例如 `1~12` 中，`1` 分别出现在 1、10、11（两次）、12 里，共 5 次。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 12`\n\n输出：`5`\n\n**示例 2**\n\n输入：`n = 13`\n\n输出：`6`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示数字 `1` 出现的总次数。\n\n## 提示\n\n- `0 <= n <= 2^31 - 1`\n- 逐个数枚举会超时，需要按数位统计\n- 结果用 `int` 就够，不需要取模\n\n> 力扣模式下只需实现 `countDigitOne` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 3,
+      "domain": "数学",
+      "referenceAnswer": "按数位统计：固定当前位 `i`（1、10、100……），把 n 拆成高位 `high`、当前位 `cur`、低位 `low`。当前位为 0 时贡献 `high * i`；为 1 时贡献 `high * i + low + 1`；大于 1 时贡献 `(high + 1) * i`。逐位累加即可，时间复杂度 O(log n)，空间 O(1)。",
+      "keyPoints": ["数位统计", "分情况讨论", "高位低位拆分"],
+      "kpNames": ["数学", "数位"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/1nzheng-shu-zhong-1chu-xian-de-ci-shu-lcof/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "countDigitOne",
+      "paramTypes": ["int"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行一个整数 n\n        // TODO 输出 1..n 中数字 1 出现的总次数\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    n = int(sys.stdin.read().strip())\n    # TODO 输出 1..n 中数字 1 出现的总次数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int countDigitOne(int n) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "class Solution:\n    def countDigitOne(self, n: int) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[12]", "expectedOutput": "5", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[13]", "expectedOutput": "6", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[100]", "expectedOutput": "21", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "12", "expectedOutput": "5", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "13", "expectedOutput": "6", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "100", "expectedOutput": "21", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "数值的整数次方（剑指 Offer 16）",
+      "content": "## 题目描述\n\n实现函数 `pow(x, n)`，计算 `x` 的 `n` 次幂。`n` 是整数，可以为负数；不需要使用库函数，也不需要处理大数问题。\n\n## 示例\n\n**示例 1**\n\n输入：`x = 2.0, n = 10`\n\n输出：`1024`\n\n**示例 2**\n\n输入：`x = 2.0, n = -2`\n\n输出：`0.25000`\n\n解释：`2^-2 = 1 / 4 = 0.25`，按规则保留 5 位小数输出 `0.25000`。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行两个值 `x` 和 `n`，`x` 是浮点数，`n` 是整数，用空格分隔；\n- 输出 `x^n`：如果结果是整数，直接输出整数形式（如 `1024`、`-8`）；否则保留 5 位小数输出（如 `0.25000`）。\n\n## 提示\n\n- `-100.0 < x < 100.0`\n- `-2^31 <= n <= 2^31 - 1`\n- `n = 0` 时任何非零 `x` 的结果都是 `1`\n- 用例保证结果精确可表示，不会有浮点误差\n- 注意 `n` 取最小值时直接取负会溢出，建议先转成 `long`\n\n本题只有 ACM 模式。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "数学",
+      "referenceAnswer": "快速幂：先把指数转成 `long` 以避免 `Integer.MIN_VALUE` 取负时溢出，若指数为负则把它变成正数并让底数取倒数。循环中指数为奇数时把当前底数乘进结果，然后底数自乘、指数右移一位，直到指数为 0。时间复杂度 O(log |n|)，空间复杂度 O(1)。",
+      "keyPoints": ["快速幂", "指数取负", "long 防溢出"],
+      "kpNames": ["数学", "快速幂"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/shu-zhi-de-zheng-shu-ci-fang-lcof/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行 x n，x 为浮点数，n 为整数（可为负）\n        // TODO 输出 x^n：结果为整数时输出整数形式，否则保留 5 位小数\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    x = float(data[0])\n    n = int(data[1])\n    # TODO 输出 x^n：结果为整数时输出整数形式，否则保留 5 位小数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "2.0 10", "expectedOutput": "1024", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2.0 -2", "expectedOutput": "0.25000", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "2.0 0", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3.0 3", "expectedOutput": "27", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "2.0 -1", "expectedOutput": "0.50000", "isSample": 0, "sort": 5},
+        {"caseMode": "ACM", "input": "-2.0 3", "expectedOutput": "-8", "isSample": 0, "sort": 6}
+      ]
+    }
+  ]
+}

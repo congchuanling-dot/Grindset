@@ -1,0 +1,543 @@
+{
+  "questions": [
+    {
+      "title": "相交链表",
+      "content": "## 题目描述\n\n给定两条单链表的节点值序列，以及它们相交的位置，请找出两条链表相交的节点。相交指同一个节点同时属于两条链表，从该节点开始后续所有节点都由两条链表共用。\n\n链表用节点值描述，位置用 0 开始的下标给出：链表 A 中下标为 `skipA` 的节点就是链表 B 中下标为 `skipB` 的节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5 6\n4 1 8 4 5\n5 6 1 8 4 5\n2 3\n```\n\n输出：\n\n```\n8\n```\n\n解释：A 从下标 2 起是 `8 → 4 → 5`，B 从下标 3 起也是 `8 → 4 → 5`，相交节点值为 8。\n\n**示例 2**\n\n输入：\n\n```\n3 2\n2 6 4\n1 5\n-1 -1\n```\n\n输出：\n\n```\n-1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `m`，表示链表 A、B 的节点个数；\n- 第二行 `n` 个整数，为 A 的节点值；\n- 第三行 `m` 个整数，为 B 的节点值；\n- 第四行两个整数 `skipA` 和 `skipB`（从 0 开始计数），表示 A 的第 `skipA` 个节点与 B 的第 `skipB` 个节点是同一个节点；`-1 -1` 表示两条链表不相交。数据保证相交部分的值完全一致；\n- 输出一行一个整数：相交节点的值；不相交输出 `-1`。\n\n## 提示\n\n- `1 <= n, m <= 300`\n- `-10^4 <= 节点值 <= 10^4`\n- 数据保证输入合法\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "链表",
+      "referenceAnswer": "两条链表若相交，则从相交节点到末尾的部分长度相同。先分别求出两条链表长度之差 d，让较长的链表先走 d 步，再让两个指针同步前进，第一次指向同一节点即为相交节点。也可以用哈希集合先存下 A 的全部节点，再遍历 B 找第一个出现在集合中的节点。时间复杂度 O(n+m)，空间复杂度 O(1)（双指针法）。",
+      "keyPoints": ["双指针", "长度对齐", "相交判定"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/intersection-of-two-linked-lists/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n m，第二行 A 的 n 个值，第三行 B 的 m 个值，第四行 skipA skipB\n        // TODO 输出相交节点的值，不相交输出 -1\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n m，第二行 A 的 n 个值，第三行 B 的 m 个值，第四行 skipA skipB\n    # TODO 输出相交节点的值，不相交输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "5 6\n4 1 8 4 5\n5 6 1 8 4 5\n2 3", "expectedOutput": "8", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "3 2\n2 6 4\n1 5\n-1 -1", "expectedOutput": "-1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1 1\n1\n1\n0 0", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "1 2\n3\n2 3\n0 1", "expectedOutput": "3", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "4 3\n1 9 1 2\n3 1 2\n2 1", "expectedOutput": "1", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "反转链表",
+      "content": "## 题目描述\n\n给定一条单链表的节点值序列，请把整条链表反转，并输出反转后的节点值序列。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n1 2 3 4 5\n```\n\n输出：\n\n```\n5 4 3 2 1\n```\n\n**示例 2**\n\n输入：\n\n```\n0\n```\n\n输出：\n\n```\n[]\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数；\n- 第二行 `n` 个整数，按从头到尾的顺序给出节点值（`n = 0` 时该行空缺）；\n- 输出一行：按反转后的顺序输出节点值，用空格分隔；空链表输出 `[]`。\n\n## 提示\n\n- `0 <= n <= 5000`\n- `-5000 <= 节点值 <= 5000`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "链表",
+      "referenceAnswer": "迭代法用三个指针：每次先用 next 暂存 cur 的后继，把 cur.next 指向 pre，再让 pre 和 cur 依次后移，直到 cur 为空，pre 就是新的头节点。整个过程只修改指针方向，额外空间 O(1)，时间复杂度 O(n)。也可以用递归反转后继部分，思路更简洁，但递归栈深度为 n。",
+      "keyPoints": ["三指针迭代", "指针方向修改", "原地反转"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/reverse-linked-list/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值\n        // TODO 输出反转后的节点值（空格分隔，空链表输出 []）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值\n    # TODO 输出反转后的节点值（空格分隔，空链表输出 []）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5", "expectedOutput": "5 4 3 2 1", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "0", "expectedOutput": "[]", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1\n7", "expectedOutput": "7", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "2\n1 2", "expectedOutput": "2 1", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "4\n1 2 3 4", "expectedOutput": "4 3 2 1", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "回文链表",
+      "content": "## 题目描述\n\n给定一条单链表的节点值序列，判断它是否是回文链表：从前往后读和从后往前读得到的值序列完全相同。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4\n1 2 2 1\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n2\n1 2\n```\n\n输出：\n\n```\nfalse\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数；\n- 第二行 `n` 个整数，按从头到尾的顺序给出节点值（`n = 0` 时该行空缺）；\n- 输出一行 `true` 或 `false`（全小写）。空链表视为回文，输出 `true`。\n\n## 提示\n\n- `0 <= n <= 10^5`\n- `0 <= 节点值 <= 9`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "链表",
+      "referenceAnswer": "用快慢指针找到链表中点，同时反转后半段链表，然后让前半段和反转后的后半段逐个比较节点值；比较结束后可以把后半段再反转回来恢复原链表。也可以把节点值复制到数组后用双指针判断，写法更简单但需要 O(n) 额外空间。快慢指针加反转的方式时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["快慢指针", "反转后半段", "双指针比较"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/palindrome-linked-list/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值\n        // TODO 输出 true 或 false\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "4\n1 2 2 1", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2\n1 2", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "true", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3\n1 2 1", "expectedOutput": "true", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "5\n1 2 3 2 2", "expectedOutput": "false", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "环形链表",
+      "content": "## 题目描述\n\n给定一条单链表的节点值序列，以及尾节点指向的位置，判断链表中是否存在环。\n\n链表的环用 `pos` 描述：尾节点的 `next` 指向下标为 `pos` 的节点（下标从 0 开始）；`pos = -1` 表示尾节点的 `next` 为 `null`，即没有环。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4\n3 2 0 -4\n1\n```\n\n输出：\n\n```\ntrue\n```\n\n解释：尾节点 `-4` 指回下标 1 的节点 `2`，形成环。\n\n**示例 2**\n\n输入：\n\n```\n2\n1 2\n-1\n```\n\n输出：\n\n```\nfalse\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数（`n >= 1`）；\n- 第二行 `n` 个整数，为链表节点值；\n- 第三行一个整数 `pos`，含义见题目描述，`-1` 表示无环；\n- 输出一行 `true` 或 `false`（全小写）。\n\n## 提示\n\n- `1 <= n <= 10^4`\n- `0 <= pos < n` 或 `pos = -1`\n- `-10^5 <= 节点值 <= 10^5`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "链表",
+      "referenceAnswer": "使用快慢指针：慢指针每次走一步，快指针每次走两步。若无环，快指针会先到达 null，循环结束；若有环，快指针进入环后每轮都会追上慢指针一步，最终两者一定相遇。整个算法只用了两个指针，时间复杂度 O(n)，空间复杂度 O(1)。也可以用哈希集合记录访问过的节点，但需要 O(n) 空间。",
+      "keyPoints": ["快慢指针", "环检测", "相遇判定"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/linked-list-cycle/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值，第三行 pos（-1 表示无环）\n        // TODO 输出 true 或 false\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值，第三行 pos（-1 表示无环）\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "4\n3 2 0 -4\n1", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2\n1 2\n-1", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "2\n1 2\n0", "expectedOutput": "true", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "1\n1\n0", "expectedOutput": "true", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "1\n1\n-1", "expectedOutput": "false", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "环形链表 II",
+      "content": "## 题目描述\n\n给定一条单链表的节点值序列，以及尾节点指向的位置，请返回链表开始入环的节点下标（从 0 开始）。如果链表无环，输出 `-1`。\n\n环用 `pos` 描述：尾节点的 `next` 指向下标为 `pos` 的节点；`pos = -1` 表示无环。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4\n3 2 0 -4\n1\n```\n\n输出：\n\n```\n1\n```\n\n解释：尾节点 `-4` 指回下标 1 的节点 `2`，因此环的入口下标是 1。\n\n**示例 2**\n\n输入：\n\n```\n3\n1 2 3\n-1\n```\n\n输出：\n\n```\n-1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数（`n >= 1`）；\n- 第二行 `n` 个整数，为链表节点值；\n- 第三行一个整数 `pos`，含义见题目描述，`-1` 表示无环；\n- 输出一行一个整数：环入口节点的下标；无环输出 `-1`。\n\n## 提示\n\n- `1 <= n <= 10^4`\n- `0 <= pos < n` 或 `pos = -1`\n- `-10^5 <= 节点值 <= 10^5`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "先用快慢指针判断是否有环并得到相遇点。设头节点到环入口距离为 a，环入口到相遇点距离为 b，环长为 c，则相遇时快指针走的距离是慢指针的两倍，可推出 a = c - b，即从头节点和相遇点同时出发、每次各走一步，两个指针会在环入口相遇。时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["快慢指针", "相遇后同速前进", "环入口推导"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/linked-list-cycle-ii/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值，第三行 pos（-1 表示无环）\n        // TODO 输出环入口节点的下标，无环输出 -1\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值，第三行 pos（-1 表示无环）\n    # TODO 输出环入口节点的下标，无环输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "4\n3 2 0 -4\n1", "expectedOutput": "1", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "3\n1 2 3\n-1", "expectedOutput": "-1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "2\n1 2\n0", "expectedOutput": "0", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5\n2", "expectedOutput": "2", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "1\n1\n0", "expectedOutput": "0", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "合并两个有序链表",
+      "content": "## 题目描述\n\n给定两条按非递减顺序排列的单链表，请把它们合并成一条新的非递减链表，新链表由原来两条链表的节点拼接而成。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n1 2 4\n1 3 4\n```\n\n输出：\n\n```\n1 1 2 3 4 4\n```\n\n**示例 2**\n\n输入：\n\n```\n1 3\n5\n1 2 3\n```\n\n输出：\n\n```\n1 2 3 5\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `m`，表示两条链表的节点个数（均 `>= 1`）；\n- 第二行 `n` 个整数，为第一条链表的节点值；\n- 第三行 `m` 个整数，为第二条链表的节点值；\n- 输出一行：合并后的节点值，用空格分隔。\n\n## 提示\n\n- `1 <= n, m <= 50`\n- 两条链表均按非递减顺序排列\n- `-100 <= 节点值 <= 100`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "链表",
+      "referenceAnswer": "使用哨兵节点简化头部处理，再用双指针分别遍历两条链表：每次比较两个当前节点的值，把较小者接到结果链表尾部并后移对应指针；当其中一条链表遍历完后，把另一条的剩余部分直接接到结果尾部。哨兵节点避免了单独讨论空链表和头节点的情况。时间复杂度 O(n+m)，空间复杂度 O(1)。",
+      "keyPoints": ["哨兵节点", "双指针", "有序合并"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/merge-two-sorted-lists/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n m，第二行 n 个值，第三行 m 个值\n        // TODO 输出合并后的节点值（空格分隔）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n m，第二行 n 个值，第三行 m 个值\n    # TODO 输出合并后的节点值（空格分隔）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "3 3\n1 2 4\n1 3 4", "expectedOutput": "1 1 2 3 4 4", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "1 3\n5\n1 2 3", "expectedOutput": "1 2 3 5", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "3 2\n1 1 2\n1 3", "expectedOutput": "1 1 1 2 3", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "2 4\n2 5\n1 3 4 6", "expectedOutput": "1 2 3 4 5 6", "isSample": 0, "sort": 4}
+      ]
+    },
+    {
+      "title": "两数相加",
+      "content": "## 题目描述\n\n给定两个非负整数，它们以单链表形式逆序存储：每个节点存放一位数字（0~9），个位在链表头，之后依次是十位、百位……请计算两数之和，并按同样的逆序形式输出和的各位数字。\n\n数字不会有前导零，除了数字 0 本身。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n2 4 3\n5 6 4\n```\n\n输出：\n\n```\n7 0 8\n```\n\n解释：链表表示 342 和 465，和为 807，逆序输出为 `7 0 8`。\n\n**示例 2**\n\n输入：\n\n```\n1 1\n5\n5\n```\n\n输出：\n\n```\n0 1\n```\n\n解释：5 + 5 = 10，逆序输出为 `0 1`。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `m`，表示两个数字的位数（均 `>= 1`）；\n- 第二行 `n` 个数字（0~9），为第一个数的逆序各位；\n- 第三行 `m` 个数字（0~9），为第二个数的逆序各位；\n- 输出一行：和的各位数字，同样按逆序（个位在前）用空格分隔。\n\n## 提示\n\n- `1 <= n, m <= 100`\n- 每个节点只存放一位数字\n- 两个数均无前导零\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "模拟竖式加法：两个指针分别从两条链表头（个位）出发，逐位相加并维护进位 carry。当前位的值为 (a + b + carry) % 10，新的进位为 (a + b + carry) / 10。某个链表遍历完后，把缺失的位按 0 处理；最后如果 carry 仍不为 0，再补一个节点。时间复杂度 O(max(n, m))，空间复杂度 O(1) 额外空间。",
+      "keyPoints": ["模拟竖式加法", "进位处理", "逆序存储"],
+      "kpNames": ["链表", "模拟"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/add-two-numbers/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n m，第二行 n 个数字（逆序），第三行 m 个数字（逆序）\n        // TODO 输出和的各位数字，逆序、空格分隔\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n m，第二行 n 个数字（逆序），第三行 m 个数字（逆序）\n    # TODO 输出和的各位数字，逆序、空格分隔\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "3 3\n2 4 3\n5 6 4", "expectedOutput": "7 0 8", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "1 1\n5\n5", "expectedOutput": "0 1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1 1\n0\n0", "expectedOutput": "0", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "7 4\n9 9 9 9 9 9 9\n9 9 9 9", "expectedOutput": "8 9 9 0 0 0 1", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "3 2\n1 2 3\n9 9", "expectedOutput": "0 2 4", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "删除链表的倒数第 N 个结点",
+      "content": "## 题目描述\n\n给定一条单链表的节点值序列和一个整数 `k`，请删除链表的倒数第 `k` 个节点，并输出删除后的节点值序列。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n1 2 3 4 5\n2\n```\n\n输出：\n\n```\n1 2 3 5\n```\n\n**示例 2**\n\n输入：\n\n```\n1\n1\n1\n```\n\n输出：\n\n```\n[]\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数；\n- 第二行 `n` 个整数，为链表节点值（按从头到尾的顺序）；\n- 第三行一个整数 `k`，满足 `1 <= k <= n`；\n- 输出一行：删除后的节点值，用空格分隔；结果为空时输出 `[]`。\n\n## 提示\n\n- `1 <= n <= 30`\n- `1 <= k <= n`\n- `0 <= 节点值 <= 100`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "使用快慢指针一次遍历：先让快指针从头走 k 步，再让快指针和慢指针同步前进，直到快指针到达 null，此时慢指针正好指向倒数第 k 个节点的前驱。把慢指针的 next 改为 next.next 即可删除目标节点。在头节点前加一个哨兵节点，可以统一处理删除头节点的情形。时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["快慢指针", "哨兵节点", "一次遍历"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/remove-nth-node-from-end-of-list/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值，第三行 k\n        // TODO 输出删除倒数第 k 个节点后的序列（空则输出 []）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值，第三行 k\n    # TODO 输出删除倒数第 k 个节点后的序列（空则输出 []）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5\n2", "expectedOutput": "1 2 3 5", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "1\n1\n1", "expectedOutput": "[]", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "2\n1 2\n1", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "2\n1 2\n2", "expectedOutput": "2", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "3\n1 2 3\n3", "expectedOutput": "2 3", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "两两交换链表中的节点",
+      "content": "## 题目描述\n\n给定一条单链表，请把相邻的两个节点两两交换，并输出交换后的节点值序列。如果节点总数为奇数，最后一个节点保持不动。交换时必须实际调整节点之间的连接，不能只修改节点里的值。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4\n1 2 3 4\n```\n\n输出：\n\n```\n2 1 4 3\n```\n\n**示例 2**\n\n输入：\n\n```\n3\n1 2 3\n```\n\n输出：\n\n```\n2 1 3\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数；\n- 第二行 `n` 个整数，为链表节点值（`n = 0` 时该行空缺）；\n- 输出一行：交换后的节点值，用空格分隔；空链表输出 `[]`。\n\n## 提示\n\n- `0 <= n <= 100`\n- `0 <= 节点值 <= 100`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "在头节点前加哨兵节点，用指针 pre 表示已经处理部分的尾部。每一轮判断 pre 后面是否还有两个节点：若不足两个就结束；否则记 first = pre.next、second = first.next，调整指针让 first.next 指向 second.next、second.next 指向 first、pre.next 指向 second，然后把 pre 移到 first，继续处理下一对。时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["哨兵节点", "成对交换", "指针重连"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/swap-nodes-in-pairs/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值\n        // TODO 输出两两交换后的节点值（空链表输出 []）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值\n    # TODO 输出两两交换后的节点值（空链表输出 []）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "4\n1 2 3 4", "expectedOutput": "2 1 4 3", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "2 1 3", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "0", "expectedOutput": "[]", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5", "expectedOutput": "2 1 4 3 5", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "K 个一组翻转链表",
+      "content": "## 题目描述\n\n给定一条单链表和一个整数 `k`，请每 `k` 个节点为一组进行翻转。如果最后剩余的节点不足 `k` 个，则保持原有顺序。要求实际调整节点连接，不能只修改节点值。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n1 2 3 4 5\n2\n```\n\n输出：\n\n```\n2 1 4 3 5\n```\n\n**示例 2**\n\n输入：\n\n```\n5\n1 2 3 4 5\n3\n```\n\n输出：\n\n```\n3 2 1 4 5\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数（`n >= 1`）；\n- 第二行 `n` 个整数，为链表节点值；\n- 第三行一个整数 `k`（`k >= 1`）；\n- 输出一行：翻转后的节点值，用空格分隔。\n\n## 提示\n\n- `1 <= n <= 5000`\n- `1 <= k <= n`\n- `0 <= 节点值 <= 1000`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 3,
+      "domain": "链表",
+      "referenceAnswer": "使用哨兵节点，指针 groupPre 指向上一组的尾节点。每一轮先从 groupPre 出发向后走 k 步，检查剩余节点是否够 k 个；不够就直接结束。够的话再用头插法把这一组的 k 个节点依次插到 groupPre 之后完成局部反转，同时记录这一组原来的头节点作为下一轮的 groupPre。每组只遍历一次，总时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["分组翻转", "头插法", "哨兵节点"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/reverse-nodes-in-k-group/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值，第三行 k\n        // TODO 输出每 k 个一组翻转后的节点值（不足 k 个保持原顺序）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值，第三行 k\n    # TODO 输出每 k 个一组翻转后的节点值（不足 k 个保持原顺序）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5\n2", "expectedOutput": "2 1 4 3 5", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5\n3", "expectedOutput": "3 2 1 4 5", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "6\n1 2 3 4 5 6\n3", "expectedOutput": "3 2 1 6 5 4", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5\n1", "expectedOutput": "1 2 3 4 5", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "3\n1 2 3\n4", "expectedOutput": "1 2 3", "isSample": 0, "sort": 5},
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5\n5", "expectedOutput": "5 4 3 2 1", "isSample": 0, "sort": 6}
+      ]
+    },
+    {
+      "title": "随机链表的复制",
+      "content": "## 题目描述\n\n给定一条单链表，每个节点除了 `next` 指针外，还有一个 `random` 指针，可以指向链表中任意节点或为空。请按同样的结构复制这条链表（深拷贝），并输出复制结果中每个节点 `random` 指针所指向节点的值。\n\n`random` 指针用下标数组描述：第 `i` 个整数表示第 `i` 个节点的 `random` 指向的下标，`-1` 表示指向空。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n7 13 11 10 1\n-1 0 4 2 0\n```\n\n输出：\n\n```\nnull 7 1 11 7\n```\n\n解释：复制出的 5 个节点 `random` 依次指向 null、下标 0 的值 7、下标 4 的值 1、下标 2 的值 11、下标 0 的值 7。\n\n**示例 2**\n\n输入：\n\n```\n2\n1 2\n-1 -1\n```\n\n输出：\n\n```\nnull null\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数（`n >= 1`）；\n- 第二行 `n` 个整数，为链表的节点值；\n- 第三行 `n` 个整数，第 `i` 个表示第 `i` 个节点 `random` 指针指向的下标，`-1` 表示空；\n- 输出一行：按顺序输出复制链表中每个节点 `random` 指向节点的值；指向空时输出 `null`，多个结果用空格分隔。\n\n## 提示\n\n- `1 <= n <= 1000`\n- `-10^4 <= 节点值 <= 10^4`\n- `random` 下标合法，`-1` 表示空\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "分三步完成深拷贝：第一步遍历原链表，为每个节点新建一个复制节点，并用哈希表建立“原节点到复制节点”的映射；第二步再遍历一次，通过哈希表设置复制节点的 next 和 random 指针，random 为空时对应也为空；第三步返回复制链表的头节点。也可以用复制节点穿插在原节点之后的方法省掉哈希表。时间 O(n)，空间 O(n)。",
+      "keyPoints": ["深拷贝", "哈希表映射", "random 指针"],
+      "kpNames": ["链表", "哈希表"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/copy-list-with-random-pointer/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值，第三行 n 个 random 下标（-1 表示空）\n        // TODO 输出复制链表中每个节点 random 指向的值，空输出 null\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值，第三行 n 个 random 下标（-1 表示空）\n    # TODO 输出复制链表中每个节点 random 指向的值，空输出 null\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "5\n7 13 11 10 1\n-1 0 4 2 0", "expectedOutput": "null 7 1 11 7", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2\n1 2\n-1 -1", "expectedOutput": "null null", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1\n3\n0", "expectedOutput": "3", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3\n1 2 3\n2 2 1", "expectedOutput": "3 3 2", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "2\n5 4\n1 0", "expectedOutput": "4 5", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "排序链表",
+      "content": "## 题目描述\n\n给定一条单链表，请把它按节点值升序排列，并输出排序后的节点值序列。要求在链表上完成排序，时间复杂度为 O(n log n)。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4\n4 2 1 3\n```\n\n输出：\n\n```\n1 2 3 4\n```\n\n**示例 2**\n\n输入：\n\n```\n5\n-1 5 3 4 0\n```\n\n输出：\n\n```\n-1 0 3 4 5\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数（`n >= 1`）；\n- 第二行 `n` 个整数，为链表节点值；\n- 输出一行：升序排列后的节点值，用空格分隔。\n\n## 提示\n\n- `1 <= n <= 5 * 10^4`\n- `-10^5 <= 节点值 <= 10^5`\n- 建议使用归并排序，避免 O(n^2) 的超时\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "在链表上做归并排序：用快慢指针找到中点并把链表断开，递归对左右两半排序，再用双指针合并两条有序链表。因为链表不能随机访问，归并排序比快排更合适。时间复杂度 O(n log n)，递归调用栈占用 O(log n) 空间；如果改用自底向上的迭代归并，则额外空间可以做到 O(1)。",
+      "keyPoints": ["归并排序", "快慢指针找中点", "有序链表合并"],
+      "kpNames": ["链表", "归并排序"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/sort-list/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值\n        // TODO 输出升序排列后的节点值（空格分隔）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值\n    # TODO 输出升序排列后的节点值（空格分隔）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "4\n4 2 1 3", "expectedOutput": "1 2 3 4", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "5\n-1 5 3 4 0", "expectedOutput": "-1 0 3 4 5", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "2\n2 1", "expectedOutput": "1 2", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "5\n3 3 1 2 2", "expectedOutput": "1 2 2 3 3", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "合并 K 个升序链表",
+      "content": "## 题目描述\n\n给定 `k` 条按升序排列的单链表，请把它们合并成一条升序链表，并输出合并后的节点值序列。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n3 1 4 5\n3 1 3 4\n2 2 6\n```\n\n输出：\n\n```\n1 1 2 3 4 4 5 6\n```\n\n**示例 2**\n\n输入：\n\n```\n2\n1 1\n1 0\n```\n\n输出：\n\n```\n0 1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `k`，表示链表条数（`k` 可以为 0）；\n- 接下来 `k` 行，每行第一个整数 `m` 表示该链表长度，随后是 `m` 个整数，即该链表的节点值；`m = 0` 时该行只有一个 `0`；\n- 输出一行：合并后的节点值，用空格分隔；结果为空时输出 `[]`。\n\n## 提示\n\n- `0 <= k <= 100`\n- 单条链表长度 `0 <= m <= 100`\n- 每条链表均按升序排列\n- `-10^4 <= 节点值 <= 10^4`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 3,
+      "domain": "链表",
+      "referenceAnswer": "维护一个容量为 k 的小顶堆：初始时把每条链表的头节点放入堆中；每次弹出值最小的节点接到结果链表尾部，若该节点还有后继节点，就把后继节点入堆。直到堆为空为止。也可以两两归并，时间复杂度 O(N log k)。其中 N 为所有节点总数，堆解法总时间 O(N log k)，额外空间 O(k)。",
+      "keyPoints": ["小顶堆", "多路归并", "优先队列"],
+      "kpNames": ["链表", "堆"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/merge-k-sorted-lists/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 k，接下来 k 行：每行一个 m 加 m 个节点值\n        // TODO 输出合并后的升序节点值（空则输出 []）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 k，接下来 k 行：每行一个 m 加 m 个节点值\n    # TODO 输出合并后的升序节点值（空则输出 []）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "3\n3 1 4 5\n3 1 3 4\n2 2 6", "expectedOutput": "1 1 2 3 4 4 5 6", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2\n1 1\n2 0 2", "expectedOutput": "0 1 2", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "0", "expectedOutput": "[]", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3\n3 1 2 3\n0\n1 5", "expectedOutput": "1 2 3 5", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "1\n2 -1 0", "expectedOutput": "-1 0", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "反转链表 II",
+      "content": "## 题目描述\n\n给定一条单链表和两个整数 `left`、`right`（`1 <= left <= right <= n`），请把从第 `left` 个节点到第 `right` 个节点的这一段区间反转，其余节点位置不变，输出反转后的节点值序列。\n\n节点位置从 1 开始计数。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5 2 4\n1 2 3 4 5\n```\n\n输出：\n\n```\n1 4 3 2 5\n```\n\n**示例 2**\n\n输入：\n\n```\n1 1 1\n5\n```\n\n输出：\n\n```\n5\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行三个整数 `n`、`left`、`right`，`n` 为节点个数；\n- 第二行 `n` 个整数，为链表节点值；\n- 输出一行：区间反转后的节点值，用空格分隔。\n\n## 提示\n\n- `1 <= n <= 500`\n- `1 <= left <= right <= n`\n- `-500 <= 节点值 <= 500`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "用哨兵节点定位第 left 个节点的前驱 pre。固定 pre 不动，把区间内的节点逐个摘下，用头插法插到 pre 后面：每次把当前节点 cur 的 next 指向 pre.next，pre.next 指向 cur，共执行 right - left 次，区间就完成了反转。哨兵节点让 left = 1 时无需特殊处理。时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["区间反转", "头插法", "哨兵节点"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/reverse-linked-list-ii/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n left right，第二行 n 个节点值\n        // TODO 输出区间 [left, right] 反转后的节点值\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n left right，第二行 n 个节点值\n    # TODO 输出区间 [left, right] 反转后的节点值\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "5 2 4\n1 2 3 4 5", "expectedOutput": "1 4 3 2 5", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "1 1 1\n5", "expectedOutput": "5", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "3 1 3\n1 2 3", "expectedOutput": "3 2 1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "2 1 2\n3 5", "expectedOutput": "5 3", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "5 1 2\n1 2 3 4 5", "expectedOutput": "2 1 3 4 5", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "删除排序链表中的重复元素 II",
+      "content": "## 题目描述\n\n给定一条按升序排列的单链表，请删除所有值重复出现的节点，只保留在链表中只出现一次的节点，并输出结果序列。结果同样保持升序。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n1 2 3 3 4 4 5\n```\n\n输出：\n\n```\n1 2 5\n```\n\n**示例 2**\n\n输入：\n\n```\n2\n1 1\n```\n\n输出：\n\n```\n[]\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数（`n >= 1`）；\n- 第二行 `n` 个整数，为升序排列的链表节点值；\n- 输出一行：删除重复节点后的序列，用空格分隔；结果为空时输出 `[]`。\n\n## 提示\n\n- `1 <= n <= 300`\n- `-100 <= 节点值 <= 100`\n- 链表按非递减顺序排列\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "用哨兵节点指向头节点，指针 cur 从哨兵开始扫描。若 cur.next 与 cur.next.next 的值相同，记录该重复值，然后循环把所有值等于该值的节点都跳过（cur.next 不断后移），这样一次删掉整段重复节点；否则 cur 正常后移一位。哨兵节点保证头节点被删除时也能正确处理。时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["哨兵节点", "整段删除重复值", "一次遍历"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/remove-duplicates-from-sorted-list-ii/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个升序节点值\n        // TODO 输出删除所有重复节点后的序列（空则输出 []）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个升序节点值\n    # TODO 输出删除所有重复节点后的序列（空则输出 []）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "7\n1 2 3 3 4 4 5", "expectedOutput": "1 2 5", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2\n1 1", "expectedOutput": "[]", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "5\n1 1 1 2 3", "expectedOutput": "2 3", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "3\n1 2 2", "expectedOutput": "1", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "旋转链表",
+      "content": "## 题目描述\n\n给定一条单链表和一个非负整数 `k`，请把链表每个节点向右移动 `k` 个位置，并输出旋转后的节点值序列。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5 2\n1 2 3 4 5\n```\n\n输出：\n\n```\n4 5 1 2 3\n```\n\n**示例 2**\n\n输入：\n\n```\n3 4\n0 1 2\n```\n\n输出：\n\n```\n2 0 1\n```\n\n解释：`4 % 3 = 1`，相当于向右旋转 1 位。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `k`，`n` 为节点个数；\n- 第二行 `n` 个整数，为链表节点值（`n >= 1`）；\n- 输出一行：旋转后的节点值，用空格分隔。\n\n## 提示\n\n- `1 <= n <= 500`\n- `0 <= k <= 2 * 10^9`\n- `-100 <= 节点值 <= 100`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "先遍历一次求出链表长度 len，并让 k 对 len 取模；若 k 为 0 则链表不变。否则把尾节点指向头节点形成环，再从头节点走 len - k - 1 步找到新的尾节点，把它的 next 置空并返回其后继作为新的头节点。整个过程只需要常数个指针。时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["取模去冗余旋转", "首尾成环", "找到新尾节点"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/rotate-list/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n k，第二行 n 个节点值\n        // TODO 输出右移 k 位后的节点值\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n k，第二行 n 个节点值\n    # TODO 输出右移 k 位后的节点值\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "5 2\n1 2 3 4 5", "expectedOutput": "4 5 1 2 3", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "3 4\n0 1 2", "expectedOutput": "2 0 1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1 0\n1", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "2 1\n1 2", "expectedOutput": "2 1", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "3 3\n1 2 3", "expectedOutput": "1 2 3", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "分隔链表",
+      "content": "## 题目描述\n\n给定一条单链表和一个整数 `x`，请把所有小于 `x` 的节点排在大于等于 `x` 的节点之前，并保持每一部分内部原有的相对顺序，输出调整后的节点值序列。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n6 3\n1 4 3 2 5 2\n```\n\n输出：\n\n```\n1 2 2 4 3 5\n```\n\n**示例 2**\n\n输入：\n\n```\n2 2\n2 1\n```\n\n输出：\n\n```\n1 2\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `x`，`n` 为节点个数（`n >= 1`）；\n- 第二行 `n` 个整数，为链表节点值；\n- 输出一行：调整后的节点值，用空格分隔。\n\n## 提示\n\n- `1 <= n <= 200`\n- `-100 <= x, 节点值 <= 100`\n- 两部分内部的相对顺序必须保持不变\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "链表",
+      "referenceAnswer": "创建两条带哨兵节点的临时链表，分别收集小于 x 和大于等于 x 的节点。遍历原链表时按值的大小把节点接到对应链表的尾部，这样自然保持了各自的相对顺序。遍历结束后把第一条链表的尾部接上第二条链表的头部（跳过哨兵），再把第二条链表尾部置空即可。时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["双链表分流", "哨兵节点", "保持相对顺序"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/partition-list/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n x，第二行 n 个节点值\n        // TODO 输出小于 x 的节点在前、其余在后的序列\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n x，第二行 n 个节点值\n    # TODO 输出小于 x 的节点在前、其余在后的序列\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "6 3\n1 4 3 2 5 2", "expectedOutput": "1 2 2 4 3 5", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2 2\n2 1", "expectedOutput": "1 2", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "3 3\n3 1 2", "expectedOutput": "1 2 3", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "1 0\n1", "expectedOutput": "1", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "4 3\n4 2 1 3", "expectedOutput": "2 1 4 3", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "从尾到头打印链表（剑指 Offer 06）",
+      "content": "## 题目描述\n\n给定一条单链表的节点值序列，请从尾到头反过来输出各节点的值。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n1 3 2\n```\n\n输出：\n\n```\n2 3 1\n```\n\n**示例 2**\n\n输入：\n\n```\n0\n```\n\n输出：\n\n```\n[]\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数；\n- 第二行 `n` 个整数，按从头到尾的顺序给出节点值（`n = 0` 时该行空缺）；\n- 输出一行：从尾到头的节点值，用空格分隔；空链表输出 `[]`。\n\n## 提示\n\n- `0 <= n <= 10^4`\n- `0 <= 节点值 <= 10^4`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "链表",
+      "referenceAnswer": "思路一：顺序遍历链表，把节点值依次压入栈，然后不断弹栈输出，得到的就是从尾到头的顺序。思路二：递归到链表末尾再回溯，回溯时把节点值加入结果，同样得到逆序。思路三：先反转链表再顺序输出。三种做法时间复杂度都是 O(n)，前两种需要 O(n) 的额外空间，反转链表可以做到 O(1) 空间但会改变原结构。",
+      "keyPoints": ["栈", "递归回溯", "逆序输出"],
+      "kpNames": ["链表", "栈"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/cong-wei-dao-tou-da-yin-lian-biao-lcof/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个节点值\n        // TODO 从尾到头输出节点值（空链表输出 []）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个节点值\n    # TODO 从尾到头输出节点值（空链表输出 []）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "3\n1 3 2", "expectedOutput": "2 3 1", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "0", "expectedOutput": "[]", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1\n5", "expectedOutput": "5", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "4\n1 2 3 4", "expectedOutput": "4 3 2 1", "isSample": 0, "sort": 4}
+      ]
+    },
+    {
+      "title": "链表中倒数第 k 个节点（剑指 Offer 22）",
+      "content": "## 题目描述\n\n给定一条单链表和一个正整数 `k`，请找出链表的倒数第 `k` 个节点，并输出从该节点到链表末尾的节点值序列。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5 2\n1 2 3 4 5\n```\n\n输出：\n\n```\n4 5\n```\n\n**示例 2**\n\n输入：\n\n```\n1 1\n1\n```\n\n输出：\n\n```\n1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `k`，`n` 为节点个数；\n- 第二行 `n` 个整数，为链表节点值；\n- 输出一行：从倒数第 `k` 个节点到末尾的节点值，用空格分隔。\n\n## 提示\n\n- `1 <= k <= n <= 1000`\n- `0 <= 节点值 <= 10^4`\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "链表",
+      "referenceAnswer": "使用快慢指针：快指针先从头节点向前走 k 步，然后快慢指针同时每次走一步。当快指针走到 null 时，慢指针刚好停在倒数第 k 个节点上。只需遍历一次链表，时间复杂度 O(n)，空间复杂度 O(1)。也可以先求链表长度 len，再从头走 len - k 步，但需要遍历两次。",
+      "keyPoints": ["快慢指针", "一次遍历", "倒数第 k 个"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n k，第二行 n 个节点值\n        // TODO 输出从倒数第 k 个节点到末尾的节点值\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n k，第二行 n 个节点值\n    # TODO 输出从倒数第 k 个节点到末尾的节点值\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "5 2\n1 2 3 4 5", "expectedOutput": "4 5", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "1 1\n1", "expectedOutput": "1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "3 3\n1 2 3", "expectedOutput": "1 2 3", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "2 1\n1 2", "expectedOutput": "2", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "3 2\n2 3 4", "expectedOutput": "3 4", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "删除链表的节点（剑指 Offer 18）",
+      "content": "## 题目描述\n\n给定一条单链表和一个目标值 `val`，请删除链表中值为 `val` 的节点，并输出删除后的节点值序列。题目保证链表中节点值互不相同，且一定存在值为 `val` 的节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4 5\n4 5 1 9\n```\n\n输出：\n\n```\n4 1 9\n```\n\n**示例 2**\n\n输入：\n\n```\n1 1\n1\n```\n\n输出：\n\n```\n[]\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `val`，`n` 为节点个数；\n- 第二行 `n` 个整数，为链表节点值（互不相同）；\n- 输出一行：删除后的节点值，用空格分隔；结果为空时输出 `[]`。\n\n## 提示\n\n- `1 <= n <= 1000`\n- `-10^4 <= val, 节点值 <= 10^4`\n- 保证链表中存在值为 `val` 的节点\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "链表",
+      "referenceAnswer": "在头节点前加一个哨兵节点，指针从哨兵开始遍历。检查下一个节点是否为待删除节点：若是，把当前节点的 next 指向待删除节点的 next，直接结束；否则指针后移一位继续检查。哨兵节点让删除头节点与删除中间节点走同一套逻辑，不需要额外分支。时间复杂度 O(n)，空间复杂度 O(1)。",
+      "keyPoints": ["哨兵节点", "单指针遍历", "删除节点"],
+      "kpNames": ["链表", "双指针"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/shan-chu-lian-biao-de-jie-dian-lcof/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n val，第二行 n 个节点值\n        // TODO 输出删除值为 val 的节点后的序列（空则输出 []）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n val，第二行 n 个节点值\n    # TODO 输出删除值为 val 的节点后的序列（空则输出 []）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "4 5\n4 5 1 9", "expectedOutput": "4 1 9", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "1 1\n1", "expectedOutput": "[]", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "4 1\n4 5 1 9", "expectedOutput": "4 5 9", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3 3\n1 2 3", "expectedOutput": "1 2", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "2 2\n2 1", "expectedOutput": "1", "isSample": 0, "sort": 5}
+      ]
+    }
+  ]
+}

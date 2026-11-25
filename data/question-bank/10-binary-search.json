@@ -1,0 +1,442 @@
+{
+  "questions": [
+    {
+      "title": "搜索插入位置",
+      "content": "## 题目描述\n\n给定一个严格升序排列、不含重复元素的整数数组 `nums` 和一个目标值 `target`。如果 `target` 存在于数组中，返回它的下标；否则返回它按顺序插入后应处的下标。要求时间复杂度为 O(log n)。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,3,5,6], target = 5`\n\n输出：`2`\n\n**示例 2**\n\n输入：`nums = [1,3,5,6], target = 2`\n\n输出：`1`\n\n**示例 3**\n\n输入：`nums = [1,3,5,6], target = 7`\n\n输出：`4`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `target`；\n- 第二行 `n` 个严格升序的整数；\n- 输出一个整数，表示目标值的下标或插入位置。\n\n## 提示\n\n- `1 <= n <= 10^4`\n- `-10^4 <= nums[i], target <= 10^4`\n- `nums` 严格升序且无重复元素\n\n> 力扣模式下只需实现 `searchInsert` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "二分查找",
+      "referenceAnswer": "标准二分查找：用 left、right 划定闭区间，每次取中点 mid，若 nums[mid] == target 直接返回；nums[mid] < target 收缩左边界，否则收缩右边界。循环结束时的 left 就是目标值应插入的位置。时间复杂度 O(log n)，空间复杂度 O(1)。",
+      "keyPoints": ["二分查找", "插入位置", "闭区间收缩"],
+      "kpNames": ["二分查找", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/search-insert-position/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "searchInsert",
+      "paramTypes": ["int[]", "int"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n target，第二行 n 个升序整数\n        // TODO 输出目标值下标或插入位置\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n target，第二行 n 个升序整数\n    # TODO 输出目标值下标或插入位置\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int searchInsert(int[] nums, int target) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def searchInsert(self, nums: List[int], target: int) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[1,3,5,6],5]", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[1,3,5,6],2]", "expectedOutput": "1", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[1,3,5,6],7]", "expectedOutput": "4", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "4 5\n1 3 5 6", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "4 2\n1 3 5 6", "expectedOutput": "1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "4 0\n1 3 5 6", "expectedOutput": "0", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "搜索二维矩阵",
+      "content": "## 题目描述\n\n给定一个 `m x n` 的整数矩阵 `matrix` 和一个目标值 `target`，判断 `target` 是否存在于矩阵中。矩阵满足：\n\n1. 每一行从左到右严格升序；\n2. 每一行的第一个整数大于上一行的最后一个整数。\n\n因此把矩阵按行展开后是一个严格升序数组。请设计 O(log(m*n)) 的算法。\n\n## 示例\n\n**示例 1**\n\n输入：`matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3`\n\n输出：`true`\n\n**示例 2**\n\n输入：`matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 13`\n\n输出：`false`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行三个整数 `m`、`n` 和 `target`；\n- 接下来 `m` 行，每行 `n` 个整数，表示矩阵；\n- 输出 `true` 或 `false`（全小写）。\n\n## 提示\n\n- `1 <= m, n <= 100`\n- `-10^4 <= matrix[i][j], target <= 10^4`\n- 矩阵满足上述两条有序性质\n\n> 力扣模式下只需实现 `searchMatrix` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "二分查找",
+      "referenceAnswer": "把二维矩阵看成下标 0 到 m*n-1 的一维升序数组，元素为 matrix[mid / n][mid % n]。在该虚拟数组上做标准二分：命中返回 true，循环结束仍未命中返回 false。时间复杂度 O(log(m·n))，空间复杂度 O(1)。",
+      "keyPoints": ["虚拟一维二分", "行列换算", "有序性利用"],
+      "kpNames": ["二分查找", "矩阵"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/search-a-2d-matrix/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "searchMatrix",
+      "paramTypes": ["int[][]", "int"],
+      "returnType": "boolean",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m n target，接下来 m 行每行 n 个整数\n        // TODO 输出 true 或 false（全小写）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 m n target，接下来 m 行每行 n 个整数\n    # TODO 输出 true 或 false（全小写）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public boolean searchMatrix(int[][] matrix, int target) {\n        // TODO\n        return false;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def searchMatrix(self, matrix: List[List[int]], target: int) -> bool:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[[1,3,5,7],[10,11,16,20],[23,30,34,60]],3]", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[[1,3,5,7],[10,11,16,20],[23,30,34,60]],13]", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[[1]],1]", "expectedOutput": "true", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3 4 3\n1 3 5 7\n10 11 16 20\n23 30 34 60", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "3 4 13\n1 3 5 7\n10 11 16 20\n23 30 34 60", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1 1 1\n1", "expectedOutput": "true", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "寻找峰值",
+      "content": "## 题目描述\n\n峰值元素指严格大于左右相邻元素的元素，可以认为数组两端之外是负无穷。给定一个整数数组 `nums`，返回任意一个峰值元素的下标。\n\n本题的测试数据保证峰值下标唯一，因此答案可以直接比较。要求时间复杂度 O(log n)。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,2,3,1]`\n\n输出：`2`\n\n解释：`3` 是峰值，下标为 2。\n\n**示例 2**\n\n输入：`nums = [1,2]`\n\n输出：`1`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 第二行 `n` 个整数，表示数组 `nums`；\n- 输出一个整数，表示峰值元素的下标。\n\n## 提示\n\n- `1 <= n <= 1000`\n- 相邻元素互不相等，峰值下标唯一\n\n> 力扣模式下只需实现 `findPeakElement` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "二分查找",
+      "referenceAnswer": "二分查找：比较中点 mid 与 mid + 1。若 nums[mid] < nums[mid+1]，说明右侧存在上升趋势，峰值必在右半段，令 left = mid + 1；否则峰值在左侧（含 mid），令 right = mid。区间收敛到单点时即峰值下标。时间复杂度 O(log n)，空间复杂度 O(1)。",
+      "keyPoints": ["比较相邻元素", "二分收缩区间", "边界视为负无穷"],
+      "kpNames": ["二分查找", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/find-peak-element/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "findPeakElement",
+      "paramTypes": ["int[]"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个整数\n        // TODO 输出峰值元素的下标\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个整数\n    # TODO 输出峰值元素的下标\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int findPeakElement(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def findPeakElement(self, nums: List[int]) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[1,2,3,1]]", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[1,2]]", "expectedOutput": "1", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[3,2,1]]", "expectedOutput": "0", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "4\n1 2 3 1", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2\n1 2", "expectedOutput": "1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "3\n3 2 1", "expectedOutput": "0", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "搜索旋转排序数组",
+      "content": "## 题目描述\n\n给定一个升序数组 `nums`，它可能在某个未知下标处被旋转过（例如 `[0,1,2,4,5,6,7]` 旋转后可能变成 `[4,5,6,7,0,1,2]`），数组中元素互不相同。再给定目标值 `target`，返回它在数组中的下标，不存在返回 `-1`。要求时间复杂度 O(log n)。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [4,5,6,7,0,1,2], target = 0`\n\n输出：`4`\n\n**示例 2**\n\n输入：`nums = [4,5,6,7,0,1,2], target = 3`\n\n输出：`-1`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `target`；\n- 第二行 `n` 个互不相同的整数；\n- 输出目标值的下标，不存在输出 `-1`。\n\n## 提示\n\n- `1 <= n <= 5000`\n- `-10^4 <= nums[i], target <= 10^4`\n- 数组元素互不相同，且由升序数组旋转得到\n\n> 力扣模式下只需实现 `search` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "二分查找",
+      "referenceAnswer": "在二分的基础上先判断哪一半有序：若 nums[left] <= nums[mid]，说明左半段有序，再看 target 是否落在 [nums[left], nums[mid]] 内决定往哪边收缩；否则右半段有序，同理判断。每次排除一半区间，时间复杂度 O(log n)，空间复杂度 O(1)。",
+      "keyPoints": ["判断有序半区", "二分查找", "旋转数组性质"],
+      "kpNames": ["二分查找", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/search-in-rotated-sorted-array/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "search",
+      "paramTypes": ["int[]", "int"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n target，第二行 n 个互不相同的整数\n        // TODO 输出目标值下标，不存在输出 -1\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n target，第二行 n 个互不相同的整数\n    # TODO 输出目标值下标，不存在输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int search(int[] nums, int target) {\n        // TODO\n        return -1;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def search(self, nums: List[int], target: int) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[4,5,6,7,0,1,2],0]", "expectedOutput": "4", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[4,5,6,7,0,1,2],3]", "expectedOutput": "-1", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[1],0]", "expectedOutput": "-1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "7 0\n4 5 6 7 0 1 2", "expectedOutput": "4", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "7 3\n4 5 6 7 0 1 2", "expectedOutput": "-1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "2 1\n3 1", "expectedOutput": "1", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "在排序数组中查找元素的第一个和最后一个位置",
+      "content": "## 题目描述\n\n给定一个非降序排列的整数数组 `nums` 和一个目标值 `target`，找出 `target` 在数组中第一次和最后一次出现的下标。若不存在，返回 `[-1,-1]`。要求时间复杂度 O(log n)。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [5,7,7,8,8,10], target = 8`\n\n输出：`[3,4]`\n\n**示例 2**\n\n输入：`nums = [5,7,7,8,8,10], target = 6`\n\n输出：`[-1,-1]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `target`；当 `n = 0` 时第二行省略；\n- 第二行 `n` 个非降序整数；\n- 输出一行两个整数，第一个为起始下标，第二个为结束下标；不存在输出 `-1 -1`。\n\n## 提示\n\n- `0 <= n <= 10^5`\n- `-10^9 <= nums[i], target <= 10^9`\n- `nums` 非降序排列\n\n> 力扣模式下只需实现 `searchRange` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "二分查找",
+      "referenceAnswer": "写两个二分：lowerBound 找第一个大于等于 target 的位置，upperBound 找第一个大于 target 的位置。若 lowerBound 越界或该位置的值不等于 target，说明不存在，返回 [-1,-1]；否则答案为 [lowerBound, upperBound-1]。两次二分的时间复杂度均为 O(log n)。",
+      "keyPoints": ["左右边界二分", "lowerBound", "不存在判定"],
+      "kpNames": ["二分查找", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "searchRange",
+      "paramTypes": ["int[]", "int"],
+      "returnType": "int[]",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n target，第二行 n 个非降序整数（n=0 时第二行省略）\n        // TODO 输出起始下标和结束下标，不存在输出 -1 -1\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n target，第二行 n 个非降序整数（n=0 时第二行省略）\n    # TODO 输出起始下标和结束下标，不存在输出 -1 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int[] searchRange(int[] nums, int target) {\n        // TODO\n        return new int[]{-1, -1};\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def searchRange(self, nums: List[int], target: int) -> List[int]:\n        # TODO\n        return [-1, -1]"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[5,7,7,8,8,10],8]", "expectedOutput": "[3,4]", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[5,7,7,8,8,10],6]", "expectedOutput": "[-1,-1]", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[],0]", "expectedOutput": "[-1,-1]", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "6 8\n5 7 7 8 8 10", "expectedOutput": "3 4", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "6 6\n5 7 7 8 8 10", "expectedOutput": "-1 -1", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "0 5", "expectedOutput": "-1 -1", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "寻找旋转排序数组中的最小值",
+      "content": "## 题目描述\n\n给定一个长度为 `n` 的升序数组，它被旋转过 1 到 `n` 次（例如 `[0,1,2,4,5,6,7]` 可能变成 `[4,5,6,7,0,1,2]`），元素互不相同。请返回数组中的最小元素。要求时间复杂度 O(log n)。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [3,4,5,1,2]`\n\n输出：`1`\n\n**示例 2**\n\n输入：`nums = [4,5,6,7,0,1,2]`\n\n输出：`0`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 第二行 `n` 个互不相同的整数；\n- 输出一个整数，表示数组中的最小元素。\n\n## 提示\n\n- `1 <= n <= 5000`\n- `-5000 <= nums[i] <= 5000`\n- 数组元素互不相同\n\n> 力扣模式下只需实现 `findMin` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "二分查找",
+      "referenceAnswer": "二分查找：比较 nums[mid] 与右端点 nums[right]。若 nums[mid] > nums[right]，说明最小值在 mid 右边，令 left = mid + 1；否则最小值在 mid 或其左边，令 right = mid。区间收敛到单点即为最小值。时间复杂度 O(log n)，空间复杂度 O(1)。",
+      "keyPoints": ["与右端点比较", "二分收缩", "旋转数组性质"],
+      "kpNames": ["二分查找", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "findMin",
+      "paramTypes": ["int[]"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个互不相同的整数\n        // TODO 输出数组中的最小元素\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个互不相同的整数\n    # TODO 输出数组中的最小元素\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int findMin(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def findMin(self, nums: List[int]) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[3,4,5,1,2]]", "expectedOutput": "1", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[4,5,6,7,0,1,2]]", "expectedOutput": "0", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[11,13,15,17]]", "expectedOutput": "11", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "5\n3 4 5 1 2", "expectedOutput": "1", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "7\n4 5 6 7 0 1 2", "expectedOutput": "0", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "4\n11 13 15 17", "expectedOutput": "11", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "寻找两个正序数组的中位数",
+      "content": "## 题目描述\n\n给定两个升序整数数组 `nums1` 和 `nums2`，请返回这两个数组合并后的中位数。中位数定义为：合并后长度为奇数时取中间那个数；长度为偶数时取中间两个数的平均值。\n\n要求算法的时间复杂度为 O(log(m+n))。本题测试数据保证中位数是整数或 `.5`，不会出现其它小数。\n\n## 示例\n\n**示例 1**\n\n输入：`nums1 = [1,2], nums2 = [3,4]`\n\n输出：`2.5`\n\n**示例 2**\n\n输入：`nums1 = [5,6], nums2 = [7,8]`\n\n输出：`6.5`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `m`，表示两个数组的长度；\n- 第二行 `n` 个整数，表示 `nums1`；\n- 第三行 `m` 个整数，表示 `nums2`；\n- 输出中位数：若为整数按整数形式输出（如 `2`），否则保留一位小数（如 `2.5`）。\n\n## 提示\n\n- `0 <= n, m <= 1000`，且 `n + m >= 1`\n- `-10^6 <= nums[i] <= 10^6`\n- 两个数组均非降序\n\n> 力扣模式下只需实现 `findMedianSortedArrays` 函数，返回 `double`，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 3,
+      "domain": "二分查找",
+      "referenceAnswer": "对较短的数组做二分，枚举第一个数组的分割线 i，第二个数组的分割线 j = (m+n+1)/2 - i，使左半部分元素个数满足要求。合法分割需满足 nums1[i-1] <= nums2[j] 且 nums2[j-1] <= nums1[i]。找到后按总长度奇偶取左半最大值，或左右最大值与最小值的平均。时间复杂度 O(log min(m,n))。",
+      "keyPoints": ["短数组二分", "分割线", "边界哨兵"],
+      "kpNames": ["二分查找", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/median-of-two-sorted-arrays/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "findMedianSortedArrays",
+      "paramTypes": ["int[]", "int[]"],
+      "returnType": "double",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n m，第二行 nums1，第三行 nums2\n        // TODO 输出中位数：整数按整数输出，否则保留一位小数\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n m，第二行 nums1，第三行 nums2\n    # TODO 输出中位数：整数按整数输出，否则保留一位小数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public double findMedianSortedArrays(int[] nums1, int[] nums2) {\n        // TODO\n        return 0.0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def findMedianSortedArrays(self, nums1: List[int], nums2: List[int]) -> float:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[1,2],[3,4]]", "expectedOutput": "2.5", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[1,3],[2,7]]", "expectedOutput": "2.5", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[5,6],[7,8]]", "expectedOutput": "6.5", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "2 1\n1 3\n2", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2 2\n1 2\n3 4", "expectedOutput": "2.5", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1 1\n1\n2", "expectedOutput": "1.5", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "二维数组中的查找（剑指 Offer 04）",
+      "content": "## 题目描述\n\n在一个 `m x n` 的二维数组中，每一行从左到右递增，每一列从上到下递增。给定目标值 `target`，判断它是否出现在矩阵中。\n\n请利用行列有序性，设计时间复杂度 O(m+n) 的查找算法。\n\n## 示例\n\n**示例 1**\n\n输入：矩阵 `[[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22]]`，`target = 5`\n\n输出：`true`\n\n**示例 2**\n\n输入：矩阵 `[[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22]]`，`target = 20`\n\n输出：`false`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行三个整数 `m`、`n`、`target`；`m = 0` 时后面没有矩阵行；\n- 接下来 `m` 行，每行 `n` 个整数；\n- 输出 `true` 或 `false`（全小写）。\n\n## 提示\n\n- `0 <= m, n <= 1000`\n- `-10^9 <= matrix[i][j], target <= 10^9`\n- 每行升序、每列升序\n\n> 力扣模式下只需实现 `findNumberIn2DArray` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "二分查找",
+      "referenceAnswer": "从矩阵右上角出发：当前值等于 target 即找到；大于 target 说明这一列下方都更大，向左移动一列；小于 target 说明这一行左边都更小，向下移动一行。每次排除一行或一列，时间复杂度 O(m+n)，空间复杂度 O(1)。",
+      "keyPoints": ["从右上角出发", "排除行列", "行列有序性"],
+      "kpNames": ["矩阵", "二分查找"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/er-wei-shu-zu-zhong-de-cha-zhao-lcof/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "findNumberIn2DArray",
+      "paramTypes": ["int[][]", "int"],
+      "returnType": "boolean",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m n target，接下来 m 行每行 n 个整数（m=0 时无矩阵行）\n        // TODO 输出 true 或 false（全小写）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 m n target，接下来 m 行每行 n 个整数（m=0 时无矩阵行）\n    # TODO 输出 true 或 false（全小写）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public boolean findNumberIn2DArray(int[][] matrix, int target) {\n        // TODO\n        return false;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def findNumberIn2DArray(self, matrix: List[List[int]], target: int) -> bool:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]],5]", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]],20]", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[],5]", "expectedOutput": "false", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "5 5 5\n1 4 7 11 15\n2 5 8 12 19\n3 6 9 16 22\n10 13 14 17 24\n18 21 23 26 30", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "5 5 20\n1 4 7 11 15\n2 5 8 12 19\n3 6 9 16 22\n10 13 14 17 24\n18 21 23 26 30", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "0 0 5", "expectedOutput": "false", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "旋转数组的最小数字（剑指 Offer 11）",
+      "content": "## 题目描述\n\n把一个升序数组最前面的若干元素搬到末尾，称为数组的旋转。给定一个可能包含重复元素的旋转数组，返回其中的最小元素。\n\n## 示例\n\n**示例 1**\n\n输入：`numbers = [3,4,5,1,2]`\n\n输出：`1`\n\n**示例 2**\n\n输入：`numbers = [2,2,2,0,1]`\n\n输出：`0`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 第二行 `n` 个整数，表示旋转后的数组；\n- 输出一个整数，表示最小元素。\n\n## 提示\n\n- `1 <= n <= 5000`\n- `-5000 <= numbers[i] <= 5000`\n- 数组允许包含重复元素\n\n> 力扣模式下只需实现 `minArray` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "二分查找",
+      "referenceAnswer": "二分查找：比较 numbers[mid] 与 numbers[right]。大于右端点时最小值在右边，left = mid + 1；小于右端点时最小值在 mid 或其左边，right = mid；相等时无法判断，令 right-- 逐步缩小范围。最坏时间复杂度 O(n)，平均 O(log n)，空间复杂度 O(1)。",
+      "keyPoints": ["重复元素处理", "右端点比较", "二分收缩"],
+      "kpNames": ["二分查找", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/xuan-zhuan-shu-zu-de-zui-xiao-shu-zi-lcof/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "minArray",
+      "paramTypes": ["int[]"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个整数\n        // TODO 输出最小元素\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个整数\n    # TODO 输出最小元素\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int minArray(int[] numbers) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def minArray(self, numbers: List[int]) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[3,4,5,1,2]]", "expectedOutput": "1", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[2,2,2,0,1]]", "expectedOutput": "0", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[1,3,5]]", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "5\n3 4 5 1 2", "expectedOutput": "1", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "5\n2 2 2 0 1", "expectedOutput": "0", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "3\n1 3 5", "expectedOutput": "1", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "0～n-1 中缺失的数字（剑指 Offer 53 - II）",
+      "content": "## 题目描述\n\n一个长度为 `n-1` 的升序数组中包含 `0` 到 `n-1` 这 `n` 个数字中的 `n-1` 个，每个数字只出现一次，缺少其中一个。请找出缺失的数字。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [0,1,3]`\n\n输出：`2`\n\n**示例 2**\n\n输入：`nums = [0,1,2,3,4,5,6,7,9]`\n\n输出：`8`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个升序整数；\n- 输出一个整数，表示缺失的数字。\n\n## 提示\n\n- `1 <= n <= 10^4`\n- `0 <= nums[i] <= n`\n- 数组严格升序，数字互不重复\n\n> 力扣模式下只需实现 `missingNumber` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "二分查找",
+      "referenceAnswer": "利用下标与值的对应关系做二分：若没有缺失，应有 nums[i] == i。二分找到第一个 nums[mid] != mid 的位置，它就是缺失值所在下标；若所有位置都满足 nums[i] == i，则缺失的是 n。时间复杂度 O(log n)，空间复杂度 O(1)。",
+      "keyPoints": ["下标与值对应", "二分定位", "末尾缺失处理"],
+      "kpNames": ["二分查找", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/que-shi-de-shu-zi-lcof/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "missingNumber",
+      "paramTypes": ["int[]"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个升序整数\n        // TODO 输出缺失的数字\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个升序整数\n    # TODO 输出缺失的数字\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int missingNumber(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def missingNumber(self, nums: List[int]) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[0,1,3]]", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[0,1,2,3,4,5,6,7,9]]", "expectedOutput": "8", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[1]]", "expectedOutput": "0", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3\n0 1 3", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "9\n0 1 2 3 4 5 6 7 9", "expectedOutput": "8", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1\n0", "expectedOutput": "1", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "在排序数组中查找数字 I（剑指 Offer 53 - I）",
+      "content": "## 题目描述\n\n给定一个非降序排列的整数数组 `nums` 和一个整数 `target`，统计 `target` 在数组中出现的次数。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [5,7,7,8,8,10], target = 8`\n\n输出：`2`\n\n**示例 2**\n\n输入：`nums = [5,7,7,8,8,10], target = 6`\n\n输出：`0`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `target`；\n- 第二行 `n` 个非降序整数；\n- 输出一个整数，表示 `target` 出现的次数。\n\n## 提示\n\n- `0 <= n <= 10^5`\n- `-10^9 <= nums[i], target <= 10^9`\n- `nums` 非降序排列\n\n> 力扣模式下只需实现 `search` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "二分查找",
+      "referenceAnswer": "分别用二分求出 target 第一次出现的下标 left 和第一个大于 target 的下标 right，出现次数为 right - left。若 left 越界或 nums[left] != target，说明不存在，返回 0。两次二分的时间复杂度为 O(log n)，空间复杂度 O(1)。",
+      "keyPoints": ["左右边界二分", "计数", "不存在返回 0"],
+      "kpNames": ["二分查找", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/zai-pai-xu-shu-zu-zhong-cha-zhao-shu-zi-lcof/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "search",
+      "paramTypes": ["int[]", "int"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n target，第二行 n 个非降序整数\n        // TODO 输出 target 出现的次数\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n target，第二行 n 个非降序整数\n    # TODO 输出 target 出现的次数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int search(int[] nums, int target) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def search(self, nums: List[int], target: int) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[5,7,7,8,8,10],8]", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[5,7,7,8,8,10],6]", "expectedOutput": "0", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[1,1,1],1]", "expectedOutput": "3", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "6 8\n5 7 7 8 8 10", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "6 6\n5 7 7 8 8 10", "expectedOutput": "0", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "3 1\n1 1 1", "expectedOutput": "3", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "x 的平方根",
+      "content": "## 题目描述\n\n给定一个非负整数 `x`，求它的算术平方根，并向下取整。也就是说，返回满足 `k * k <= x` 的最大整数 `k`。\n\n不允许使用任何内置的求平方根函数（如 `Math.sqrt`、`pow`）。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4\n```\n\n输出：\n\n```\n2\n```\n\n**示例 2**\n\n输入：\n\n```\n8\n```\n\n输出：\n\n```\n2\n```\n\n解释：`8` 的平方根约等于 `2.828`，向下取整为 `2`。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个非负整数 `x`；\n- 输出一个整数，表示向下取整后的平方根（即 `⌊√x⌋`）。\n\n## 提示\n\n- `0 <= x <= 2^31 - 1`\n- 输出一定是整数，不涉及浮点精度\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "二分查找",
+      "referenceAnswer": "在 [0, x] 区间上二分答案 k：每次取中点 mid，用 mid <= x / mid 判断 mid * mid <= x，可避免乘法溢出。满足时记录答案并向右收缩，否则向左收缩。最终记录的值就是向下取整的平方根。时间复杂度 O(log x)，空间复杂度 O(1)。",
+      "keyPoints": ["二分答案", "避免乘法溢出", "向下取整"],
+      "kpNames": ["二分查找", "数学"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/sqrtx/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行一个非负整数 x\n        // TODO 输出向下取整后的平方根（整数）\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行一个非负整数 x\n    # TODO 输出向下取整后的平方根（整数）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "4", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "8", "expectedOutput": "2", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "0", "expectedOutput": "0", "isSample": 0, "sort": 4}
+      ]
+    },
+    {
+      "title": "Pow(x, n)",
+      "content": "## 题目描述\n\n实现 `pow(x, n)`，计算 `x` 的 `n` 次幂（即 `x^n`）。`n` 可以为负数，此时结果为 `1 / x^(-n)`。\n\n不允许直接调用语言内置的幂函数。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n2.0 10\n```\n\n输出：\n\n```\n1024\n```\n\n**示例 2**\n\n输入：\n\n```\n2.0 -2\n```\n\n输出：\n\n```\n0.25000\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个数：小数 `x` 与整数 `n`，用空格分隔；\n- 输出 `x^n` 的结果：若结果为整数，按整数形式输出（如 `1024`、`1`）；否则保留 5 位小数（如 `0.25000`）；\n- 本题测试数据保证结果能被二进制精确表示，不会出现无限小数。\n\n## 提示\n\n- `-100.0 < x < 100.0`\n- `-2^31 <= n <= 2^31 - 1`\n- `x != 0` 或 `n > 0`\n- 结果绝对值不会超出 `double` 的表示范围\n",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "二分查找",
+      "referenceAnswer": "快速幂：把指数按二进制拆解，底数每轮平方、指数右移一位；当前二进制位为 1 时把答案乘上当前底数。n 为负数时先把 x 取倒数并把指数转为正数，注意用 long 承接避免溢出。时间复杂度 O(log |n|)，空间复杂度 O(1)。",
+      "keyPoints": ["快速幂", "负指数取倒数", "指数用 long"],
+      "kpNames": ["数学", "分治"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/powx-n/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 x（小数）和 n（整数）\n        // TODO 输出 x^n：整数按整数输出，否则保留 5 位小数\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 x（小数）和 n（整数）\n    # TODO 输出 x^n：整数按整数输出，否则保留 5 位小数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "2.0 10", "expectedOutput": "1024", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2.0 -2", "expectedOutput": "0.25000", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "2.0 0", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "1.5 2", "expectedOutput": "2.25000", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "0.5 3", "expectedOutput": "0.12500", "isSample": 0, "sort": 5}
+      ]
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
+  FileText,
   Loader2,
   Play,
   Send,
@@ -28,6 +29,7 @@ import {
   type CodingStatus,
   type CodingSubmission,
 } from '../api/questionBank'
+import MarkdownContent from '../components/MarkdownContent'
 import { difficultyClass, difficultyLabel } from '../components/questions/QuestionBadges'
 
 // 用本地打包的 monaco，避免编辑器依赖外部 CDN
@@ -205,10 +207,6 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
             </span>
           </div>
         )}
-        <div className="ml-auto flex shrink-0 items-center gap-2 text-[11px] text-slate-400">
-          <span>时限 {detail?.timeLimitMs ?? 2000}ms</span>
-          <span>内存 {detail?.memoryLimitMb ?? 256}MB</span>
-        </div>
       </header>
 
       {loading ? (
@@ -231,61 +229,84 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
       ) : (
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:grid-cols-2 lg:overflow-hidden">
           {/* 左侧:题面与例题 */}
-          <section className="min-h-0 overflow-y-auto rounded-xl border border-slate-200 bg-white px-4 py-4">
-            <p className="whitespace-pre-wrap text-sm leading-7 text-slate-800">{detail.content}</p>
-
-            <div className="mt-5">
-              <p className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
-                <Terminal size={13} className="text-teal-600" />
-                例题（{samples.length}）
-              </p>
-              {isFunction && (
-                <div className="mt-2 rounded-lg border border-teal-100 bg-teal-50/60 px-3 py-2">
-                  <p className="text-[11px] font-medium text-teal-700">
-                    只需实现函数，不用写 main
-                  </p>
-                  <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded bg-white px-2 py-1 font-mono text-[11px] text-slate-700">
-                    {signatureText}
-                  </pre>
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    判题器会自动读入参数并调用它，返回值按 JSON 与期望输出比较。
-                  </p>
-                </div>
-              )}
-              <div className="mt-2 space-y-2">
-                {samples.map((sample, index) => (
-                  <div key={index} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] font-medium text-slate-500">示例 {index + 1}</p>
-                    <p className="mt-1 text-[11px] text-slate-400">
-                      {isFunction ? '参数（JSON 数组，按签名顺序）' : '输入'}
-                    </p>
-                    <pre className="mt-0.5 overflow-x-auto whitespace-pre-wrap rounded bg-white px-2 py-1 font-mono text-xs text-slate-700">
-                      {sample.input || '(空)'}
-                    </pre>
-                    <p className="mt-1.5 text-[11px] text-slate-400">
-                      {isFunction ? '期望返回值' : '期望输出'}
-                    </p>
-                    <pre className="mt-0.5 overflow-x-auto whitespace-pre-wrap rounded bg-white px-2 py-1 font-mono text-xs text-slate-700">
-                      {sample.expectedOutput}
-                    </pre>
-                  </div>
-                ))}
-              </div>
+          <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="flex shrink-0 items-center gap-1.5 border-b border-slate-200 px-4 py-2.5">
+              <FileText size={14} className="text-teal-600" />
+              <p className="text-xs font-semibold text-slate-700">题目描述</p>
+              <span className="ml-auto text-[11px] text-slate-400">
+                时限 {detail.timeLimitMs || 2000}ms · 内存 {detail.memoryLimitMb || 256}MB
+              </span>
             </div>
 
-            {history.length > 0 && (
-              <div className="mt-5">
-                <p className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
-                  <Clock size={13} className="text-slate-400" />
-                  提交历史（最近 {history.length} 次）
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+              <MarkdownContent content={normalizeQuestionContent(detail.content)} />
+
+              <div className="mt-6">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                  <Terminal size={13} className="text-teal-600" />
+                  示例
+                  <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-normal text-slate-500">
+                    {samples.length} 组
+                  </span>
                 </p>
-                <div className="mt-2 space-y-1.5">
-                  {history.map((item) => (
-                    <SubmissionRow key={item.id} item={item} />
+
+                {isFunction && (
+                  <div className="mt-2.5 rounded-lg border border-teal-100 bg-teal-50/60 px-3 py-2.5">
+                    <p className="text-[11px] font-medium text-teal-700">只需实现函数，不用写 main</p>
+                    <pre className="mt-1.5 overflow-x-auto whitespace-pre-wrap rounded-md bg-white px-2.5 py-1.5 font-mono text-xs leading-6 text-slate-700">
+                      {signatureText}
+                    </pre>
+                    <p className="mt-1.5 text-[11px] leading-5 text-slate-500">
+                      判题器会自动读入参数并调用它，返回值按 JSON 与期望输出比较。
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-2.5 space-y-3">
+                  {samples.length === 0 && (
+                    <p className="rounded-lg border border-dashed border-slate-200 px-3 py-3 text-center text-[11px] text-slate-400">
+                      该题暂未提供公开示例
+                    </p>
+                  )}
+                  {samples.map((sample, index) => (
+                    <div key={index} className="overflow-hidden rounded-lg border border-slate-200">
+                      <p className="border-b border-slate-100 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-500">
+                        示例 {index + 1}
+                      </p>
+                      <div className="divide-y divide-slate-100">
+                        <SampleBlock
+                          label={isFunction ? '参数' : '输入'}
+                          hint={isFunction ? 'JSON 数组，按签名顺序' : undefined}
+                          value={sample.input || '(空)'}
+                        />
+                        <SampleBlock
+                          label={isFunction ? '期望返回值' : '期望输出'}
+                          value={sample.expectedOutput}
+                        />
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
-            )}
+
+              {history.length > 0 && (
+                <div className="mt-6">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                    <Clock size={13} className="text-slate-400" />
+                    提交历史（最近 {history.length} 次）
+                  </p>
+                  <div className="mt-2 space-y-1.5">
+                    {history.map((item) => (
+                      <SubmissionRow key={item.id} item={item} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="mt-6 border-t border-dashed border-slate-200 pt-3 text-[11px] leading-5 text-slate-400">
+                相似题目、题解与评论功能正在开发中。
+              </p>
+            </div>
           </section>
 
           {/* 右侧:编辑器 + 操作 + 结果 */}
@@ -411,6 +432,39 @@ function starterCodes(detail: CodingDetail, mode: CodeMode): Record<string, stri
     [codeKey(mode, 'JAVA')]: starter.JAVA ?? '',
     [codeKey(mode, 'PYTHON')]: starter.PYTHON ?? '',
   }
+}
+
+/**
+ * 题面既可能是 Markdown(带配图、代码块),也可能是带换行的纯文本。
+ * 纯文本的单个换行在 Markdown 里会被合并成一行,这里补成硬换行,保留原有断行。
+ */
+function normalizeQuestionContent(content: string): string {
+  const lines = content.replace(/\r\n/g, '\n').split('\n')
+  let inFence = false
+  return lines
+    .map((line) => {
+      const isFence = /^\s*```/.test(line)
+      if (isFence) inFence = !inFence
+      if (inFence || isFence || !line.trim()) return line
+      // 标题、列表、表格、引用本身就是块级语法,不需要硬换行
+      if (/^\s*(#{1,6}\s|[-*+]\s|\d+\.\s|\||>)/.test(line)) return line
+      return `${line}  `
+    })
+    .join('\n')
+}
+
+function SampleBlock({ label, hint, value }: { label: string; hint?: string; value: string }) {
+  return (
+    <div className="px-3 py-2">
+      <p className="text-[11px] text-slate-400">
+        <span className="font-medium text-slate-500">{label}</span>
+        {hint && <span className="ml-1">{hint}</span>}
+      </p>
+      <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded-md bg-slate-50 px-2.5 py-1.5 font-mono text-xs leading-6 text-slate-800">
+        {value}
+      </pre>
+    </div>
+  )
 }
 
 function RunResultView({ result }: { result: CodeRunResult }) {

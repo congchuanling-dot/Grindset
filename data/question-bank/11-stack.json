@@ -1,0 +1,311 @@
+{
+  "questions": [
+    {
+      "title": "有效的括号",
+      "content": "## 题目描述\n\n给定一个只由 `(`、`)`、`[`、`]`、`{`、`}` 组成的非空字符串 `s`，判断这个字符串是否有效。\n\n有效需要同时满足两点：每个左括号必须用相同类型的右括号闭合；左括号必须以正确的顺序闭合。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"()\"`\n\n输出：`true`\n\n**示例 2**\n\n输入：`s = \"()[]{}\"`\n\n输出：`true`\n\n**示例 3**\n\n输入：`s = \"(]\"`\n\n输出：`false`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行字符串 `s`，只包含上述六种括号字符；\n- 输出一行 `true` 或 `false`。\n\n## 提示\n\n- `1 <= s.length <= 10^4`\n- `s` 仅由括号字符组成\n\n> 力扣模式下只需实现 `isValid` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "栈",
+      "referenceAnswer": "用栈保存尚未匹配的左括号：遇到左括号就入栈；遇到右括号时，如果栈为空或栈顶不是与之匹配的左括号，说明无效，否则弹出栈顶。遍历结束后栈为空才说明全部匹配。时间复杂度 O(n)，空间复杂度 O(n)。",
+      "keyPoints": ["栈", "括号匹配", "后进先出"],
+      "kpNames": ["栈", "字符串"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/valid-parentheses/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "isValid",
+      "paramTypes": ["String"],
+      "returnType": "boolean",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行括号字符串 s\n        // TODO 输出 true 或 false\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 输入一行括号字符串 s\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public boolean isValid(String s) {\n        // TODO\n        return false;\n    }\n}",
+        "PYTHON": "class Solution:\n    def isValid(self, s: str) -> bool:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[\"()\"]", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[\"()[]{}\"]", "expectedOutput": "true", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[\"(]\"]", "expectedOutput": "false", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "()", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "()[]{}", "expectedOutput": "true", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "([)]", "expectedOutput": "false", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "字符串解码",
+      "content": "## 题目描述\n\n编码字符串遵循 `k[encoded_string]` 的规则，表示把方括号内的内容重复 `k` 次，`k` 是正整数。方括号内部还可以嵌套同样的编码。\n\n给定一个编码后的字符串 `s`，返回它解码后的结果。输入保证合法，且不含多余空格。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"3[a]2[bc]\"`\n\n输出：`\"aaabcbc\"`\n\n**示例 2**\n\n输入：`s = \"3[a2[c]]\"`\n\n输出：`\"accaccacc\"`\n\n**示例 3**\n\n输入：`s = \"2[abc]3[cd]ef\"`\n\n输出：`\"abcabccdcdcdef\"`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行编码字符串 `s`；\n- 输出一行解码后的字符串。\n\n## 提示\n\n- `1 <= s.length <= 30`\n- `1 <= k <= 300`\n- 保证输入合法，解码后长度不超过 `10^5`\n\n> 力扣模式下只需实现 `decodeString` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "栈",
+      "referenceAnswer": "用两个栈分别保存重复次数和进入方括号前已拼好的字符串。遍历字符：数字累积成多位数；遇到 `[` 时把当前次数与当前前缀压栈并清空前缀；遇到 `]` 时弹出前缀和次数，把当前片段重复后接回前缀；普通字符直接追加到前缀。时间复杂度与输出长度成正比。",
+      "keyPoints": ["双栈", "嵌套解码", "字符串拼接"],
+      "kpNames": ["栈", "字符串"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/decode-string/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "decodeString",
+      "paramTypes": ["String"],
+      "returnType": "String",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行编码字符串 s\n        // TODO 输出解码后的字符串\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 输入一行编码字符串 s\n    # TODO 输出解码后的字符串\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public String decodeString(String s) {\n        // TODO\n        return \"\";\n    }\n}",
+        "PYTHON": "class Solution:\n    def decodeString(self, s: str) -> str:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[\"3[a]2[bc]\"]", "expectedOutput": "\"aaabcbc\"", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[\"3[a2[c]]\"]", "expectedOutput": "\"accaccacc\"", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[\"2[abc]3[cd]ef\"]", "expectedOutput": "\"abcabccdcdcdef\"", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3[a]2[bc]", "expectedOutput": "aaabcbc", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "3[a2[c]]", "expectedOutput": "accaccacc", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "2[abc]3[cd]ef", "expectedOutput": "abcabccdcdcdef", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "每日温度",
+      "content": "## 题目描述\n\n给定一个整数数组 `temperatures` 表示每天的气温。请返回一个数组 `answer`，其中 `answer[i]` 表示第 `i` 天之后还需要等待多少天才会出现更高的气温；如果之后都不会更高，则填 `0`。\n\n## 示例\n\n**示例 1**\n\n输入：`temperatures = [73,74,75,71,69,72,76,73]`\n\n输出：`[1,1,4,2,1,1,0,0]`\n\n**示例 2**\n\n输入：`temperatures = [30,40,50,60]`\n\n输出：`[1,1,1,0]`\n\n**示例 3**\n\n输入：`temperatures = [30,60,90]`\n\n输出：`[1,1,0]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示天数；\n- 第二行 `n` 个整数，表示每天的气温；\n- 输出一行 `n` 个整数，用空格分隔。\n\n## 提示\n\n- `1 <= n <= 10^5`\n- `30 <= temperatures[i] <= 100`\n\n> 力扣模式下只需实现 `dailyTemperatures` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "栈",
+      "referenceAnswer": "维护一个存放下标的单调递减栈。遍历每天气温，当栈非空且当前气温大于栈顶下标对应的气温时，弹出栈顶下标 `j`，令 `answer[j] = i - j` 并持续处理；之后把当前下标入栈。遍历结束后仍留在栈里的下标对应答案 0。时间复杂度 O(n)。",
+      "keyPoints": ["单调栈", "下标入栈", "下一个更大元素"],
+      "kpNames": ["栈", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/daily-temperatures/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "dailyTemperatures",
+      "paramTypes": ["int[]"],
+      "returnType": "int[]",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个气温\n        // TODO 输出每个位置等待的天数，空格分隔\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个气温\n    # TODO 输出每个位置等待的天数，空格分隔\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        // TODO\n        return new int[temperatures.length];\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def dailyTemperatures(self, temperatures: List[int]) -> List[int]:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[73,74,75,71,69,72,76,73]]", "expectedOutput": "[1,1,4,2,1,1,0,0]", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[30,40,50,60]]", "expectedOutput": "[1,1,1,0]", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[30,60,90]]", "expectedOutput": "[1,1,0]", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "8\n73 74 75 71 69 72 76 73", "expectedOutput": "1 1 4 2 1 1 0 0", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "4\n30 40 50 60", "expectedOutput": "1 1 1 0", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "3\n30 60 90", "expectedOutput": "1 1 0", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "柱状图中最大的矩形",
+      "content": "## 题目描述\n\n给定 `n` 个非负整数，表示一排宽度都为 1 的柱子的高度 `heights`。请找出其中能够勾勒出的最大矩形面积，矩形必须由连续的若干根柱子构成，高度取这些柱子的最小值。\n\n## 示例\n\n**示例 1**\n\n输入：`heights = [2,1,5,6,2,3]`\n\n输出：`10`\n\n解释：选取高度为 5 和 6 的两根柱子，按较低高度 5 计算，面积为 `5 * 2 = 10`。\n\n**示例 2**\n\n输入：`heights = [2,4]`\n\n输出：`4`\n\n**示例 3**\n\n输入：`heights = [1]`\n\n输出：`1`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示柱子数量；\n- 第二行 `n` 个非负整数，表示柱子高度；\n- 输出一个整数，表示最大矩形面积。\n\n## 提示\n\n- `1 <= n <= 10^5`\n- `0 <= heights[i] <= 10^4`\n\n> 力扣模式下只需实现 `largestRectangleArea` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 3,
+      "domain": "栈",
+      "referenceAnswer": "维护一个存放高度的单调递增栈。遍历每根柱子，当当前高度小于栈顶高度时反复弹出栈顶，并以弹出高度乘以当前下标与新的栈顶下标之差更新最大面积。在数组首尾各补一个高度 0 的哨兵，可以统一处理栈清空和收尾计算。时间复杂度 O(n)，空间复杂度 O(n)。",
+      "keyPoints": ["单调栈", "哨兵", "最大矩形"],
+      "kpNames": ["栈", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/largest-rectangle-in-histogram/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "largestRectangleArea",
+      "paramTypes": ["int[]"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个柱子高度\n        // TODO 输出最大矩形面积\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个柱子高度\n    # TODO 输出最大矩形面积\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int largestRectangleArea(int[] heights) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def largestRectangleArea(self, heights: List[int]) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[2,1,5,6,2,3]]", "expectedOutput": "10", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[2,4]]", "expectedOutput": "4", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[1]]", "expectedOutput": "1", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "6\n2 1 5 6 2 3", "expectedOutput": "10", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2\n2 4", "expectedOutput": "4", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "简化路径",
+      "content": "## 题目描述\n\n给定一个 Unix 风格的绝对路径字符串 `path`，请把它简化为规范形式。规则如下：\n\n- 多个连续的 `/` 视为一个；\n- `.` 表示当前目录，可以忽略；\n- `..` 表示回到上一级目录，如果已经在根目录则忽略；\n- 结果必须以 `/` 开头，且除根目录 `/` 外不能以 `/` 结尾；\n- 结果中不能包含 `.` 或 `..`。\n\n## 示例\n\n**示例 1**\n\n输入：`path = \"/home/\"`\n\n输出：`\"/home\"`\n\n**示例 2**\n\n输入：`path = \"/../\"`\n\n输出：`\"/\"`\n\n**示例 3**\n\n输入：`path = \"/home//foo/\"`\n\n输出：`\"/home/foo\"`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行绝对路径 `path`；\n- 输出一行简化后的路径。\n\n## 提示\n\n- `1 <= path.length <= 3000`\n- `path` 由字母、数字、`.`、`/`、`_` 组成\n- `path` 是一个合法的绝对路径\n\n> 力扣模式下只需实现 `simplifyPath` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "栈",
+      "referenceAnswer": "按 `/` 切分路径，用栈保存目录名。空串和 `.` 直接跳过；遇到 `..` 时若栈非空则弹出一个目录；其余目录名入栈。最后用 `/` 把栈中目录连接起来并在最前面补 `/`，若栈为空则返回 `/`。每个字符只处理一次，时间复杂度 O(n)。",
+      "keyPoints": ["栈", "路径解析", "边界处理"],
+      "kpNames": ["栈", "字符串"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/simplify-path/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "simplifyPath",
+      "paramTypes": ["String"],
+      "returnType": "String",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行绝对路径 path\n        // TODO 输出简化后的路径\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 输入一行绝对路径 path\n    # TODO 输出简化后的路径\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public String simplifyPath(String path) {\n        // TODO\n        return \"/\";\n    }\n}",
+        "PYTHON": "class Solution:\n    def simplifyPath(self, path: str) -> str:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[\"/home/\"]", "expectedOutput": "\"/home\"", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[\"/../\"]", "expectedOutput": "\"/\"", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[\"/home//foo/\"]", "expectedOutput": "\"/home/foo\"", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "/home/", "expectedOutput": "/home", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "/../", "expectedOutput": "/", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "/home//foo/", "expectedOutput": "/home/foo", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "逆波兰表达式求值",
+      "content": "## 题目描述\n\n给定一个用字符串数组表示的逆波兰表达式（后缀表达式）`tokens`，请计算它的值。\n\n有效的运算符只有 `+`、`-`、`*`、`/`。两个整数之间的除法向零取整，且除数不会为 0。输入保证是合法的逆波兰表达式。\n\n## 示例\n\n**示例 1**\n\n输入：`tokens = [\"2\",\"1\",\"+\",\"3\",\"*\"]`\n\n输出：`9`\n\n解释：`(2 + 1) * 3 = 9`。\n\n**示例 2**\n\n输入：`tokens = [\"4\",\"13\",\"5\",\"/\",\"+\"]`\n\n输出：`6`\n\n解释：`4 + 13 / 5 = 4 + 2 = 6`。\n\n**示例 3**\n\n输入：`tokens = [\"10\",\"6\",\"9\",\"3\",\"+\",\"-11\",\"*\",\"/\",\"*\",\"17\",\"+\",\"5\",\"+\"]`\n\n输出：`22`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示 token 个数；\n- 第二行 `n` 个 token，用空格分隔；\n- 输出一个整数，表示表达式的值。\n\n## 提示\n\n- `1 <= n <= 10^4`\n- `tokens[i]` 是整数或四种运算符之一\n- 除法向零截断，除数不为 0\n\n> 力扣模式下只需实现 `evalRPN` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "栈",
+      "referenceAnswer": "用栈保存操作数。遍历 token：如果是数字就转成整数入栈；如果是运算符则先弹出右操作数、再弹出左操作数，按运算符计算后把结果压回栈中。注意除法使用整数除法并向零截断。遍历结束后栈顶就是表达式的值。时间复杂度 O(n)，空间复杂度 O(n)。",
+      "keyPoints": ["栈", "后缀表达式", "向零取整"],
+      "kpNames": ["栈", "字符串"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/evaluate-reverse-polish-notation/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "evalRPN",
+      "paramTypes": ["String[]"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（数字或 + - * /）\n        // TODO 输出表达式的结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（数字或 + - * /）\n    # TODO 输出表达式的结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int evalRPN(String[] tokens) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def evalRPN(self, tokens: List[str]) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[\"2\",\"1\",\"+\",\"3\",\"*\"]]", "expectedOutput": "9", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[\"4\",\"13\",\"5\",\"/\",\"+\"]]", "expectedOutput": "6", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[\"10\",\"6\",\"9\",\"3\",\"+\",\"-11\",\"*\",\"/\",\"*\",\"17\",\"+\",\"5\",\"+\"]]", "expectedOutput": "22", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "5\n2 1 + 3 *", "expectedOutput": "9", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "5\n4 13 5 / +", "expectedOutput": "6", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "13\n10 6 9 3 + -11 * / * 17 + 5 +", "expectedOutput": "22", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "基本计算器",
+      "content": "## 题目描述\n\n给定一个只包含非负整数、`+`、`-`、`(`、`)` 和空格的字符串表达式 `s`，请计算并返回它的值。\n\n表达式中的 `-` 既可以是运算符，也可以表示一元负号（例如 `-2`）。整数除法不会出现。请不要使用语言内置的表达式求值函数。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"1 + 1\"`\n\n输出：`2`\n\n**示例 2**\n\n输入：`s = \"2-1 + 2\"`\n\n输出：`3`\n\n**示例 3**\n\n输入：`s = \"(1+(4+5+2)-3)+(6+8)\"`\n\n输出：`23`\n\n## 输入输出格式（ACM 模式）\n\n- 输入为一行表达式，可能包含任意空格，需要整行读入并忽略所有空格；\n- 输出一个整数，表示表达式的值。\n\n## 提示\n\n- `1 <= s.length <= 3 * 10^5`\n- `s` 由数字、`+`、`-`、`(`、`)` 和空格组成\n- 表达式合法，中间结果和最终结果都在 32 位整数范围内\n\n> 力扣模式下只需实现 `calculate` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 3,
+      "domain": "栈",
+      "referenceAnswer": "维护当前累计结果、当前符号和正在读取的数字，用栈保存进入括号前的累计结果与符号。遇到数字累积；遇到 `+`/`-` 先结算上一个数字再更新符号；遇到 `(` 把当前结果和符号压栈并重置；遇到 `)` 先结算数字，再弹出外层结果和符号合并。时间复杂度 O(n)，空间复杂度 O(n)。",
+      "keyPoints": ["栈", "括号展开", "一元负号"],
+      "kpNames": ["栈", "字符串"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/basic-calculator/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "calculate",
+      "paramTypes": ["String"],
+      "returnType": "int",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入为一行表达式，可能包含空格，需整行读入（sc.nextLine()）\n        // TODO 忽略空格后求值，输出一个整数\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 输入为一行表达式，可能包含空格，需整行读入（sys.stdin.readline()）\n    # TODO 忽略空格后求值，输出一个整数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public int calculate(String s) {\n        // TODO\n        return 0;\n    }\n}",
+        "PYTHON": "class Solution:\n    def calculate(self, s: str) -> int:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[\"1 + 1\"]", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[\"2-1 + 2\"]", "expectedOutput": "3", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[\"(1+(4+5+2)-3)+(6+8)\"]", "expectedOutput": "23", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "1 + 1", "expectedOutput": "2", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "2-1 + 2", "expectedOutput": "3", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "(1+(4+5+2)-3)+(6+8)", "expectedOutput": "23", "isSample": 0, "sort": 3}
+      ]
+    },
+    {
+      "title": "用两个栈实现队列（剑指 Offer 09）",
+      "content": "## 题目描述\n\n请用两个栈实现一个队列，支持四种操作：\n\n- `push x`：把整数 `x` 放到队列尾部；\n- `pop`：删除并返回队首元素；\n- `peek`：返回队首元素，不删除；\n- `empty`：返回队列是否为空。\n\n实现时只允许使用栈的基本操作（入栈、出栈、取栈顶、判空）。\n\n## 示例\n\n输入：\n\n```\n7\npush 1\npush 2\npeek\npop\nempty\npop\nempty\n```\n\n输出：\n\n```\n1\n1\nfalse\n2\ntrue\n```\n\n解释：依次入队 1、2 后队首为 1；`pop` 返回 1 且队列仍非空；再 `pop` 返回 2，此时队列为空。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `q`，表示操作条数；\n- 接下来 `q` 行，每行是一条操作：`push x`、`pop`、`peek` 或 `empty`；\n- 对 `push` 不输出任何内容；\n- 对 `pop`、`peek` 输出队首元素（各占一行）；\n- 对 `empty` 输出 `true` 或 `false`（各占一行）；\n- 数据保证执行 `pop`、`peek` 时队列非空。\n\n## 提示\n\n- `1 <= q <= 1000`\n- `-10^6 <= x <= 10^6`\n- 所有输出结果按操作顺序逐行输出",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 1,
+      "domain": "栈",
+      "referenceAnswer": "准备两个栈：`in` 负责接收入队元素，`out` 负责出队。`push` 直接压入 `in`；`pop`/`peek` 时若 `out` 为空，就把 `in` 中所有元素依次弹出并压入 `out`，再从 `out` 栈顶取值；`empty` 只需判断两个栈是否都为空。每个元素最多被搬运一次，均摊时间复杂度 O(1)。",
+      "keyPoints": ["双栈", "队列", "均摊 O(1)"],
+      "kpNames": ["栈", "队列"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/yong-liang-ge-zhan-shi-xian-dui-lie-lcof/",
+      "codeMode": "ACM",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 q 表示操作条数；接下来 q 行，每行是 push x / pop / peek / empty\n        // push 不输出；pop、peek 输出队首元素；empty 输出 true 或 false\n        // TODO 用两个栈实现队列并逐行输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 q 表示操作条数；接下来 q 行，每行是 push x / pop / peek / empty\n    # push 不输出；pop、peek 输出队首元素；empty 输出 true 或 false\n    # TODO 用两个栈实现队列并逐行输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "testCases": [
+        {"caseMode": "ACM", "input": "7\npush 1\npush 2\npeek\npop\nempty\npop\nempty", "expectedOutput": "1\n1\nfalse\n2\ntrue", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "4\nempty\npush 3\npeek\npop", "expectedOutput": "true\n3\n3", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "9\npush 1\npush 2\npush 3\npop\npop\npush 4\npeek\npop\npop", "expectedOutput": "1\n2\n3\n3\n4", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "3\nempty\npush 7\nempty", "expectedOutput": "true\nfalse", "isSample": 0, "sort": 4},
+        {"caseMode": "ACM", "input": "6\npush 1\npop\nempty\npush 2\npeek\nempty", "expectedOutput": "1\ntrue\n2\nfalse", "isSample": 0, "sort": 5}
+      ]
+    },
+    {
+      "title": "栈的压入、弹出序列（剑指 Offer 31）",
+      "content": "## 题目描述\n\n给定两个长度为 `n` 的整数序列 `pushed` 和 `popped`，其中 `pushed` 是元素被压入栈的顺序，`popped` 是可能的弹出顺序。请判断 `popped` 是否可能是该栈的弹出序列。\n\n压入过程中可以随时弹出元素，但同一时刻只能按栈的方式操作，且两个序列中的元素值互不相同。\n\n## 示例\n\n**示例 1**\n\n输入：`pushed = [1,2,3,4,5], popped = [4,5,3,2,1]`\n\n输出：`true`\n\n解释：压入 1、2、3、4 后弹出 4，压入 5 后弹出 5，再依次弹出 3、2、1。\n\n**示例 2**\n\n输入：`pushed = [1,2,3,4,5], popped = [4,3,5,1,2]`\n\n输出：`false`\n\n解释：弹出 4、3、5 后栈内只剩 1、2，栈顶是 2，无法先弹出 1。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 第二行 `n` 个整数，表示 `pushed`；\n- 第三行 `n` 个整数，表示 `popped`；\n- 输出一行 `true` 或 `false`。\n\n## 提示\n\n- `1 <= n <= 1000`\n- `0 <= pushed[i], popped[i] <= 1000`\n- `pushed` 是 `popped` 的一个排列，元素互不相同\n\n> 力扣模式下只需实现 `validateStackSequences` 函数，不需要读写标准输入输出。",
+      "type": "CODE",
+      "judgeMode": "CODING",
+      "difficulty": 2,
+      "domain": "栈",
+      "referenceAnswer": "用一个栈模拟压入弹出过程。按 `pushed` 顺序把元素压栈，每压入一个元素后，只要栈顶等于 `popped` 当前待弹出的元素，就持续弹出并把 `popped` 的指针后移。全部压入并处理完后，如果 `popped` 的指针走到末尾，说明该弹出序列合法。时间复杂度 O(n)，空间复杂度 O(n)。",
+      "keyPoints": ["模拟", "栈", "序列校验"],
+      "kpNames": ["栈", "数组"],
+      "source": "CRAWL",
+      "sourceUrl": "https://leetcode.cn/problems/zhan-de-ya-ru-dan-chu-xu-lie-lcof/",
+      "codeMode": "LEETCODE",
+      "timeLimitMs": 2000,
+      "memoryLimitMb": 256,
+      "functionName": "validateStackSequences",
+      "paramTypes": ["int[]", "int[]"],
+      "returnType": "boolean",
+      "starterCode": {
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n；第二行 n 个 pushed；第三行 n 个 popped\n        // TODO 输出 true 或 false\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n；第二行 n 个 pushed；第三行 n 个 popped\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      },
+      "starterCodeFunction": {
+        "JAVA": "class Solution {\n    public boolean validateStackSequences(int[] pushed, int[] popped) {\n        // TODO\n        return false;\n    }\n}",
+        "PYTHON": "from typing import List\n\nclass Solution:\n    def validateStackSequences(self, pushed: List[int], popped: List[int]) -> bool:\n        # TODO\n        pass"
+      },
+      "testCases": [
+        {"caseMode": "LEETCODE", "input": "[[1,2,3,4,5],[4,5,3,2,1]]", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "LEETCODE", "input": "[[1,2,3,4,5],[4,3,5,1,2]]", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "LEETCODE", "input": "[[1,2],[2,1]]", "expectedOutput": "true", "isSample": 0, "sort": 3},
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5\n4 5 3 2 1", "expectedOutput": "true", "isSample": 1, "sort": 1},
+        {"caseMode": "ACM", "input": "5\n1 2 3 4 5\n4 3 5 1 2", "expectedOutput": "false", "isSample": 1, "sort": 2},
+        {"caseMode": "ACM", "input": "2\n1 2\n2 1", "expectedOutput": "true", "isSample": 0, "sort": 3}
+      ]
+    }
+  ]
+}
