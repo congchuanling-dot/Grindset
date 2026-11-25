@@ -1,0 +1,96 @@
+import { Sparkles, X } from 'lucide-react'
+import type { InterviewReport } from '../../api/interview'
+
+interface ReportDialogProps {
+  report: InterviewReport
+  position?: string
+  onClose: () => void
+}
+
+const DIMENSION_LABELS: Record<string, string> = {
+  technical: '技术深度',
+  logic: '逻辑表达',
+  project: '项目经验',
+  communication: '沟通表达',
+}
+
+function ReportList({ title, items, tone }: { title: string; items: string[]; tone: 'teal' | 'rose' | 'slate' }) {
+  if (items.length === 0) return null
+  const dot =
+    tone === 'teal' ? 'bg-teal-500' : tone === 'rose' ? 'bg-rose-400' : 'bg-slate-400'
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold text-slate-700">{title}</h3>
+      <ul className="space-y-1.5">
+        {items.map((item) => (
+          <li key={item} className="flex gap-2 text-xs leading-5 text-slate-600">
+            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/** 复盘报告弹窗:总分 + 维度分 + 薄弱点/亮点/建议 */
+function ReportDialog({ report, position, onClose }: ReportDialogProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+              <Sparkles size={15} className="text-teal-600" />
+              面试复盘
+            </h2>
+            {position && <p className="mt-0.5 text-[11px] text-slate-400">{position}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="mb-5 flex items-end gap-2">
+          <span className="text-4xl font-semibold tabular-nums text-teal-600">
+            {report.overallScore}
+          </span>
+          <span className="pb-1 text-xs text-slate-400">/ 100 分</span>
+        </div>
+
+        {Object.keys(report.dimensionScores).length > 0 && (
+          <div className="mb-5 space-y-2">
+            {Object.entries(report.dimensionScores).map(([key, value]) => (
+              <div key={key} className="flex items-center gap-2">
+                <span className="w-20 shrink-0 text-[11px] text-slate-500">
+                  {DIMENSION_LABELS[key] ?? key}
+                </span>
+                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                  <span
+                    className="block h-full rounded-full bg-teal-500"
+                    style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+                  />
+                </span>
+                <span className="w-7 text-right text-[11px] tabular-nums text-slate-500">
+                  {value}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <ReportList title="亮点" items={report.highlights} tone="teal" />
+          <ReportList title="薄弱点" items={report.weakPoints} tone="rose" />
+          <ReportList title="改进建议" items={report.advice} tone="slate" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default ReportDialog

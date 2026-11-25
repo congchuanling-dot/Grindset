@@ -5,9 +5,9 @@ import AuthCallbackPage from './pages/AuthCallbackPage'
 import ChatPage from './pages/ChatPage'
 import InterviewPage from './pages/InterviewPage'
 import InterviewRecordsPage from './pages/InterviewRecordsPage'
-import InterviewSessionPage from './pages/InterviewSessionPage'
 import KnowledgePage from './pages/KnowledgePage'
 import LoginPage from './pages/LoginPage'
+import InterviewRoomPage from './pages/InterviewRoomPage'
 import QuestionDetailPage from './pages/QuestionDetailPage'
 import CodingListPage from './pages/questions/CodingListPage'
 import CodingWorkspacePage from './pages/questions/CodingWorkspacePage'
@@ -46,9 +46,8 @@ function App() {
         </Route>
         {/* 编程题工作台占满右侧,不显示题库左侧列表 */}
         <Route path="/questions/coding/:id" element={<CodingWorkspacePage />} />
-        {/* AI 面试:入口配置 + 面试对话页 */}
+        {/* AI 面试:入口配置 + 面试间(创建后直接进面试间) */}
         <Route path="/interview" element={<InterviewPage />} />
-        <Route path="/interview/:sessionId" element={<InterviewSessionPage />} />
         {/* 面试记录:按简历筛选,进入详情查看复盘 */}
         <Route path="/records" element={<InterviewRecordsPage />} />
         {/* 掌握度画像:按知识点沉淀历次面试评分 */}
@@ -56,6 +55,16 @@ function App() {
         {/* 错题本:自动收录低分题,支持单题重练 */}
         <Route path="/wrong-questions" element={<WrongQuestionsPage />} />
       </Route>
+
+      {/* 面试间要全屏沉浸,单独放在侧边栏外壳之外 */}
+      <Route
+        path="/interview/:sessionId"
+        element={
+          <RequireAuth>
+            <InterviewRoomPage />
+          </RequireAuth>
+        }
+      />
     </Routes>
   )
 }
