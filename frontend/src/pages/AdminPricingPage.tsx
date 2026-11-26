@@ -7,6 +7,7 @@ import {
   RefreshCw,
   Save,
   Tags,
+  Wallet,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -15,9 +16,12 @@ import {
   adminLogout,
   AdminAuthError,
   getAdminToken,
+  listChannelBalances,
   listModelPrices,
+  refreshChannelBalance,
   saveAdminToken,
   updateModelPrices,
+  type AdminChannelBalance,
   type AdminModelPrice,
 } from '../api/adminPricing'
 import { errMessage } from '../utils/error'
@@ -46,7 +50,10 @@ function AdminPricingPage() {
   const [password, setPassword] = useState('')
   const [models, setModels] = useState<AdminModelPrice[]>([])
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
+  const [channels, setChannels] = useState<AdminChannelBalance[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingChannels, setLoadingChannels] = useState(false)
+  const [refreshingId, setRefreshingId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -58,25 +65,43 @@ function AdminPricingPage() {
     setToken('')
     setModels([])
     setDrafts({})
+    setChannels([])
     setError(message)
   }
 
   async function load() {
     setLoading(true)
+    setLoadingChannels(true)
     setError(null)
-    try {
-      const list = await listModelPrices()
+
+    // 价格和余额互不依赖,一个失败不影响另一个展示
+    const [modelResult, channelResult] = await Promise.allSettled([
+      listModelPrices(),
+      listChannelBalances(),
+    ])
+
+    if (modelResult.status === 'fulfilled') {
+      const list = modelResult.value
       setModels(list)
       setDrafts(Object.fromEntries(list.map((item) => [item.id, draftOf(item)])))
-    } catch (e) {
-      if (e instanceof AdminAuthError) {
-        resetToLogin(e.message)
-      } else {
-        setError(errMessage(e, '加载模型价格失败'))
-      }
-    } finally {
-      setLoading(false)
     }
+    if (channelResult.status === 'fulfilled') {
+      setChannels(channelResult.value)
+    }
+
+    const rejected = [modelResult, channelResult].find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    )
+    if (rejected) {
+      if (rejected.reason instanceof AdminAuthError) {
+        resetToLogin(rejected.reason.message)
+      } else {
+        setError(errMessage(rejected.reason, '加载管理数据失败'))
+      }
+    }
+
+    setLoading(false)
+    setLoadingChannels(false)
   }
 
   useEffect(() => {
@@ -162,6 +187,36 @@ function AdminPricingPage() {
       }
     } finally {
       setSavingId(null)
+    }
+  }
+
+  async function handleRefreshBalance(channel: AdminChannelBalance) {
+    setRefreshingId(channel.id)
+    setError(null)
+    try {
+      const data = await refreshChannelBalance(channel.id)
+      setChannels((prev) =>
+        prev.map((item) =>
+          item.id === channel.id
+            ? {
+                ...item,
+                balance: data.balance,
+                currency: data.currency,
+                source: 'MANUAL',
+                balanceUpdatedAt: data.updatedAt,
+              }
+            : item,
+        ),
+      )
+      setNotice(`${channel.name} 余额已刷新`)
+    } catch (e) {
+      if (e instanceof AdminAuthError) {
+        resetToLogin(e.message)
+      } else {
+        setError(errMessage(e, '刷新余额失败'))
+      }
+    } finally {
+      setRefreshingId(null)
     }
   }
 
@@ -297,6 +352,68 @@ function AdminPricingPage() {
           </div>
         )}
 
+        {/* 各渠道余额:DeepSeek 由后端定时自动刷新 */}
+        <section className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <Wallet size={15} className="text-teal-600" />
+              账户余额
+            </h2>
+            <span className="text-[11px] text-slate-400">
+              DeepSeek 每 5 分钟自动查询，其余厂商手工维护
+            </span>
+          </div>
+
+          {loadingChannels ? (
+            <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+              <Loader2 size={13} className="animate-spin" />
+              加载余额…
+            </div>
+          ) : channels.length === 0 ? (
+            <p className="mt-3 text-xs text-slate-400">还没有配置渠道。</p>
+          ) : (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {channels.map((channel) => (
+                <div
+                  key={channel.id}
+                  className="rounded-lg border border-slate-100 bg-slate-50/60 p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-600">{channel.name}</span>
+                    {!channel.enabled && (
+                      <span className="rounded bg-slate-200 px-1 py-0.5 text-[10px] text-slate-500">
+                        已停用
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-xl font-semibold text-slate-800">
+                    {formatBalance(channel)}
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-400">
+                    <span>
+                      {channel.balanceUpdatedAt ? `${channel.balanceUpdatedAt} 更新` : '暂无更新记录'}
+                    </span>
+                    {channel.providerId === 'deepseek' && (
+                      <button
+                        type="button"
+                        disabled={refreshingId === channel.id}
+                        onClick={() => void handleRefreshBalance(channel)}
+                        className="flex items-center gap-1 text-teal-600 transition enabled:hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          size={11}
+                          className={refreshingId === channel.id ? 'animate-spin' : ''}
+                        />
+                        刷新
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         <section className="rounded-xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between px-4 pt-4">
             <h2 className="text-sm font-semibold text-slate-800">模型单价</h2>
@@ -389,6 +506,14 @@ function AdminPricingPage() {
       </main>
     </div>
   )
+}
+
+function formatBalance(channel: AdminChannelBalance): string {
+  if (channel.balance == null) {
+    return '—'
+  }
+  const symbol = channel.currency === 'USD' ? '$' : '¥'
+  return `${symbol}${channel.balance.toFixed(2)}`
 }
 
 function PriceInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {

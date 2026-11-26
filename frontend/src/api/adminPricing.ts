@@ -80,3 +80,31 @@ export async function updateModelPrices(
   })
   await unwrapAdmin<null>(res, '保存单价失败')
 }
+
+/** 渠道余额信息(管理页只看展示字段) */
+export interface AdminChannelBalance {
+  id: number
+  providerId: string
+  name: string
+  enabled: boolean
+  balance: number | null
+  currency: string
+  source: string
+  balanceUpdatedAt: string | null
+}
+
+export async function listChannelBalances(): Promise<AdminChannelBalance[]> {
+  const res = await fetch('/api/admin/llm/channels', { headers: adminHeaders() })
+  return unwrapAdmin<AdminChannelBalance[]>(res, '加载余额失败')
+}
+
+/** 立即向厂商查询一次余额(目前仅 DeepSeek 支持) */
+export async function refreshChannelBalance(
+  id: number,
+): Promise<{ balance: number | null; currency: string; updatedAt: string | null }> {
+  const res = await fetch(`/api/admin/llm/channels/${id}/balance/refresh`, {
+    method: 'POST',
+    headers: adminHeaders(),
+  })
+  return unwrapAdmin(res, '刷新余额失败')
+}
