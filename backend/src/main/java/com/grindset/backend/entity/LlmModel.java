@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -29,6 +30,15 @@ public class LlmModel {
 
     /** 同渠道内排序,小的在前 */
     private Integer sort;
+
+    /** 输入单价,元/千 token */
+    private BigDecimal inputPrice;
+
+    /** 缓存命中输入单价,元/千 token */
+    private BigDecimal cachedInputPrice;
+
+    /** 输出单价,元/千 token */
+    private BigDecimal outputPrice;
 
     private LocalDateTime createdAt;
 
@@ -80,6 +90,30 @@ public class LlmModel {
 
     public void setSort(Integer sort) {
         this.sort = sort;
+    }
+
+    public BigDecimal getInputPrice() {
+        return inputPrice;
+    }
+
+    public void setInputPrice(BigDecimal inputPrice) {
+        this.inputPrice = inputPrice;
+    }
+
+    public BigDecimal getCachedInputPrice() {
+        return cachedInputPrice;
+    }
+
+    public void setCachedInputPrice(BigDecimal cachedInputPrice) {
+        this.cachedInputPrice = cachedInputPrice;
+    }
+
+    public BigDecimal getOutputPrice() {
+        return outputPrice;
+    }
+
+    public void setOutputPrice(BigDecimal outputPrice) {
+        this.outputPrice = outputPrice;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -16,9 +16,10 @@ public interface LlmClient {
      * @param model    模型 ID
      * @param messages 已含 system 提示词的完整消息列表
      * @param onDelta  增量文本回调,可能被调用很多次
+     * @return 本次调用的 token 用量;上游不返回 usage 时是估算值
      */
-    void streamChat(LlmTarget target, String model, List<ChatMessage> messages,
-                    Consumer<String> onDelta);
+    LlmUsage streamChat(LlmTarget target, String model, List<ChatMessage> messages,
+                        Consumer<String> onDelta);
 
     /**
      * 非流式调用,附带 function calling 的工具定义。

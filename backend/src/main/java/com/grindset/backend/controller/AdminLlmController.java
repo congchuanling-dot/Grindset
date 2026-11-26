@@ -7,8 +7,10 @@ import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.entity.LlmChannel;
 import com.grindset.backend.entity.LlmKey;
+import com.grindset.backend.entity.LlmModel;
 import com.grindset.backend.mapper.LlmChannelMapper;
 import com.grindset.backend.mapper.LlmKeyMapper;
+import com.grindset.backend.mapper.LlmModelMapper;
 import com.grindset.backend.service.BalanceService;
 import com.grindset.backend.service.LlmKeyService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -40,17 +43,23 @@ import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 @RequestMapping("/api/admin/llm")
 public class AdminLlmController {
 
+    /** 单价上限(元/百万 token),防止误填把成本算爆 */
+    private static final BigDecimal MAX_PRICE_PER_MILLION = new BigDecimal("100000");
+
     private final AdminGuard guard;
     private final LlmChannelMapper channelMapper;
     private final LlmKeyMapper keyMapper;
+    private final LlmModelMapper modelMapper;
     private final LlmKeyService keyService;
     private final BalanceService balanceService;
 
     public AdminLlmController(AdminGuard guard, LlmChannelMapper channelMapper, LlmKeyMapper keyMapper,
-                              LlmKeyService keyService, BalanceService balanceService) {
+                              LlmModelMapper modelMapper, LlmKeyService keyService,
+                              BalanceService balanceService) {
         this.guard = guard;
         this.channelMapper = channelMapper;
         this.keyMapper = keyMapper;
+        this.modelMapper = modelMapper;
         this.keyService = keyService;
         this.balanceService = balanceService;
     }
@@ -134,8 +143,7 @@ public class AdminLlmController {
     }
 
     /** 立即拉取一次余额(目前仅 DeepSeek 支持) */
-    @PostMapping("/channels/{id}/balance/refresh")
-    public ApiResponse<Map<String, Object>> refreshBalance(
+    @PostMapping("/channels/{id}/balance/refresh")    public ApiResponse<Map<String, Object>> refreshBalance(
             @RequestHeader(name = "X-Admin-Token", required = false) String token,
             @PathVariable long id) {
         guard.check(token);
@@ -152,6 +160,75 @@ public class AdminLlmController {
         data.put("currency", latest.getBalanceCurrency());
         data.put("updatedAt", format(latest.getBalanceUpdatedAt()));
         return ApiResponse.ok(data);
+    }
+
+    /** 模型单价列表,价格按「元/百万 token」返回,与厂商官网口径一致 */
+    @GetMapping("/models")
+    public ApiResponse<List<ModelPriceView>> models(
+            @RequestHeader(name = "X-Admin-Token", required = false) String token) {
+        guard.check(token);
+
+        List<LlmChannel> channels = channelMapper.selectList(new QueryWrapper<LlmChannel>()
+                .orderByDesc("priority").orderByAsc("id"));
+        Map<Long, LlmChannel> channelById = new LinkedHashMap<>();
+        for (LlmChannel channel : channels) {
+            channelById.put(channel.getId(), channel);
+        }
+
+        List<LlmModel> models = modelMapper.selectList(new QueryWrapper<LlmModel>()
+                .orderByAsc("channel_id").orderByAsc("sort"));
+        List<ModelPriceView> views = new ArrayList<>(models.size());
+        for (LlmModel model : models) {
+            LlmChannel channel = channelById.get(model.getChannelId());
+            if (channel == null) {
+                continue;
+            }
+            views.add(new ModelPriceView(String.valueOf(model.getId()), channel.getProviderId(),
+                    channel.getName(), model.getModelId(), model.getDisplayName(),
+                    model.getEnabled() != null && model.getEnabled() == ENABLED,
+                    perMillion(model.getInputPrice()), perMillion(model.getCachedInputPrice()),
+                    perMillion(model.getOutputPrice())));
+        }
+        return ApiResponse.ok(views);
+    }
+
+    /** 更新模型单价;入参为元/百万 token,落库转成元/千 token */
+    @PutMapping("/models/{id}/prices")
+    public ApiResponse<Void> updateModelPrices(
+            @RequestHeader(name = "X-Admin-Token", required = false) String token,
+            @PathVariable long id, @RequestBody ModelPriceRequest req) {
+        guard.check(token);
+        LlmModel model = modelMapper.selectById(id);
+        if (model == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "模型不存在");
+        }
+
+        LlmModel patch = new LlmModel();
+        patch.setId(id);
+        patch.setInputPrice(toPerThousand(req.inputPrice(), "输入单价"));
+        patch.setCachedInputPrice(toPerThousand(req.cachedInputPrice(), "缓存命中单价"));
+        patch.setOutputPrice(toPerThousand(req.outputPrice(), "输出单价"));
+        modelMapper.updateById(patch);
+        return ApiResponse.ok(null);
+    }
+
+    /** 库里的单价是元/千 token,返回给前端时换算成元/百万 token */
+    private static BigDecimal perMillion(BigDecimal perThousand) {
+        return perThousand == null ? BigDecimal.ZERO : perThousand.multiply(BigDecimal.valueOf(1000));
+    }
+
+    /** 前端按元/百万 token 提交,落库除以 1000;负数或超范围直接拒绝 */
+    private static BigDecimal toPerThousand(BigDecimal perMillion, String label) {
+        if (perMillion == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, label + "不能为空");
+        }
+        if (perMillion.signum() < 0) {
+            throw new BizException(ErrorCode.BAD_REQUEST, label + "不能为负数");
+        }
+        if (perMillion.compareTo(MAX_PRICE_PER_MILLION) > 0) {
+            throw new BizException(ErrorCode.BAD_REQUEST, label + "超出合理范围");
+        }
+        return perMillion.divide(BigDecimal.valueOf(1000), 6, RoundingMode.HALF_UP);
     }
 
     private LlmChannel requireChannel(long id) {
@@ -182,5 +259,15 @@ public class AdminLlmController {
     }
 
     public record BalanceRequest(BigDecimal amount, String currency) {
+    }
+
+    public record ModelPriceView(String id, String providerId, String channelName, String modelId,
+                                 String displayName, boolean enabled, BigDecimal inputPrice,
+                                 BigDecimal cachedInputPrice, BigDecimal outputPrice) {
+    }
+
+    /** 单价入参,单位统一为元/百万 token */
+    public record ModelPriceRequest(BigDecimal inputPrice, BigDecimal cachedInputPrice,
+                                    BigDecimal outputPrice) {
     }
 }

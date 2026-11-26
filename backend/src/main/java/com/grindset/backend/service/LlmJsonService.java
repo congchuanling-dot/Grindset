@@ -7,6 +7,7 @@ import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.llm.ChatMessage;
 import com.grindset.backend.llm.LlmRouter;
 import com.grindset.backend.llm.LlmTarget;
+import com.grindset.backend.llm.LlmUsageContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -75,9 +76,9 @@ public class LlmJsonService {
      * 也要让模型看到自己写错了什么,只丢一句"再来一次"没有用。</p>
      */
     public <T> T call(List<LlmTarget> targets, String model, List<ChatMessage> messages,
-                      Function<String, T> parser, String failureMessage) {
+                      Function<String, T> parser, String failureMessage, LlmUsageContext context) {
         // 第一次调用
-        String raw = router.complete(targets, model, messages);
+        String raw = router.complete(targets, model, messages, context);
         try {
             return parser.apply(raw);
         } catch (BizException first) {
@@ -86,7 +87,7 @@ public class LlmJsonService {
             messages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, raw));
             messages.add(new ChatMessage(ChatMessage.ROLE_USER,
                     String.format(RETRY_HINT, first.getMessage())));
-            String retryRaw = router.complete(targets, model, messages);
+            String retryRaw = router.complete(targets, model, messages, context);
             try {
                 return parser.apply(retryRaw);
             } catch (BizException e) {
@@ -97,10 +98,10 @@ public class LlmJsonService {
 
     /** 不重试的单次调用:用于失败可以直接报错、或重试没有意义的场景 */
     public <T> T callOnce(List<LlmTarget> targets, String model, List<ChatMessage> messages,
-                          Function<String, T> parser, String failureMessage) {
+                          Function<String, T> parser, String failureMessage, LlmUsageContext context) {
         // 不重试:失败直接把底层异常换成业务文案
         try {
-            return parser.apply(router.complete(targets, model, messages));
+            return parser.apply(router.complete(targets, model, messages, context));
         } catch (BizException e) {
             throw new BizException(ErrorCode.BAD_GATEWAY, failureMessage);
         }

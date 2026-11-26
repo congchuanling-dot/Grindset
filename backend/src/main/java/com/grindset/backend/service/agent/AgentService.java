@@ -3,11 +3,13 @@ package com.grindset.backend.service.agent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grindset.backend.common.AiBizType;
 import com.grindset.backend.llm.ChatMessage;
 import com.grindset.backend.llm.LlmCompletion;
 import com.grindset.backend.llm.LlmRouter;
 import com.grindset.backend.llm.LlmTarget;
 import com.grindset.backend.llm.LlmToolCall;
+import com.grindset.backend.llm.LlmUsageContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -62,6 +64,9 @@ public class AgentService {
 
         // 工具 schema 走 function calling 的 tools 参数,不拼进提示词,避免和实际实现漂移
         List<Map<String, Object>> tools = registry.toolDefinitions();
+        // 决策轮和回答轮都记到同一个业务场景下
+        LlmUsageContext usageContext =
+                new LlmUsageContext(userId, AiBizType.AGENT_CHAT, null);
 
         // 只记录本轮新增的消息(system 和旧历史不落库)
         List<ChatMessage> turnMessages = new ArrayList<>();
@@ -74,7 +79,7 @@ public class AgentService {
                 // 每轮都先裁上下文:工具结果会不断追加,不裁迟早超过模型窗口
                 trimContext(messages);
                 // 决策轮必须非流式:只有拿到完整的 tool_calls 才能决定执行哪些工具
-                LlmCompletion completion = router.completeWithTools(targets, model, messages, tools);
+                LlmCompletion completion = router.completeWithTools(targets, model, messages, tools, usageContext);
                 if (!completion.hasToolCalls()) {
                     // 没有工具调用 = 模型认为信息够了。决策轮的正文不完整、也不该带回答格式,
                     // 直接丢弃,统一交给下面的流式回答
@@ -136,7 +141,7 @@ public class AgentService {
             router.stream(targets, model, messages, text -> {
                 answer.append(text);
                 sink.delta(text);
-            });
+            }, usageContext);
         } catch (StreamAbortedException e) {
             // 客户端断开:已经生成的正文和已执行的工具都要带给调用方落库
             turnMessages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, answer.toString()));

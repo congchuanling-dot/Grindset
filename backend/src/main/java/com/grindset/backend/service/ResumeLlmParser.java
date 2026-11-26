@@ -1,5 +1,6 @@
 package com.grindset.backend.service;
 
+import com.grindset.backend.common.AiBizType;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.CandidateType;
 import com.grindset.backend.common.ErrorCode;
@@ -8,6 +9,7 @@ import com.grindset.backend.common.Texts;
 import com.grindset.backend.config.ResumeProperties;
 import com.grindset.backend.dto.ParsedResume;
 import com.grindset.backend.llm.ChatMessage;
+import com.grindset.backend.llm.LlmUsageContext;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -54,7 +56,7 @@ public class ResumeLlmParser {
      * 模型调用失败直接抛出;JSON 不合法由 LlmJsonService 带提示重试一次,仍失败返回 502。
      * 这里只负责 prompt 和 normalize,不再自己维护重试逻辑。
      */
-    public ParseResult parse(String text) {
+    public ParseResult parse(String text, long userId, long resumeId) {
         ModelCatalogService.SelectedModel selection = selectModel();
         // prompt 只负责"告诉模型输出什么结构 + 塞原文";解析、重试、错误文案都交给 LlmJsonService
         List<ChatMessage> messages = new ArrayList<>();
@@ -64,7 +66,8 @@ public class ResumeLlmParser {
         // normalize 会降级未知章节、夹取熟练度、丢掉空章节;模型输出不能直接落库
         ParsedResume resume = llmJson.call(selection.targets(), selection.model(), messages,
                 raw -> normalize(llmJson.parse(raw, ParsedResume.class)),
-                "AI 解析结果异常,请稍后重试");
+                "AI 解析结果异常,请稍后重试",
+                new LlmUsageContext(userId, AiBizType.RESUME_PARSE, String.valueOf(resumeId)));
         return new ParseResult(resume, selection.model());
     }
 

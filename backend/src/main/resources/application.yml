@@ -73,9 +73,13 @@ app:
     # 一次性 code 有效期(秒),给前端换 accessToken
     code-ttl-seconds: 60
 
-  # 管理接口令牌:未配置时 /api/admin/** 全部停用(403),避免裸奔
+  # 管理后台:/admin 独立登录,只认下面这一个账号。
+  # token 是给运维直接调接口用的静态令牌(可留空);前端登录成功后用 Redis 会话令牌。
+  # 生产环境请通过环境变量覆盖账号密码。
   admin:
     token: ${ADMIN_TOKEN:}
+    account: ${ADMIN_ACCOUNT:3406902529@qq.com}
+    password: ${ADMIN_PASSWORD:Cong123456}
 
   # 大模型服务。
   # 渠道(地址/名称)和模型目录已迁到数据库 llm_channels / llm_models,

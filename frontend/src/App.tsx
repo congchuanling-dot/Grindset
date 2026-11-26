@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import RequireAuth from './auth/RequireAuth'
 import AppLayout from './layouts/AppLayout'
+import AdminPricingPage from './pages/AdminPricingPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import ChatPage from './pages/ChatPage'
 import InterviewPage from './pages/InterviewPage'
@@ -13,12 +14,15 @@ import CodingWorkspacePage from './pages/questions/CodingWorkspacePage'
 import QuestionBankLayout from './pages/questions/QuestionBankLayout'
 import QuestionOverview from './pages/questions/QuestionOverview'
 import ResumePage from './pages/ResumePage'
+import UsagePage from './pages/UsagePage'
 
 function App() {
   return (
     <Routes>
       {/* 登录页:谁都能访问 */}
       <Route path="/login" element={<LoginPage />} />
+      {/* 管理后台:独立页面、独立登录,不套用户登录态和侧边栏 */}
+      <Route path="/admin" element={<AdminPricingPage />} />
       {/* 第三方登录回调:用一次性 code 换令牌,不套 RequireAuth */}
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
@@ -48,6 +52,8 @@ function App() {
         <Route path="/interview" element={<InterviewPage />} />
         {/* 面试记录:按简历筛选,进入详情查看复盘 */}
         <Route path="/records" element={<InterviewRecordsPage />} />
+        {/* Token 用量:汇总各业务场景的模型调用 */}
+        <Route path="/usage" element={<UsagePage />} />
       </Route>
 
       {/* 面试间要全屏沉浸,单独放在侧边栏外壳之外 */}

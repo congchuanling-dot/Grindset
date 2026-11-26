@@ -1,8 +1,10 @@
 package com.grindset.backend.service.agent;
 
+import com.grindset.backend.common.AiBizType;
 import com.grindset.backend.llm.ChatMessage;
 import com.grindset.backend.llm.LlmRouter;
 import com.grindset.backend.llm.LlmTarget;
+import com.grindset.backend.llm.LlmUsageContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -38,23 +40,25 @@ public class AgentTitleService {
      *
      * @param fallback 生成失败时使用的兜底标题(通常是截断后的首条提问)
      */
-    public CompletableFuture<String> generateAsync(List<LlmTarget> targets, String model,
+    public CompletableFuture<String> generateAsync(long userId, List<LlmTarget> targets, String model,
                                                    String question, String fallback) {
         CompletableFuture<String> future = new CompletableFuture<>();
         // 虚拟线程:不占平台线程,标题生成失败也不影响请求线程
         Thread.ofVirtual().name("agent-title-", 0).start(
-                () -> future.complete(generate(targets, model, question, fallback)));
+                () -> future.complete(generate(userId, targets, model, question, fallback)));
         return future;
     }
 
-    private String generate(List<LlmTarget> targets, String model, String question, String fallback) {
+    private String generate(long userId, List<LlmTarget> targets, String model,
+                            String question, String fallback) {
         try {
             String raw = router.complete(targets, model, List.of(
                     new ChatMessage(ChatMessage.ROLE_SYSTEM, """
                             你是会话标题生成器。根据用户提问生成一个不超过 15 个字的标题。
                             只输出标题本身,不要引号、标点、编号或任何解释。
                             """),
-                    new ChatMessage(ChatMessage.ROLE_USER, "用户提问:" + question)));
+                    new ChatMessage(ChatMessage.ROLE_USER, "用户提问:" + question)),
+                    new LlmUsageContext(userId, AiBizType.AGENT_TITLE, null));
             String title = normalize(raw, fallback);
             log.debug("Agent 会话标题生成完成 title={}", title);
             return title;

@@ -1,5 +1,6 @@
 import {
   FileUp,
+  Gauge,
   History,
   Library,
   LogOut,
@@ -69,6 +70,24 @@ function AppLayout() {
             </NavLink>
           ))}
         </nav>
+
+        {/* 侧边栏底部:用量统计 + 账号信息 + 退出 */}
+        <div className="border-t border-slate-200 px-2 pt-2">
+          <NavLink
+            to="/usage"
+            title="Token 用量"
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                isActive
+                  ? 'bg-teal-50 font-medium text-teal-700'
+                  : 'text-slate-600 hover:bg-slate-200/60'
+              }`
+            }
+          >
+            <Gauge size={18} className="shrink-0" />
+            <span className="hidden md:inline">Token 用量</span>
+          </NavLink>
+        </div>
 
         <div className="border-t border-slate-200 p-2 md:p-3">
           <div className="hidden truncate px-2 pb-2 text-xs text-slate-400 md:block">

@@ -1,5 +1,6 @@
 package com.grindset.backend.llm;
 
+import com.grindset.backend.service.AiUsageService;
 import com.grindset.backend.service.LlmKeyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,28 +22,32 @@ public class LlmRouter {
 
     private final LlmClient client;
     private final LlmKeyService keyService;
+    private final AiUsageService usageService;
 
-    public LlmRouter(LlmClient client, LlmKeyService keyService) {
+    public LlmRouter(LlmClient client, LlmKeyService keyService, AiUsageService usageService) {
         this.client = client;
         this.keyService = keyService;
+        this.usageService = usageService;
     }
 
     /**
      * @param targets 候选目标,已按渠道优先级 + key 最久未用排序
      */
     public void stream(List<LlmTarget> targets, String model, List<ChatMessage> messages,
-                       Consumer<String> onDelta) {
+                       Consumer<String> onDelta, LlmUsageContext context) {
         LlmException last = null;
         for (LlmTarget target : targets) {
             // started 一旦为 true,说明已经给前端吐过字;此后失败不能换 key,
             // 否则新 key 会从头再生成一遍,用户会看到重复内容
             boolean[] started = {false};
             try {
-                client.streamChat(target, model, messages, text -> {
+                LlmUsage usage = client.streamChat(target, model, messages, text -> {
                     started[0] = true;
                     onDelta.accept(text);
                 });
                 keyService.markUsed(target.keyId());
+                // 只有成功这次记账;失败换 key 的尝试不重复计费
+                usageService.record(context, target, model, usage);
                 return;
             } catch (LlmException e) {
                 if (started[0]) {
@@ -63,20 +68,23 @@ public class LlmRouter {
      * 非流式调用:逐个候选 key 尝试,直到拿到完整结果。
      * 非流式没有"已吐字不能重试"的限制,失败可以直接换下一把 key。
      */
-    public String complete(List<LlmTarget> targets, String model, List<ChatMessage> messages) {
-        return completeWithTools(targets, model, messages, List.of()).content();
+    public String complete(List<LlmTarget> targets, String model, List<ChatMessage> messages,
+                           LlmUsageContext context) {
+        return completeWithTools(targets, model, messages, List.of(), context).content();
     }
 
     /** 带 function calling 工具定义的非流式调用,重试策略同上 */
     public LlmCompletion completeWithTools(List<LlmTarget> targets, String model,
                                            List<ChatMessage> messages,
-                                           List<Map<String, Object>> tools) {
+                                           List<Map<String, Object>> tools,
+                                           LlmUsageContext context) {
         LlmException last = null;
         for (LlmTarget target : targets) {
             try {
                 LlmCompletion result = client.completeWithTools(target, model, messages, tools);
                 // 记录使用时间,多 key 轮询靠它把"最久未用"排到前面
                 keyService.markUsed(target.keyId());
+                usageService.record(context, target, model, result.usage());
                 return result;
             } catch (LlmException e) {
                 log.warn("模型调用失败,尝试下一个 key provider={} keyId={} reason={}",

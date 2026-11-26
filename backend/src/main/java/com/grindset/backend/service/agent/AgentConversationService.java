@@ -168,7 +168,7 @@ public class AgentConversationService {
 
             // 标题和回答并行生成,回答结束时标题通常已经好了
             CompletableFuture<String> titleFuture = firstTurn
-                    ? titleService.generateAsync(targets, model, display, conversation.getTitle())
+                    ? titleService.generateAsync(userId, targets, model, display, conversation.getTitle())
                     : CompletableFuture.completedFuture(conversation.getTitle());
 
             RecordingSink recorder = new RecordingSink(sink);

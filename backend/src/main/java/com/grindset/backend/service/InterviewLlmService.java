@@ -1,5 +1,6 @@
 package com.grindset.backend.service;
 
+import com.grindset.backend.common.AiBizType;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.InterviewStyle;
@@ -14,6 +15,7 @@ import com.grindset.backend.entity.InterviewSession;
 import com.grindset.backend.entity.QuestionBank;
 import com.grindset.backend.llm.ChatMessage;
 import com.grindset.backend.llm.LlmRouter;
+import com.grindset.backend.llm.LlmUsageContext;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -125,7 +127,8 @@ public class InterviewLlmService {
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, QUESTION_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
                 questionPrompt(session, resumeText, seq, coveredPoints)));
-        router.stream(selection.targets(), selection.model(), messages, onDelta);
+        router.stream(selection.targets(), selection.model(), messages, onDelta,
+                usageContext(session, AiBizType.INTERVIEW_QUESTION));
     }
 
     /**
@@ -153,7 +156,8 @@ public class InterviewLlmService {
                     validateDecision(decision, followUpCount(question));
                     return decision;
                 },
-                "AI 点评结果异常,请稍后重试");
+                "AI 点评结果异常,请稍后重试",
+                usageContext(session, AiBizType.INTERVIEW_DECISION));
     }
 
     /**
@@ -171,7 +175,8 @@ public class InterviewLlmService {
         // 评分兜底不重试:失败直接报错,避免收束阶段再拖一轮
         return llmJson.callOnce(selection.targets(), selection.model(), messages,
                 raw -> normalizeEvaluation(llmJson.parse(raw, InterviewTurnDecision.Evaluation.class)),
-                "AI 评分结果异常,请稍后重试");
+                "AI 评分结果异常,请稍后重试",
+                usageContext(session, AiBizType.INTERVIEW_EVALUATION));
     }
 
     /** 生成整场复盘报告;threadsText 只包含已收束的题目,未答完的不参与评分 */
@@ -184,22 +189,32 @@ public class InterviewLlmService {
         // 报告字段多,失败重试一次;仍失败就报错,不能返回半成品
         return llmJson.call(selection.targets(), selection.model(), messages,
                 raw -> normalizeReport(llmJson.parse(raw, InterviewReport.class)),
-                "AI 复盘结果异常,请稍后重试");
+                "AI 复盘结果异常,请稍后重试",
+                usageContext(session, AiBizType.INTERVIEW_REPORT));
     }
 
     /**
      * 题库作答评分:返回 1~5 分、命中/遗漏要点、点评和建议。
      * 非流式调用,JSON 不合法时带提示重试一次,仍失败返回 502。
      */
-    public BankEvaluation bankEvaluate(QuestionBank question, String answer) {
+    public BankEvaluation bankEvaluate(QuestionBank question, String answer, long userId) {
         ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, BANK_EVALUATE_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER, bankPrompt(question, answer)));
 
+        String ref = question == null || question.getId() == null
+                ? null : String.valueOf(question.getId());
         return llmJson.call(selection.targets(), selection.model(), messages,
                 raw -> normalizeBank(llmJson.parse(raw, BankEvaluation.class)),
-                "AI 评分异常,请稍后重试");
+                "AI 评分异常,请稍后重试",
+                new LlmUsageContext(userId, AiBizType.BANK_EVALUATION, ref));
+    }
+
+    /** 面试场景的记账上下文:同一场面试的调用都挂在 sessionId 上 */
+    private static LlmUsageContext usageContext(InterviewSession session, AiBizType bizType) {
+        long userId = session.getUserId() == null ? 0L : session.getUserId();
+        return new LlmUsageContext(userId, bizType, String.valueOf(session.getId()));
     }
 
     private static String questionPrompt(InterviewSession session, String resumeText,

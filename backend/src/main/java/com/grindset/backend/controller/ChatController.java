@@ -2,13 +2,16 @@ package com.grindset.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
+import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.dto.ChatRequest;
 import com.grindset.backend.dto.ProviderInfo;
 import com.grindset.backend.llm.LlmException;
+import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.service.ChatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,17 +50,23 @@ public class ChatController {
     }
 
     @PostMapping
-    public SseEmitter chat(@RequestBody ChatRequest request) {
+    public SseEmitter chat(@AuthenticationPrincipal LoginUser loginUser,
+                           @RequestBody ChatRequest request) {
+        // 用量记账需要用户维度;安全配置已要求登录,这里只做兜底
+        if (loginUser == null) {
+            throw new BizException(ErrorCode.UNAUTHORIZED, "请先登录");
+        }
+        long userId = loginUser.userId();
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
         // 虚拟线程:一个用户一条对话挂住不占平台线程,几十个人同时用也不怕
-        Thread.ofVirtual().name("chat-sse-", 0).start(() -> runChat(request, emitter));
+        Thread.ofVirtual().name("chat-sse-", 0).start(() -> runChat(userId, request, emitter));
         return emitter;
     }
 
     /** 在虚拟线程里跑完整条流。注意:参数错误也走 SSE error 事件(响应头已经发出去了) */
-    private void runChat(ChatRequest request, SseEmitter emitter) {
+    private void runChat(long userId, ChatRequest request, SseEmitter emitter) {
         try {
-            chatService.stream(request, text -> sendEvent(emitter, "delta", Map.of("text", text)));
+            chatService.stream(request, userId, text -> sendEvent(emitter, "delta", Map.of("text", text)));
             sendEvent(emitter, "done", Map.of());
             emitter.complete();
         } catch (ClientGoneException e) {

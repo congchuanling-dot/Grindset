@@ -1,5 +1,6 @@
 package com.grindset.backend.service;
 
+import com.grindset.backend.common.AiBizType;
 import com.grindset.backend.common.Texts;
 import com.grindset.backend.dto.ChatRequest;
 import com.grindset.backend.dto.ProviderInfo;
@@ -7,6 +8,7 @@ import com.grindset.backend.llm.ChatMessage;
 import com.grindset.backend.llm.LlmProperties;
 import com.grindset.backend.llm.LlmRouter;
 import com.grindset.backend.llm.LlmTarget;
+import com.grindset.backend.llm.LlmUsageContext;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,11 +46,12 @@ public class ChatService {
      * <p>选模型/渠道统一走 ModelCatalogService,历史消息统一走 ChatHistoryBuilder,
      * 不再和 Agent 各维护一套校验。</p>
      */
-    public void stream(ChatRequest request, Consumer<String> onDelta) {
+    public void stream(ChatRequest request, long userId, Consumer<String> onDelta) {
         String model = Texts.strip(request.getModel());
         List<LlmTarget> targets = catalog.requireTargets(Texts.strip(request.getProvider()), model);
         List<ChatMessage> messages = ChatHistoryBuilder.build(request.getMessages(),
                 properties.getMaxHistoryMessages(), properties.getSystemPrompt(), false);
-        router.stream(targets, model, messages, onDelta);
+        router.stream(targets, model, messages, onDelta,
+                new LlmUsageContext(userId, AiBizType.HOME_CHAT, null));
     }
 }

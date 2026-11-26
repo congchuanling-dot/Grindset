@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -42,6 +43,12 @@ public class OpenAiCompatibleClient implements LlmClient {
     private static final Duration COMPLETE_TIMEOUT = Duration.ofSeconds(120);
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(15);
 
+    /**
+     * 确认支持 stream_options.include_usage 的厂商。
+     * 其余厂商不传该参数,避免未知参数被直接拒绝;拿不到 usage 时走字符估算。
+     */
+    private static final Set<String> STREAM_USAGE_PROVIDERS = Set.of("deepseek", "qwen", "doubao");
+
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
@@ -57,11 +64,13 @@ public class OpenAiCompatibleClient implements LlmClient {
      * 流式边吐字边调工具做不到,所以工具场景统一走 completeWithTools。
      */
     @Override
-    public void streamChat(LlmTarget target, String model, List<ChatMessage> messages,
-                           Consumer<String> onDelta) {
+    public LlmUsage streamChat(LlmTarget target, String model, List<ChatMessage> messages,
+                               Consumer<String> onDelta) {
         String url = trimTrailingSlash(target.baseUrl()) + "/chat/completions";
         // 流式请求不带 tools:工具调用必须一次性拿完整 tool_calls,见类注释
-        String body = buildRequestBody(model, messages, true, List.of());
+        // 只有确认支持 include_usage 的厂商才带 stream_options,否则可能被未知参数拒掉
+        String body = buildRequestBody(model, messages, true, List.of(),
+                STREAM_USAGE_PROVIDERS.contains(target.providerId()));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -83,6 +92,10 @@ public class OpenAiCompatibleClient implements LlmClient {
             Thread.currentThread().interrupt();
             throw new LlmException(502, "请求模型服务被中断");
         }
+
+        // usage 只在开了 include_usage 的厂商最后一帧出现;没拿到就按字符估算
+        LlmUsage usage = null;
+        StringBuilder output = new StringBuilder();
 
         try (InputStream in = response.body();
              BufferedReader reader = new BufferedReader(
@@ -110,8 +123,13 @@ public class OpenAiCompatibleClient implements LlmClient {
                 if ("[DONE]".equals(data)) {
                     break;
                 }
-                // 一条 data 可能只有 role / finish_reason,没有文本;解析结果为空就跳过
-                for (String text : parseDelta(data, target.providerId())) {
+                // 一条 data 可能只有 role / finish_reason / usage,没有文本;解析结果为空就跳过
+                StreamChunk chunk = parseChunk(data, target.providerId());
+                if (chunk.usage() != null) {
+                    usage = chunk.usage();
+                }
+                for (String text : chunk.texts()) {
+                    output.append(text);
                     onDelta.accept(text);
                 }
             }
@@ -119,6 +137,7 @@ public class OpenAiCompatibleClient implements LlmClient {
             // 读流过程断开:上游异常或客户端已离开,交给上层处理
             throw new LlmException(502, "模型服务连接中断,请重试");
         }
+        return usage != null ? usage : estimateUsage(messages, output.length());
     }
 
     /**
@@ -129,7 +148,7 @@ public class OpenAiCompatibleClient implements LlmClient {
     public LlmCompletion completeWithTools(LlmTarget target, String model, List<ChatMessage> messages,
                                            List<Map<String, Object>> tools) {
         String url = trimTrailingSlash(target.baseUrl()) + "/chat/completions";
-        String body = buildRequestBody(model, messages, false, tools);
+        String body = buildRequestBody(model, messages, false, tools, false);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -197,18 +216,24 @@ public class OpenAiCompatibleClient implements LlmClient {
         if (content.isBlank() && calls.isEmpty()) {
             throw new LlmException(502, "模型服务返回内容为空,请稍后再试");
         }
-        return new LlmCompletion(content, calls);
+        LlmUsage usage = readUsage(root);
+        return new LlmCompletion(content, calls,
+                usage != null ? usage : estimateUsage(messages, content.length()));
     }
 
-    /** 从一条 SSE data 里取出增量文本,取不到就返回空列表 */
-    private List<String> parseDelta(String data, String providerId) {
+    /** 一帧 SSE 的解析结果:增量文本 + 可能出现的 usage(开 include_usage 时最后一帧才有) */
+    private record StreamChunk(List<String> texts, LlmUsage usage) {
+    }
+
+    /** 从一条 SSE data 里取出增量文本和 usage,取不到就返回空列表 */
+    private StreamChunk parseChunk(String data, String providerId) {
         JsonNode root;
         try {
             root = objectMapper.readTree(data);
         } catch (IOException e) {
             // 单条脏数据不打断整个流
             log.debug("忽略无法解析的流数据 provider={} data={}", providerId, data);
-            return List.of();
+            return new StreamChunk(List.of(), null);
         }
 
         // 流里也可能夹错误帧;遇到要立刻中断,不能当成空 delta 吞掉
@@ -218,12 +243,52 @@ public class OpenAiCompatibleClient implements LlmClient {
             throw new LlmException(502, message);
         }
 
+        LlmUsage usage = readUsage(root);
         // 只取 delta.content;reasoning_content / role 这些不需要下发给前端
         JsonNode content = root.path("choices").path(0).path("delta").path("content");
         if (content.isTextual() && !content.asText().isEmpty()) {
-            return List.of(content.asText());
+            return new StreamChunk(List.of(content.asText()), usage);
         }
-        return List.of();
+        return new StreamChunk(List.of(), usage);
+    }
+
+    /**
+     * 从响应体里读 usage;缺失或全为 0 返回 null,由上层按字符估算。
+     * DeepSeek 的缓存命中字段是 prompt_cache_hit_tokens,OpenAI 系是 prompt_tokens_details.cached_tokens。
+     */
+    private static LlmUsage readUsage(JsonNode root) {
+        JsonNode usage = root.path("usage");
+        if (usage.isMissingNode() || usage.isNull()) {
+            return null;
+        }
+        int input = usage.path("prompt_tokens").asInt(0);
+        int output = usage.path("completion_tokens").asInt(0);
+        if (input == 0 && output == 0) {
+            return null;
+        }
+        int cached = usage.path("prompt_cache_hit_tokens").asInt(0);
+        if (cached == 0) {
+            cached = usage.path("prompt_tokens_details").path("cached_tokens").asInt(0);
+        }
+        return new LlmUsage(input, output, Math.min(cached, input), false);
+    }
+
+    /**
+     * 上游没返回 usage 时的兜底估算:中英文混合按 2 个字符约 1 token。
+     * 只用于记账兜底并标记 estimated,不能当作准确账单。
+     */
+    private static LlmUsage estimateUsage(List<ChatMessage> messages, int outputChars) {
+        int inputChars = 0;
+        for (ChatMessage message : messages) {
+            if (message.content() != null) {
+                inputChars += message.content().length();
+            }
+        }
+        return new LlmUsage(estimateTokens(inputChars), estimateTokens(outputChars), 0, true);
+    }
+
+    private static int estimateTokens(int chars) {
+        return chars <= 0 ? 0 : (int) Math.ceil(chars / 2.0);
     }
 
     /**
@@ -233,7 +298,7 @@ public class OpenAiCompatibleClient implements LlmClient {
      * 3. 工具结果:role=tool + tool_call_id + content,id 必须和上面的调用一一对应。
      */
     private String buildRequestBody(String model, List<ChatMessage> messages, boolean stream,
-                                    List<Map<String, Object>> tools) {
+                                    List<Map<String, Object>> tools, boolean includeUsage) {
         List<Map<String, Object>> payloadMessages = new ArrayList<>(messages.size());
         for (ChatMessage message : messages) {
             Map<String, Object> item = new LinkedHashMap<>();
@@ -266,6 +331,10 @@ public class OpenAiCompatibleClient implements LlmClient {
         payload.put("model", model);
         payload.put("messages", payloadMessages);
         payload.put("stream", stream);
+        // 让厂商在最后一帧返回 usage;不支持的厂商不传,拿不到就按字符估算
+        if (stream && includeUsage) {
+            payload.put("stream_options", Map.of("include_usage", true));
+        }
         // 只有 Agent 决策轮会传 tools;普通对话不传,避免模型突然想调工具
         if (tools != null && !tools.isEmpty()) {
             payload.put("tools", tools);

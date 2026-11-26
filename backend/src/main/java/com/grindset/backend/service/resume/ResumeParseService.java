@@ -118,7 +118,8 @@ public class ResumeParseService {
     /** 上传兜底:OSS 不可用时直接从临时文件同步解析 */
     public void parseFile(Resume resume, Path file, String fileName) {
         ResumeTextExtractor.ExtractedText extracted = extractor.extract(fileName, file);
-        ResumeLlmParser.ParseResult result = parser.parse(extracted.text());
+        long userId = resume.getUserId() == null ? 0L : resume.getUserId();
+        ResumeLlmParser.ParseResult result = parser.parse(extracted.text(), userId, resume.getId());
         saveParsed(resume.getId(), result.resume(), result.model(), false);
     }
 

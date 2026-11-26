@@ -269,7 +269,7 @@ public class QuestionBankService {
         }
         try {
             // 慢调用放在事务外,避免长时间占用数据库连接
-            BankEvaluation evaluation = llmService.bankEvaluate(question, text);
+            BankEvaluation evaluation = llmService.bankEvaluate(question, text, userId);
             LocalDateTime now = LocalDateTime.now();
 
             QuestionAttemptResult result = transactionTemplate.execute(status -> {
