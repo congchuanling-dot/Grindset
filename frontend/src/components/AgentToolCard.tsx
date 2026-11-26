@@ -1,7 +1,6 @@
 import {
   AlertCircle,
   BarChart3,
-  Brain,
   Check,
   ChevronRight,
   FileText,
@@ -14,7 +13,6 @@ import {
 import type { AgentToolStep } from '../api/agent'
 
 const ICONS = {
-  get_knowledge_profile: Brain,
   get_question_stats: BarChart3,
   list_questions: ListChecks,
   list_recent_interviews: MessagesSquare,

@@ -4,7 +4,6 @@
 -- question_bank           题库内容（人工精选种子题 + 后续导入）
 -- user_question_progress  每个用户每道题的做题进度（0 未做 / 1 已做 / 2 错题）
 -- question_attempts       每次作答记录（含 AI 命中/遗漏要点）
--- wrong_questions         增加 source 列：INTERVIEW 面试 / BANK 题库
 -- ============================================================
 
 USE grindset;
@@ -67,16 +66,3 @@ CREATE TABLE IF NOT EXISTS question_attempts (
     KEY idx_user_created (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='题库作答记录';
 
--- ---------- 错题快照增加来源列（可重复执行） ----------
-SET @col_exists = (
-    SELECT COUNT(*) FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'wrong_questions'
-      AND COLUMN_NAME = 'source'
-);
-SET @ddl = IF(@col_exists = 0,
-    'ALTER TABLE wrong_questions ADD COLUMN `source` VARCHAR(16) NOT NULL DEFAULT ''INTERVIEW'' COMMENT ''来源：INTERVIEW 面试 / BANK 题库'' AFTER question_id',
-    'SELECT 1');
-PREPARE stmt FROM @ddl;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;

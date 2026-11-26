@@ -32,7 +32,7 @@
 - 多轮消息表(chat 式会话):面试是严格的一问一答线程,不建独立 messages-per-session 模型。
 - 简历原件持久化:仍沿用简历模块的设计,不落盘、不存原文纯文本;喂给模型的是解析后的完整结构化内容。
 - 多实例分布式锁、限流与计费。
-- 报告二次编辑、分享、错题本、掌握度画像联动。
+- 报告二次编辑、分享。
 
 ---
 
@@ -285,7 +285,9 @@ data: {"message":"..."}
 |---|---|
 | [api/interview.ts](../frontend/src/api/interview.ts) | 会话接口 + SSE 解析,收到 done/error 主动结束读取 |
 | [InterviewPage.tsx](../frontend/src/pages/InterviewPage.tsx) | 选简历、预览、配置、题数、历史记录 |
-| [InterviewSessionPage.tsx](../frontend/src/pages/InterviewSessionPage.tsx) | 线程式对话、流式出题、点评卡、复盘弹窗、简历侧滑预览 |
+| [InterviewRoomPage.tsx](../frontend/src/pages/InterviewRoomPage.tsx) | 全屏面试间：宫格、语音收发、字幕条、对话抽屉、复盘弹窗 |
+| [useInterviewerVoice.ts](../frontend/src/hooks/useInterviewerVoice.ts) | TTS 播放、口型驱动、打断 |
+| [useVoiceInput.ts](../frontend/src/hooks/useVoiceInput.ts) | 语音识别、结束语/静音自动提交 |
 | [ResumeViewer.tsx](../frontend/src/components/resume/ResumeViewer.tsx) | 简历预览复用组件 |
 
 交互状态:
@@ -354,7 +356,7 @@ app:
 | 追问流式 | 追问一次性返回 | 改为 SSE 流式输出 |
 | 会话锁 | 单实例内存锁 | 多实例部署改 Redis 分布式锁 |
 | 提前结束 | 未答完的题保留在库中(状态 2) | 增加"放弃当前题"状态与统计口径 |
-| 学情沉淀 | 仅存知识点 | 汇总到用户画像/错题本 |
+| 学情沉淀 | 仅存每道题的知识点标签 | 需要按知识点聚合时再另建统计表 |
 
 ---
 

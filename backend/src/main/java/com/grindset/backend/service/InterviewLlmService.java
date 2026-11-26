@@ -119,13 +119,12 @@ public class InterviewLlmService {
      */
     public void streamQuestion(InterviewSession session, String resumeText, int seq,
                                List<String> coveredPoints,
-                               List<KnowledgeProfileService.Candidate> candidates,
                                Consumer<String> onDelta) {
         ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, QUESTION_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
-                questionPrompt(session, resumeText, seq, coveredPoints, candidates)));
+                questionPrompt(session, resumeText, seq, coveredPoints)));
         router.stream(selection.targets(), selection.model(), messages, onDelta);
     }
 
@@ -137,13 +136,12 @@ public class InterviewLlmService {
      * 追问时 evaluation 可以为空,收束时必须带评分。</p>
      */
     public InterviewTurnDecision decide(InterviewSession session, String resumeText,
-                                        InterviewQuestion question, List<InterviewMessage> thread,
-                                        List<String> knownPoints) {
+                                        InterviewQuestion question, List<InterviewMessage> thread) {
         ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, DECISION_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
-                decisionPrompt(session, resumeText, question, thread, knownPoints)));
+                decisionPrompt(session, resumeText, question, thread)));
 
         // 解析后先 normalize 兜空值,再校验追问次数;两步都通过才算有效结果,
         // 否则 LlmJsonService 会带着错误提示重试一次
@@ -164,13 +162,12 @@ public class InterviewLlmService {
      */
     public InterviewTurnDecision.Evaluation evaluateOnly(InterviewSession session, String resumeText,
                                                          InterviewQuestion question,
-                                                         List<InterviewMessage> thread,
-                                                         List<String> knownPoints) {
+                                                         List<InterviewMessage> thread) {
         ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, EVALUATE_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
-                decisionPrompt(session, resumeText, question, thread, knownPoints)));
+                decisionPrompt(session, resumeText, question, thread)));
         // 评分兜底不重试:失败直接报错,避免收束阶段再拖一轮
         return llmJson.callOnce(selection.targets(), selection.model(), messages,
                 raw -> normalizeEvaluation(llmJson.parse(raw, InterviewTurnDecision.Evaluation.class)),
@@ -206,8 +203,7 @@ public class InterviewLlmService {
     }
 
     private static String questionPrompt(InterviewSession session, String resumeText,
-                                         int seq, List<String> coveredPoints,
-                                         List<KnowledgeProfileService.Candidate> candidates) {
+                                         int seq, List<String> coveredPoints) {
         String covered = coveredPoints == null || coveredPoints.isEmpty()
                 ? "无" : String.join("、", coveredPoints);
         return """
@@ -217,8 +213,6 @@ public class InterviewLlmService {
                 侧重方向:%s
                 当前进度:第 %d / %d 题
                 已考察知识点:%s
-                参考薄弱知识点(按优先级,若与当前岗位/简历不相关可忽略):
-                %s
 
                 候选人简历(全部结构化内容):
                 <<<
@@ -228,21 +222,17 @@ public class InterviewLlmService {
                 请直接输出这一道题。
                 """.formatted(blankToDash(session.getPosition()), blankToDash(session.getRound()),
                 styleLabel(session.getStyle()), focusText(session.getFocus()),
-                seq, session.getQuestionCount(), covered, candidateText(candidates), resumeText);
+                seq, session.getQuestionCount(), covered, resumeText);
     }
 
     private static String decisionPrompt(InterviewSession session, String resumeText,
-                                         InterviewQuestion question, List<InterviewMessage> thread,
-                                         List<String> knownPoints) {
+                                         InterviewQuestion question, List<InterviewMessage> thread) {
         return """
                 面试岗位:%s
                 面试轮次:%s
                 面试风格:%s
                 侧重方向:%s
                 本题已追问次数:%d(最多 3 次)
-
-                该用户已有知识点(请优先复用完全一致的名称,不要造近义新词):
-                %s
 
                 候选人简历(全部结构化内容):
                 <<<
@@ -257,24 +247,7 @@ public class InterviewLlmService {
                 请点评候选人最后一次回答,并按规则决定是否追问或收束。
                 """.formatted(blankToDash(session.getPosition()), blankToDash(session.getRound()),
                 styleLabel(session.getStyle()), focusText(session.getFocus()),
-                followUpCount(question), knownText(knownPoints), resumeText, threadText(thread));
-    }
-
-    /** 薄弱知识点候选,编号展示;为空时明确写"无",避免模型误读 */
-    private static String candidateText(List<KnowledgeProfileService.Candidate> candidates) {
-        if (candidates == null || candidates.isEmpty()) {
-            return "无";
-        }
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < candidates.size(); i++) {
-            if (i > 0) {
-                builder.append('\n');
-            }
-            KnowledgeProfileService.Candidate candidate = candidates.get(i);
-            builder.append(i + 1).append(". ").append(Texts.truncate(candidate.name(), 64))
-                    .append('(').append(candidate.level()).append(')');
-        }
-        return builder.toString();
+                followUpCount(question), resumeText, threadText(thread));
     }
 
     /** 已有知识点名称,限制数量与长度,控制 token */

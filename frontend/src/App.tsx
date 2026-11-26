@@ -5,7 +5,6 @@ import AuthCallbackPage from './pages/AuthCallbackPage'
 import ChatPage from './pages/ChatPage'
 import InterviewPage from './pages/InterviewPage'
 import InterviewRecordsPage from './pages/InterviewRecordsPage'
-import KnowledgePage from './pages/KnowledgePage'
 import LoginPage from './pages/LoginPage'
 import InterviewRoomPage from './pages/InterviewRoomPage'
 import QuestionDetailPage from './pages/QuestionDetailPage'
@@ -49,8 +48,6 @@ function App() {
         <Route path="/interview" element={<InterviewPage />} />
         {/* 面试记录:按简历筛选,进入详情查看复盘 */}
         <Route path="/records" element={<InterviewRecordsPage />} />
-        {/* 掌握度画像:按知识点沉淀历次面试评分 */}
-        <Route path="/knowledge" element={<KnowledgePage />} />
       </Route>
 
       {/* 面试间要全屏沉浸,单独放在侧边栏外壳之外 */}

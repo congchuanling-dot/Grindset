@@ -7,10 +7,10 @@
 Grindset 是一个「面试复习闭环」全栈应用：
 
 ```
-上传简历 → AI 模拟面试 → 复盘报告 → 掌握度画像 → 错题重练 → 题库刷题（含编程题判题）
+上传简历 → AI 模拟面试（语音对话）→ 复盘报告 → 题库刷题（含编程题判题）
 ```
 
-外加首页的 AI 助手对话。产品骨架是围绕「简历 → 面试 → 知识点 → 错题」这条数据闭环做复习，而不是一个通用聊天工具。
+外加首页的 AI 助手对话。产品骨架是围绕「简历 → 面试 → 复盘」这条数据闭环做复习，而不是一个通用聊天工具。
 
 技术栈：
 
@@ -67,8 +67,6 @@ Grindset/
 mysql -uroot -p123456 < sql/001_auth_schema.sql
 mysql -uroot -p123456 < sql/002_resume_schema.sql
 mysql -uroot -p123456 < sql/003_interview_schema.sql
-mysql -uroot -p123456 < sql/004_knowledge_schema.sql
-mysql -uroot -p123456 < sql/005_wrong_question_schema.sql
 mysql -uroot -p123456 < sql/006_question_bank_schema.sql
 mysql -uroot -p123456 < sql/007_question_bank_seed.sql
 mysql -uroot -p123456 < sql/008_coding_schema.sql
@@ -134,7 +132,9 @@ npm run dev
 | `ALIYUN_OSS_ENDPOINT` / `ALIYUN_OSS_BUCKET` / `ALIYUN_OSS_ACCESS_KEY_ID` / `ALIYUN_OSS_ACCESS_KEY_SECRET` | 简历原件的 OSS 兜底配置；正式环境应通过 `/api/admin/storage/oss` 写入数据库，这里只给本地开发用 |
 | `ALIYUN_OSS_RESUME_PREFIX` / `ALIYUN_OSS_URL_EXPIRE_SECONDS` | 可选：原件对象前缀（默认 `resumes`）与签名 URL 有效期（默认 3600 秒） |
 | `RESUME_LLM_PROVIDER` / `RESUME_LLM_MODEL` | 简历解析固定使用的厂商/模型；两者都不配则自动选第一个可用 |
-| `INTERVIEW_LLM_PROVIDER` / `INTERVIEW_LLM_MODEL` | AI 面试/评分/错题重练/题库评分固定使用；规则同上 |
+| `INTERVIEW_LLM_PROVIDER` / `INTERVIEW_LLM_MODEL` | AI 面试/评分/复盘/题库评分固定使用；规则同上 |
+| `VOLC_ASR_API_KEY` / `VOLC_ASR_RESOURCE_ID` | 豆包流式语音识别（面试间语音回答） |
+| `VOLC_TTS_API_KEY` / `VOLC_TTS_RESOURCE_ID` / `VOLC_TTS_SPEAKER` | 豆包语音合成（面试官播报）；`VOLC_TTS_API_KEY` 未配时回落到 `VOLC_ASR_API_KEY` |
 | `JUDGE_JAVA_IMAGE` / `JUDGE_PYTHON_IMAGE` | 判题镜像名 |
 | `RABBITMQ_HOST` / `RABBITMQ_PORT` | RabbitMQ 地址，默认 `localhost:5672` |
 | `RABBITMQ_USER` / `RABBITMQ_PASSWORD` / `RABBITMQ_VHOST` | RabbitMQ 凭证与 vhost，默认 `grindset` / `grindset123` / `/grindset` |
@@ -172,7 +172,7 @@ npm run dev
 - 第三方登录凭证存放在 `oauth_client_config` 表（`client_secret` 用 `SecretCipher` 的 AES-GCM 加密，AAD 为行 id），**不放配置文件和环境变量**；换主密钥或改行 id 会导致密文解不开
 - 需要当前用户的接口用 `@AuthenticationPrincipal LoginUser loginUser` 取 `userId`，**不要接受前端传入的 userId**
 - 管理接口不接 JWT，只校验请求头 `X-Admin-Token`（`AdminGuard`）
-- 简历/面试/错题等资源的所有权校验失败统一返回 404，避免泄露资源是否存在
+- 简历/面试等资源的所有权校验失败统一返回 404，避免泄露资源是否存在
 
 ### 4.3 流式输出（SSE）
 
@@ -181,6 +181,7 @@ npm run dev
 - `POST /api/chat`：事件 `delta`（`{"text":"..."}`）→ `done` → 结束；失败发 `error`（`{"message":"..."}`）
 - `POST /api/agent/chat`：首帧 `conversation`（`{"conversationId":"...","title":"..."}`），随后 `status` / `tool_call` / `tool_result` / `delta`，结束 `done` 带会话 ID 与最新标题
 - `POST /api/interviews/{id}/questions`：同上，`done` 额外带 `{"questionId":"...","seq":"..."}`
+- `POST /api/tts`：请求体 `{text}`；事件 `delta`（`{"audio":"<base64 PCM>"}`，24k/s16le/单声道）→ `done`；失败发 `error`
 
 前端不用 `EventSource`，而是 `fetch` + `ReadableStream` 解析（见 `frontend/src/api/chat.ts`），因为需要带 `Authorization` 头。
 
@@ -188,7 +189,6 @@ npm run dev
 
 - 单实例内用 `ConcurrentHashMap<Long, ReentrantLock>` 按用户/题目串行化，`tryLock()` 失败返回 409/429
 - 慢 LLM 调用放在数据库事务外，先拿到结果再开短事务落库
-- 画像、错题收录是**旁路**：失败只记日志，不回滚主流程，可通过管理员重建接口修复
 - 判题使用单线程 `ExecutorService` 串行执行，提交先落库 `PENDING`，前端轮询
 - 简历上传用 `Semaphore` 限制单实例并发（默认 8），临时文件落盘、用后即删
 
@@ -222,12 +222,10 @@ npm run dev
 | `/questions/coding` | `CodingListPage` | 编程题列表（左筛选 + 右表格） |
 | `/questions/coding/:id` | `CodingWorkspace` | 编程题工作台：题面 + 编辑器左右分栏 |
 | `/interview` | `InterviewPage` | 面试配置入口（简历、岗位、轮次、风格、题数） |
-| `/interview/:sessionId` | `InterviewSessionPage` | 面试对话、复盘报告 |
+| `/interview/:sessionId` | `InterviewRoomPage` | 全屏面试间：自己摄像头 + VRM 面试官，语音对话，不套 AppLayout |
 | `/records` | `InterviewRecordsPage` | 面试记录列表、按简历筛选、删除 |
-| `/knowledge` | `KnowledgePage` | 掌握度画像 |
-| `/wrong-questions` | `WrongQuestionsPage` | 错题本与重练 |
 
-除 `/login` 外都套在 `RequireAuth` + `AppLayout` 下。
+除 `/login`、`/auth/callback`、`/interview/:sessionId` 外都套在 `RequireAuth` + `AppLayout` 下；面试间只套 `RequireAuth`。
 
 ### 5.2 请求层
 
@@ -261,34 +259,11 @@ npm run dev
 - 答题：`POST /{id}/answers` 一次请求内完成「一句话点评 + 是否追问 + 是否收束本题」
   - 一道大题 = 主问题 + 最多 3 次追问；题与题之间不共享上下文
   - 收束时写入本题评分（1~5）、知识点、总评、建议
-- 收束后的副作用：
-  - `KnowledgeProfileService.record()` 更新掌握度（独立事务）
-  - 本题得分 ≤ 2 时 `WrongQuestionService.collect()` 自动收录错题本
+- 面试间前端链路：出题（SSE）→ TTS 播报 → 自动开麦收音（结束语/5 秒无新文本自动提交）→ 提交 → 追问/下一题；答完自动生成复盘
 - 复盘：`POST /{id}/finish` 生成 0~100 总分与完整报告 JSON，存 `report_json`
 - 会话状态：`0 进行中 / 1 已结束`；题目状态：`0 未开始 / 1 提问中 / 2 作答中 / 3 已收束 / 4 已放弃`
 
-### 6.3 掌握度画像
-
-`KnowledgeProfileService`
-
-- 知识点名称先归一（去空白/标点、全半角），查或建 `knowledge_points`
-- 用户掌握度按 EMA 更新：`新值 = 旧值 × 0.7 + 本次观测 × 0.3`（观测为 1~5 分映射到 0~100）
-- 等级：`<40 WEAK`、`40~74 LEARNING`、`>=75 MASTERED`；超过 30 天未复习视为 stale
-- `weightedCandidates()`：面试出题时按掌握度加权，优先抽薄弱/陈旧知识点
-- `knownNames()`：限制评分时模型自造知识点名称，优先复用已有名称
-- 管理端 `POST /api/admin/knowledge/rebuild?userId=` 可按历史面试 + 错题重练重算
-
-### 6.4 错题本
-
-`WrongQuestionService`
-
-- 收录条件：面试题评分 ≤ 2；题库问答题评分 ≤ 2；编程题判题未通过
-- 错题是**快照**，与原面试解耦，删除原面试不影响错题本
-- 唯一键 `(user_id, question_id)`；`source` 区分 `INTERVIEW` / `BANK`
-- 重练：模型评分 + 参考答案，写 `question_retries`，同步回写掌握度
-- 重练得分 ≥ 3 标记已掌握；复习间隔 1 / 3 / 7 天（按得分）
-
-### 6.5 题库
+### 6.3 题库
 
 `QuestionBankService`
 
@@ -298,7 +273,7 @@ npm run dev
 - 进度筛选状态：`TODO` / `DONE` / `WRONG`
 - 管理端导入：`POST /api/admin/questions/import`，按题干 SHA-256 幂等
 
-### 6.6 编程题判题
+### 6.4 编程题判题
 
 - 每道编程题**同时支持两种模式**，前端在工作台顶部切换，提交时用 `codeMode` 指定：
   - `ACM`：用户写 `Main` / `main()`，从标准输入读、向标准输出写；用例存 `case_mode='ACM'` 的 stdin 文本
@@ -314,7 +289,7 @@ npm run dev
 - `POST /{id}/run` 同步运行**例题**（不写历史）；`POST /{id}/submissions` 异步判题并立即返回 `PENDING`
 - `GET /api/questions/submissions/{submissionId}` 前端轮询
 - 同一用户同一时刻只允许一个运行/提交任务，否则 429
-- 判题结束回写进度与掌握度；未通过自动进错题本
+- 判题结束只回写做题进度（`user_question_progress`），不做跨题聚合统计
 - 判题状态：`PENDING` / `RUNNING` / `ACCEPTED` / `WRONG_ANSWER` / `COMPILE_ERROR` / `RUNTIME_ERROR` / `TIME_LIMIT_EXCEEDED` / `SYSTEM_ERROR`
 
 ## 7. 接口清单
@@ -376,11 +351,13 @@ npm run dev
 | POST | `/{id}/finish` | 生成复盘报告 |
 | DELETE | `/{id}` | 删除会话 |
 
-### 掌握度画像 `/api/knowledge`
+### 语音 `/api/tts`
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| GET | `/profile` | 可选 `level=WEAK/LEARNING/MASTERED`、`domain`、`limit` |
+| POST | `/` | 请求体 `{text}`（≤500 字）；SSE 流式返回 PCM 音频块，事件 `delta`/`done`/`error` |
+
+面试官播报由前端 `useInterviewerVoice` 消费：base64 PCM → WebAudio 排队播放 → AnalyserNode 实时驱动 VRM 口型；支持随时打断（停播报 + 立即开麦）。
 
 ### 题库 `/api/questions`
 
@@ -401,14 +378,6 @@ npm run dev
 | GET | `/{id}/submissions` | 我的提交历史 |
 | GET | `/images?key=` | 公开。题库配图代理，从 OSS `questions/` 前缀流式读取 |
 
-### 错题本 `/api/wrong-questions`
-
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | `/` | 列表 + summary；可选 `status`、`kpId`、`kp`、`sessionId`、`limit` |
-| GET | `/{id}` | 错题详情 + 重练历史 |
-| POST | `/{id}/retry` | 提交重练 `{answer}` |
-
 ### 管理接口（需要 `X-Admin-Token`，不需要 JWT）
 
 | 方法 | 路径 | 说明 |
@@ -418,8 +387,6 @@ npm run dev
 | PATCH | `/api/admin/llm/keys/{id}` | 启用（0）/ 禁用（2）某把 key |
 | PUT | `/api/admin/llm/channels/{id}/balance` | 手工维护余额，来源改为 `MANUAL` |
 | POST | `/api/admin/llm/channels/{id}/balance/refresh` | 立即拉取余额（目前仅 DeepSeek） |
-| POST | `/api/admin/knowledge/rebuild?userId=` | 按用户重建掌握度画像 |
-| POST | `/api/admin/wrong-questions/rebuild?userId=` | 按用户回填历史错题 |
 | POST | `/api/admin/questions/import` | JSON 批量导入题库，按内容哈希幂等 |
 | POST | `/api/admin/questions/images` | 上传题库配图到 OSS `questions/`，返回代理 URL |
 | GET | `/api/admin/storage/oss` | 查看简历原件 OSS 配置（AccessKey 只返回掩码） |
@@ -436,7 +403,7 @@ npm run dev
 - 失败会 `markFailed()`，连续失败进入冷却，鉴权失败自动停用
 - 场景与模型配置：
   - 简历解析：`app.resume.llm.*`，都是空则自动选第一个可用厂商/模型
-  - AI 面试、面试评分、复盘、错题重练、题库评分：`app.interview.llm.*`，规则同上
+  - AI 面试、面试评分、复盘、题库评分：`app.interview.llm.*`，规则同上
   - 首页对话：前端选择的 provider/model
 - 所有结构化输出的 LLM 调用都要求固定 JSON，并做一次解析失败重试；再失败按业务错误返回
 
@@ -447,8 +414,6 @@ npm run dev
 | `001_auth_schema.sql` | `users`、`user_identities` | 用户与登录身份（LOCAL 密码 / 预留 OAuth） |
 | `002_resume_schema.sql` | `resumes`、`resume_sections`、`resume_section_items`、`resume_skills` | 通用章节式简历结构 |
 | `003_interview_schema.sql` | `interview_sessions`、`interview_questions`、`interview_messages` | 面试会话、题目线程、线程内消息 |
-| `004_knowledge_schema.sql` | `knowledge_points`、`user_knowledge_states` | 知识点字典与用户掌握度 |
-| `005_wrong_question_schema.sql` | `wrong_questions`、`question_retries` | 错题快照与重练记录 |
 | `006_question_bank_schema.sql` | `question_bank`、`user_question_progress`、`question_attempts` | 题库、做题进度、作答记录 |
 | `007_question_bank_seed.sql` | — | 约 60 道多领域种子题 |
 | `008_coding_schema.sql` | `question_test_cases`、`question_submissions` + `question_bank` 扩展列 | 编程题用例与提交 |
@@ -474,16 +439,14 @@ npm run dev
 2. 简历章节使用通用模型，新增经历类型只改枚举，不改表结构。
 3. 文本抽取只用 PDFBox / POI 等确定性库，**不要用 LLM 做文本抽取**。
 4. LLM 只负责「纯文本 → 固定 JSON」，未知章节统一 `OTHER` 并保留原标题。
-5. 资源归属校验失败统一返回 404，包括简历、面试、错题。
+5. 资源归属校验失败统一返回 404，包括简历、面试。
 6. 面试记录接口的用户身份只从 JWT 读取，不接受前端传 userId。
 7. 会话全程落库；刷新页面能通过 `GET /api/interviews/{id}` 恢复。
-8. 掌握度用 EMA（0.7/0.3），跨场记忆薄弱点并在出题时加权优先。
-9. 错题是快照，独立于原面试；删除原面试不影响错题本。
-10. 错题收录阈值：本题评分 ≤ 2 自动收录；重练 ≥ 3 标记已掌握。
-11. 题库第一版是力扣刷题形态，不做 PDF/爬虫导入、管理后台 UI、代码判题以外的扩展。
-12. 简历预览组件在简历管理页和 AI 面试页共用同一实现，两处样式/行为必须一致。
-13. 闭集字段（文件类型、章节类型、候选人阶段、题型、判题形态、题目来源、判题语言/状态、面试风格等）在**实体层用枚举**；DTO 与前端契约保持字符串或数字。数据库值必须与枚举 `name()` 一致，例外如 `InterviewStyle` 用小写 `@EnumValue`。
-14. 简历解析是**异步任务**：上传只负责落库 + 投递消息，不在请求线程里调 LLM；消费者必须幂等（Redis 锁 + `parse_status` 判断），可重试错误走 TTL 重试队列，超过次数进死信队列。**不保存原始纯文本**，worker 从 OSS 重新下载原件。
+8. 题库第一版是力扣刷题形态，不做 PDF/爬虫导入、管理后台 UI、代码判题以外的扩展。
+9. 简历预览组件在简历管理页和 AI 面试页共用同一实现，两处样式/行为必须一致。
+10. 闭集字段（文件类型、章节类型、候选人阶段、题型、判题形态、题目来源、判题语言/状态、面试风格等）在**实体层用枚举**；DTO 与前端契约保持字符串或数字。数据库值必须与枚举 `name()` 一致，例外如 `InterviewStyle` 用小写 `@EnumValue`。
+11. 简历解析是**异步任务**：上传只负责落库 + 投递消息，不在请求线程里调 LLM；消费者必须幂等（Redis 锁 + `parse_status` 判断），可重试错误走 TTL 重试队列，超过次数进死信队列。**不保存原始纯文本**，worker 从 OSS 重新下载原件。
+12. 面试间的口型、打断、字幕都走前端状态机（出题 → 播报 → 收音 → 提交）；语音识别与合成只能通过后端 `/api/asr/stream`、`/api/tts` 代理，**API Key 不能下发到浏览器**。
 
 ## 11. 常见改动指引
 
@@ -520,7 +483,6 @@ npm run dev
 - **长 ID 精度**：所有返回给前端的雪花 ID 用字符串；前端不要用 `Number` 解析 ID。
 - **SSE 参数错误**：对话/出题在响应头发出后再出错，只能走 `error` 事件，前端要处理。
 - **单实例假设**：锁和判题队列都是进程内实现，暂不支持多实例水平扩展。
-- **旁路失败**：画像更新、错题收录失败不会让主流程报错，排查时要看日志，并用管理端 rebuild 修复。
 - **JSON 列**：修改实体 JSON 字段时注意 MyBatis-Plus 的类型处理器配置，避免写入变成字符串。
 - **时间**：数据库时区 `Asia/Shanghai`，展示格式统一 `yyyy-MM-dd HH:mm`。
 - **OAuth 凭证在库里**：GitHub / Google 的 client_secret 是 `oauth_client_config` 里的 AES-GCM 密文，AAD 绑定该行 `id`。换 secret 必须用同一主密钥重新加密后 `UPDATE`，不要只改明文；改 `id` 也会解不开。
@@ -538,10 +500,7 @@ npm run dev
 | `登录模块-技术设计.md` | JWT + refresh 轮换、表结构、接口约定 |
 | `简历解析-技术设计.md` | 文本抽取、LLM JSON 协议、通用章节模型、LLM 渠道表 |
 | `AI面试-技术设计.md` | 会话状态机、出题/追问/评分/复盘、SSE |
-| `P0-掌握度画像与加权出题-产品方案.md` | 画像产品规则与展示口径 |
-| `P0-掌握度画像与加权出题-技术设计.md` | 知识点归一、EMA、加权候选、重建 |
-| `错题重练闭环-产品方案.md` | 收录/重练/掌握规则 |
-| `错题重练闭环-技术设计.md` | 错题快照、重练记录、画像回写 |
+| `AI面试官形象与面试间-技术选型.md` | VRM 形象、VRMA 坐姿、TTS 口型、面试间交互（含 Live2D 选型过程） |
 | `面试复习闭环-PRD.md` | 整体产品闭环 |
 | `编程题判题-技术设计.md` | Docker 沙箱、判题流程、异步提交与轮询 |
 | `JWT鉴权-技术设计.md` | 鉴权细节补充 |

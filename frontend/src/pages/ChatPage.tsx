@@ -625,7 +625,7 @@ function ChatPage() {
                 你想让我帮你复习什么？
               </h1>
               <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
-                我可以直接查你的掌握度和刷题记录，再给可执行的建议。
+                我可以直接查你的刷题记录和面试记录，再给可执行的建议。
               </p>
               <div className="mt-5 flex flex-wrap justify-center gap-2">
                 {SUGGESTIONS.map((item) => (

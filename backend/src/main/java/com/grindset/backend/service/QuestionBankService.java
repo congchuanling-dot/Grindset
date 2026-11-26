@@ -78,7 +78,6 @@ public class QuestionBankService {
     private final UserQuestionProgressMapper progressMapper;
     private final QuestionAttemptMapper attemptMapper;
     private final InterviewLlmService llmService;
-    private final KnowledgeProfileService knowledgeProfileService;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
 
@@ -90,7 +89,6 @@ public class QuestionBankService {
                                UserQuestionProgressMapper progressMapper,
                                QuestionAttemptMapper attemptMapper,
                                InterviewLlmService llmService,
-                               KnowledgeProfileService knowledgeProfileService,
                                SnowflakeIdGenerator idGenerator,
                                TransactionTemplate transactionTemplate) {
         this.bankMapper = bankMapper;
@@ -98,7 +96,6 @@ public class QuestionBankService {
         this.progressMapper = progressMapper;
         this.attemptMapper = attemptMapper;
         this.llmService = llmService;
-        this.knowledgeProfileService = knowledgeProfileService;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
     }
@@ -306,16 +303,6 @@ public class QuestionBankService {
                         format(now));
             });
 
-            List<String> points = names(question.getKpNames());
-            if (points.isEmpty()) {
-                points = names(question.getKeyPoints());
-            }
-            // 掌握度回写:失败不影响作答结果,可由管理员重建修复
-            try {
-                knowledgeProfileService.record(userId, 0L, points, evaluation.score());
-            } catch (Exception e) {
-                log.error("题库掌握度回写失败 userId={} questionId={}", userId, id, e);
-            }
             return result;
         } finally {
             lock.unlock();
@@ -338,16 +325,11 @@ public class QuestionBankService {
         return statusLabel(findProgress(userId, id));
     }
 
-    /** 判题结束后回写做题进度与掌握度 */
+    /** 判题结束后回写做题进度 */
     public void recordCodingOutcome(long userId, long id, boolean accepted, String code, String message) {
-        QuestionBank question = requireOn(id);
+        requireOn(id);
         int score = accepted ? 5 : 1;
         transactionTemplate.executeWithoutResult(status -> upsertProgress(userId, id, score, LocalDateTime.now()));
-        try {
-            knowledgeProfileService.record(userId, 0L, names(question.getKpNames()), score);
-        } catch (Exception e) {
-            log.error("编程题掌握度回写失败 userId={} questionId={}", userId, id, e);
-        }
     }
 
     private UserQuestionProgress upsertProgress(long userId, long id, int score, LocalDateTime now) {

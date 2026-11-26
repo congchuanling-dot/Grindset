@@ -1,5 +1,4 @@
 import {
-  BrainCircuit,
   FileUp,
   History,
   Library,
@@ -18,7 +17,6 @@ const navItems = [
   { to: '/questions', label: '题库', icon: Library },
   { to: '/interview', label: 'AI 面试', icon: Mic },
   { to: '/records', label: '面试记录', icon: History },
-  { to: '/knowledge', label: '掌握度画像', icon: BrainCircuit },
 ]
 
 // 登录后所有页面共用的外壳:左侧边栏 + 右侧内容区。
