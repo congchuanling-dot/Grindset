@@ -14,7 +14,6 @@ import CodingWorkspacePage from './pages/questions/CodingWorkspacePage'
 import QuestionBankLayout from './pages/questions/QuestionBankLayout'
 import QuestionOverview from './pages/questions/QuestionOverview'
 import ResumePage from './pages/ResumePage'
-import WrongQuestionsPage from './pages/WrongQuestionsPage'
 
 function App() {
   return (
@@ -52,8 +51,6 @@ function App() {
         <Route path="/records" element={<InterviewRecordsPage />} />
         {/* 掌握度画像:按知识点沉淀历次面试评分 */}
         <Route path="/knowledge" element={<KnowledgePage />} />
-        {/* 错题本:自动收录低分题,支持单题重练 */}
-        <Route path="/wrong-questions" element={<WrongQuestionsPage />} />
       </Route>
 
       {/* 面试间要全屏沉浸,单独放在侧边栏外壳之外 */}

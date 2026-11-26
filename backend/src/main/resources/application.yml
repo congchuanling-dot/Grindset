@@ -150,6 +150,16 @@ app:
       # 单次会话音频字节上限,默认 10MB(16k/16bit 约 5 分钟)
       max-audio-bytes: ${ASR_MAX_AUDIO_BYTES:10485760}
 
+  # 语音合成(豆包语音合成,HTTP 单向流式)。未配置 key 时前端自动关闭播报。
+  tts:
+    enabled: ${TTS_ENABLED:true}
+    api-key: ${VOLC_TTS_API_KEY:${VOLC_ASR_API_KEY:}}
+    resource-id: ${VOLC_TTS_RESOURCE_ID:seed-tts-2.0}
+    # 音色 ID 见控制台音色库;默认通用女声
+    speaker: ${VOLC_TTS_SPEAKER:zh_female_vv_uranus_bigtts}
+    endpoint: ${VOLC_TTS_ENDPOINT:https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse}
+    timeout-seconds: ${VOLC_TTS_TIMEOUT_SECONDS:60}
+
   # 判题沙箱镜像。国内网络可先按镜像站地址拉取,例如:
   #   docker pull docker.m.daocloud.io/library/eclipse-temurin:21-jdk-alpine
   #   docker tag  docker.m.daocloud.io/library/eclipse-temurin:21-jdk-alpine eclipse-temurin:21-jdk-alpine

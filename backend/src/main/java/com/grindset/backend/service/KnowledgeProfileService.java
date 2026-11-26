@@ -10,15 +10,11 @@ import com.grindset.backend.dto.KnowledgeProfileView;
 import com.grindset.backend.entity.InterviewQuestion;
 import com.grindset.backend.entity.InterviewSession;
 import com.grindset.backend.entity.KnowledgePoint;
-import com.grindset.backend.entity.QuestionRetry;
 import com.grindset.backend.entity.UserKnowledgeState;
-import com.grindset.backend.entity.WrongQuestion;
 import com.grindset.backend.mapper.InterviewQuestionMapper;
 import com.grindset.backend.mapper.InterviewSessionMapper;
 import com.grindset.backend.mapper.KnowledgePointMapper;
-import com.grindset.backend.mapper.QuestionRetryMapper;
 import com.grindset.backend.mapper.UserKnowledgeStateMapper;
-import com.grindset.backend.mapper.WrongQuestionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -73,8 +69,6 @@ public class KnowledgeProfileService {
     private final UserKnowledgeStateMapper stateMapper;
     private final InterviewSessionMapper sessionMapper;
     private final InterviewQuestionMapper questionMapper;
-    private final WrongQuestionMapper wrongQuestionMapper;
-    private final QuestionRetryMapper retryMapper;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
 
@@ -85,16 +79,12 @@ public class KnowledgeProfileService {
                                    UserKnowledgeStateMapper stateMapper,
                                    InterviewSessionMapper sessionMapper,
                                    InterviewQuestionMapper questionMapper,
-                                   WrongQuestionMapper wrongQuestionMapper,
-                                   QuestionRetryMapper retryMapper,
                                    SnowflakeIdGenerator idGenerator,
                                    TransactionTemplate transactionTemplate) {
         this.pointMapper = pointMapper;
         this.stateMapper = stateMapper;
         this.sessionMapper = sessionMapper;
         this.questionMapper = questionMapper;
-        this.wrongQuestionMapper = wrongQuestionMapper;
-        this.retryMapper = retryMapper;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
     }
@@ -377,31 +367,7 @@ public class KnowledgeProfileService {
                 }
             }
 
-            // 2. 错题重练证据:知识点优先用重练记录,为空回退到错题快照
-            Map<Long, WrongQuestion> wrongs = wrongQuestionMapper.selectList(
-                            new QueryWrapper<WrongQuestion>().eq("user_id", userId)).stream()
-                    .collect(Collectors.toMap(WrongQuestion::getId, Function.identity()));
-            int retryCount = 0;
-            if (!wrongs.isEmpty()) {
-                for (QuestionRetry retry : retryMapper.selectList(
-                        new QueryWrapper<QuestionRetry>().eq("user_id", userId))) {
-                    WrongQuestion wrong = wrongs.get(retry.getWrongId());
-                    if (wrong == null) {
-                        continue;
-                    }
-                    List<String> points = retry.getKnowledgePoints() != null
-                            ? retry.getKnowledgePoints() : wrong.getKnowledgePoints();
-                    if (points == null || points.isEmpty()) {
-                        continue;
-                    }
-                    long sourceSessionId = wrong.getSessionId() == null ? 0L : wrong.getSessionId();
-                    evidences.add(new Evidence(retry.getCreatedAt(), order++, sourceSessionId,
-                            points, intValue(retry.getScore())));
-                    retryCount++;
-                }
-            }
-
-            // 3. 按时间升序重放;同一时间先面试题、后重练,保证结果稳定
+            // 2. 按时间升序重放;同一时间先面试题、后重练,保证结果稳定
             evidences.sort(Comparator.comparing(Evidence::at,
                             Comparator.nullsLast(Comparator.naturalOrder()))
                     .thenComparingInt(Evidence::order));
@@ -416,9 +382,9 @@ public class KnowledgeProfileService {
 
             long states = stateMapper.selectCount(new QueryWrapper<UserKnowledgeState>()
                     .eq("user_id", userId));
-            log.info("画像重建完成 userId={} questions={} retries={} states={}",
-                    userId, questionCount, retryCount, states);
-            return new RebuildResult(String.valueOf(userId), questionCount, retryCount, (int) states);
+            log.info("画像重建完成 userId={} questions={} states={}",
+                    userId, questionCount, states);
+            return new RebuildResult(String.valueOf(userId), questionCount, (int) states);
         } finally {
             lock.unlock();
         }
@@ -596,6 +562,6 @@ public class KnowledgeProfileService {
     public record Candidate(String name, String level) {
     }
 
-    public record RebuildResult(String userId, int questions, int retries, int states) {
+    public record RebuildResult(String userId, int questions, int states) {
     }
 }

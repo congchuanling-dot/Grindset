@@ -79,7 +79,6 @@ public class QuestionBankService {
     private final QuestionAttemptMapper attemptMapper;
     private final InterviewLlmService llmService;
     private final KnowledgeProfileService knowledgeProfileService;
-    private final WrongQuestionService wrongQuestionService;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
 
@@ -92,7 +91,6 @@ public class QuestionBankService {
                                QuestionAttemptMapper attemptMapper,
                                InterviewLlmService llmService,
                                KnowledgeProfileService knowledgeProfileService,
-                               WrongQuestionService wrongQuestionService,
                                SnowflakeIdGenerator idGenerator,
                                TransactionTemplate transactionTemplate) {
         this.bankMapper = bankMapper;
@@ -101,7 +99,6 @@ public class QuestionBankService {
         this.attemptMapper = attemptMapper;
         this.llmService = llmService;
         this.knowledgeProfileService = knowledgeProfileService;
-        this.wrongQuestionService = wrongQuestionService;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
     }
@@ -319,11 +316,6 @@ public class QuestionBankService {
             } catch (Exception e) {
                 log.error("题库掌握度回写失败 userId={} questionId={}", userId, id, e);
             }
-            // 低分题进入错题本,复用重练闭环
-            if (evaluation.score() <= WRONG_SCORE_MAX) {
-                wrongQuestionService.collectFromBank(userId, id, question.getContent(), points,
-                        text, evaluation.score(), evaluation.comment(), evaluation.suggestion());
-            }
             return result;
         } finally {
             lock.unlock();
@@ -346,7 +338,7 @@ public class QuestionBankService {
         return statusLabel(findProgress(userId, id));
     }
 
-    /** 判题结束后回写做题进度与掌握度;未通过则收录到错题本 */
+    /** 判题结束后回写做题进度与掌握度 */
     public void recordCodingOutcome(long userId, long id, boolean accepted, String code, String message) {
         QuestionBank question = requireOn(id);
         int score = accepted ? 5 : 1;
@@ -355,12 +347,6 @@ public class QuestionBankService {
             knowledgeProfileService.record(userId, 0L, names(question.getKpNames()), score);
         } catch (Exception e) {
             log.error("编程题掌握度回写失败 userId={} questionId={}", userId, id, e);
-        }
-        if (!accepted) {
-            wrongQuestionService.collectFromBank(userId, id, question.getContent(),
-                    names(question.getKpNames()), code, score,
-                    "编程题未通过：" + (message == null || message.isBlank() ? "未知原因" : message),
-                    "对照例题和边界条件重写代码后重新提交");
         }
     }
 

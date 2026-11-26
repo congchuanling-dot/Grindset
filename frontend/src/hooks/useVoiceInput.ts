@@ -3,6 +3,18 @@ import { getSession } from '../auth/authStore'
 
 export type VoiceState = 'idle' | 'connecting' | 'recording' | 'finishing'
 
+/** 自动断句:命中结束语或长时间没有新文本时自动结束这一段 */
+export interface VoiceAutoStop {
+  /** 说这些词就算答完了,例如"就这些""说完了" */
+  endPhrases?: string[]
+  /** 命中结束语后再等这么久没有新文本才结束(毫秒),防止把后面的补充截掉 */
+  endDelayMs?: number
+  /** 多久没有新的识别文本就兜底结束(毫秒),从识别到第一句话开始计时 */
+  silenceMs?: number
+  /** 最短录音时长(毫秒),低于这个时长不触发自动结束 */
+  minMs?: number
+}
+
 export interface VoiceInputOptions {
   /** 单次录音时长上限(秒),不同场景传不同值;服务端会用硬上限截断 */
   maxSeconds?: number
@@ -11,6 +23,8 @@ export interface VoiceInputOptions {
   /** 最终识别结果 */
   onFinal?: (text: string) => void
   onError?: (message: string) => void
+  /** 传了才启用自动断句 */
+  autoStop?: VoiceAutoStop
 }
 
 export interface VoiceInputController {
@@ -25,6 +39,23 @@ export interface VoiceInputController {
 const SAMPLE_RATE = 16000
 /** 火山建议 100~200ms 一包:16k * 16bit * 200ms */
 const CHUNK_BYTES = 6400
+/** 默认结束语:用户说完这类话就认为这一轮回答结束 */
+export const DEFAULT_END_PHRASES = [
+  '就这些',
+  '大概就这些',
+  '就这么多',
+  '说完了',
+  '答完了',
+  '回答完毕',
+  '完毕',
+  '以上',
+  '差不多',
+  '没了',
+  '就这样',
+]
+const END_DELAY_MS = 1200
+const SILENCE_MS = 5000
+const MIN_RECORD_MS = 2000
 
 /**
  * 语音输入公共 Hook:麦克风 -> 16k PCM -> 后端 /api/asr/stream -> 实时/最终文本。
@@ -50,6 +81,11 @@ export function useVoiceInput(options: VoiceInputOptions): VoiceInputController 
   const aliveRef = useRef(true)
   const limitRef = useRef(60)
   const stopRef = useRef<() => Promise<void>>(async () => {})
+  /** 最后一次识别到新文本的时间;0 表示这一轮还没开口 */
+  const lastTextAtRef = useRef(0)
+  const startedAtRef = useRef(0)
+  /** 当前文本是否以结束语结尾 */
+  const endCandidateRef = useRef(false)
 
   function phase(next: VoiceState) {
     stateRef.current = next
@@ -130,10 +166,27 @@ export function useVoiceInput(options: VoiceInputOptions): VoiceInputController 
     phase('recording')
 
     const startedAt = Date.now()
+    startedAtRef.current = startedAt
+    lastTextAtRef.current = 0
+    endCandidateRef.current = false
     timerRef.current = window.setInterval(() => {
       const elapsed = Math.floor((Date.now() - startedAt) / 1000)
       setSeconds(elapsed)
-      if (elapsed >= limitRef.current) void stopRef.current()
+      if (elapsed >= limitRef.current) {
+        void stopRef.current()
+        return
+      }
+      const autoStop = optionsRef.current.autoStop
+      if (!autoStop) return
+      const now = Date.now()
+      if (now - startedAt < (autoStop.minMs ?? MIN_RECORD_MS)) return
+      if (lastTextAtRef.current === 0) return
+      const idle = now - lastTextAtRef.current
+      if (endCandidateRef.current && idle >= (autoStop.endDelayMs ?? END_DELAY_MS)) {
+        void stopRef.current()
+      } else if (idle >= (autoStop.silenceMs ?? SILENCE_MS)) {
+        void stopRef.current()
+      }
     }, 250)
   }
 
@@ -150,6 +203,14 @@ export function useVoiceInput(options: VoiceInputOptions): VoiceInputController 
     } else if (message.type === 'partial') {
       lastPartialRef.current = message.text ?? ''
       optionsRef.current.onPartial?.(lastPartialRef.current)
+      // 记下最后一次文本变化,自动断句用它判断"还在说"还是"说完了"
+      lastTextAtRef.current = Date.now()
+      const autoStop = optionsRef.current.autoStop
+      if (autoStop) {
+        const tail = lastPartialRef.current.slice(-12)
+        const phrases = autoStop.endPhrases ?? DEFAULT_END_PHRASES
+        endCandidateRef.current = phrases.some((phrase) => tail.includes(phrase))
+      }
     } else if (message.type === 'final') {
       finishWith(message.text ?? lastPartialRef.current)
     } else if (message.type === 'error') {
@@ -166,6 +227,8 @@ export function useVoiceInput(options: VoiceInputOptions): VoiceInputController 
     }
     finishedRef.current = false
     lastPartialRef.current = ''
+    lastTextAtRef.current = 0
+    endCandidateRef.current = false
     limitRef.current = Math.max(5, optionsRef.current.maxSeconds ?? 60)
     setSeconds(0)
     phase('connecting')

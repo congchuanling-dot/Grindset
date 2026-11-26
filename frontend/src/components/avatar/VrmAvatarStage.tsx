@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm'
@@ -23,6 +23,12 @@ export interface VrmAvatarStageProps {
   /** 待机动作 VRMA 地址,half 取景下生效 */
   animationUrl?: string
   className?: string
+}
+
+/** 命令式接口:口型逐帧变化,不能走 props,否则每帧都触发 React 重渲染 */
+export interface VrmAvatarHandle {
+  /** 0~1 张嘴幅度 */
+  setMouth: (level: number) => void
 }
 
 /** 把 T-Pose 调成坐姿:大腿前伸、小腿下垂、手臂自然放在身前 */
@@ -56,15 +62,21 @@ function applySeatedPose(vrm: VRM) {
  * 不处理业务、不发请求,只负责:加载模型、待机(眨眼/呼吸/看向镜头)、按取景模式摆镜头。
  * 口型等驱动能力后续通过 ref 或 props 注入,避免业务逻辑渗进渲染层。
  */
-function VrmAvatarStage({
-  modelUrl,
-  framing = 'half',
-  animationUrl = SEATED_MOTION_URL,
-  className,
-}: VrmAvatarStageProps) {
+const VrmAvatarStage = forwardRef<VrmAvatarHandle, VrmAvatarStageProps>(function VrmAvatarStage(
+  { modelUrl, framing = 'half', animationUrl = SEATED_MOTION_URL, className },
+  ref,
+) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  /** 目标口型幅度,由 useInterviewerVoice 按音频能量写入 */
+  const mouthRef = useRef(0)
+
+  useImperativeHandle(ref, () => ({
+    setMouth: (level: number) => {
+      mouthRef.current = Math.max(0, Math.min(1, level))
+    },
+  }), [])
 
   useEffect(() => {
     const host = hostRef.current
@@ -75,6 +87,8 @@ function VrmAvatarStage({
     let renderer: THREE.WebGLRenderer | null = null
     let vrm: VRM | null = null
     let mixer: THREE.AnimationMixer | null = null
+    let mouthOpenName = 'aa'
+    let mouthRoundName: string | null = 'oh'
 
     setProgress(0)
     setError(null)
@@ -123,6 +137,11 @@ function VrmAvatarStage({
         vrm.scene.traverse((object) => {
           object.frustumCulled = false
         })
+
+        // 口型预设名按模型实际情况取:VRM1 是 aa/oh,部分 VRM0 只留了 a/o
+        const hasExpression = (name: string) => Boolean(vrm?.expressionManager?.getExpression(name))
+        mouthOpenName = hasExpression('aa') ? 'aa' : hasExpression('a') ? 'a' : 'aa'
+        mouthRoundName = hasExpression('oh') ? 'oh' : hasExpression('o') ? 'o' : null
 
         // 用外层 group 承担呼吸/摆动,不能直接改 vrm.scene 的 rotation,
         // 否则会覆盖 rotateVRM0 设置的 180° 朝向,导致背对镜头
@@ -189,6 +208,7 @@ function VrmAvatarStage({
 
         let lastTime = performance.now()
         let elapsed = 0
+        let mouthValue = 0
         const blinkTimer = { next: 2.5, closing: -1 }
 
         renderer.setAnimationLoop(() => {
@@ -202,8 +222,19 @@ function VrmAvatarStage({
           swayRoot.position.y = Math.sin(elapsed * 1.2) * 0.006
           swayRoot.rotation.y = Math.sin(elapsed * 0.35) * 0.04
 
+          // 动作先驱动骨骼。必须放在表情之前:VRMA 里可能带表情轨道,
+          // 先 mixer 再写口型,否则每帧都被重置回 0,嘴就不动了
+          mixer?.update(delta)
+
           const expressionManager = vrm.expressionManager
           if (expressionManager) {
+            // 口型:目标值来自正在播放的语音能量,这里做平滑,避免一帧一变地抽搐
+            mouthValue += (mouthRef.current - mouthValue) * Math.min(1, delta * 18)
+            expressionManager.setValue(mouthOpenName, mouthValue)
+            if (mouthRoundName) {
+              expressionManager.setValue(mouthRoundName, mouthValue * 0.35)
+            }
+
             if (blinkTimer.closing < 0 && elapsed > blinkTimer.next) {
               blinkTimer.closing = 0
             }
@@ -220,8 +251,7 @@ function VrmAvatarStage({
             }
           }
 
-          // 动作先驱动骨骼,再让 VRM 更新表情/视线/弹簧骨
-          mixer?.update(delta)
+          // 最后把表情/视线/弹簧骨写进模型
           vrm.update(delta)
           renderer.render(scene, camera)
         })
@@ -295,6 +325,6 @@ function VrmAvatarStage({
       )}
     </div>
   )
-}
+})
 
 export default VrmAvatarStage

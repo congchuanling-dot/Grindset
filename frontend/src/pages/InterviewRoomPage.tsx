@@ -1,5 +1,5 @@
 import { AlertCircle, CircleStop, Loader2, MessageSquare, RotateCw, Sparkles } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   finishInterview,
@@ -9,6 +9,7 @@ import {
   type InterviewDetail,
 } from '../api/interview'
 import { AVATAR_MODELS, AVATAR_STORAGE_KEY } from '../components/avatar/avatarModels'
+import type { VrmAvatarHandle } from '../components/avatar/VrmAvatarStage'
 import ControlBar from '../components/interview-room/ControlBar'
 import InterviewerTile from '../components/interview-room/InterviewerTile'
 import ParticipantGrid from '../components/interview-room/ParticipantGrid'
@@ -19,13 +20,27 @@ import RoomLayout from '../components/interview-room/RoomLayout'
 import SelfVideo from '../components/interview-room/SelfVideo'
 import TranscriptPanel from '../components/interview-room/TranscriptPanel'
 import { QuestionStatus, SessionStatus } from '../constants/status'
+import { useBargeIn } from '../hooks/useBargeIn'
+import { useInterviewerVoice } from '../hooks/useInterviewerVoice'
 import { useLocalMedia } from '../hooks/useLocalMedia'
 import { useRoomParticipants } from '../hooks/useRoomParticipants'
+import { useVoiceInput } from '../hooks/useVoiceInput'
+
+/** 面试间主流程:出题 -> 播报 -> 收音 -> 提交 -> 追问/下一题 */
+type RoomPhase = 'idle' | 'asking' | 'speaking' | 'listening' | 'thinking'
 
 const STYLE_LABELS: Record<string, string> = {
   pressure: '压力面',
   middle: '适中',
   relaxed: '轻松',
+}
+
+const PHASE_LABELS: Record<RoomPhase, string> = {
+  idle: '',
+  asking: '面试官正在出题',
+  speaking: '面试官正在说话',
+  listening: '正在听你说',
+  thinking: '正在分析你的回答',
 }
 
 function readStoredAvatarId(): string {
@@ -111,12 +126,66 @@ function InterviewRoomPage() {
     [],
   )
 
-  /** 让面试官出下一题:SSE 文本边收边显示,完成后重新拉详情落库状态 */
-  const handleAsk = useCallback(async () => {
-    if (asking) return
+  // ---------- 自动面试链路 ----------
+
+  const stageRef = useRef<VrmAvatarHandle>(null)
+  const [phase, setPhase] = useState<RoomPhase>('idle')
+  const [subtitle, setSubtitle] = useState('')
+  const [heard, setHeard] = useState('')
+  const autoStartedRef = useRef(false)
+  // 三个步骤互相调用(出题->播报->收音->提交->出题),用 ref 打破循环依赖
+  const flowRef = useRef({
+    ask: async (): Promise<void> => {},
+    listen: () => {},
+    answer: async (_text: string): Promise<boolean> => false,
+  })
+
+  const voice = useInterviewerVoice({
+    // 播报结束自动开始收音;播报失败(例如 TTS 未开通)也要继续,否则整场卡住
+    onEnd: () => flowRef.current.listen(),
+    onError: (message) => {
+      setActionError(message)
+      flowRef.current.listen()
+    },
+    onLevel: (level) => stageRef.current?.setMouth(level),
+  })
+
+  const asr = useVoiceInput({
+    maxSeconds: 120,
+    autoStop: {},
+    onPartial: (text) => setHeard(text),
+    onFinal: (text) => {
+      setHeard('')
+      const answer = text.trim()
+      if (answer) {
+        void flowRef.current.answer(answer)
+      } else {
+        // 什么也没识别到,继续听,不打断用户
+        flowRef.current.listen()
+      }
+    },
+    onError: (message) => {
+      setActionError(message)
+      setPhase('idle')
+    },
+  })
+
+  /** 面试官播报时检测到用户抢话:立即停播报并开始收音 */
+  useBargeIn(phase === 'speaking', () => {
+    voice.stop()
+    setPhase('listening')
+    setHeard('')
+    void asr.start()
+  })
+
+  /** 让面试官出下一题:SSE 文本边收边显示,拿到整题后播报并收音 */
+  const askNext = useCallback(async () => {
     setAsking(true)
+    setPhase('asking')
     setActionError(null)
     setPendingText('')
+    setSubtitle('')
+    setHeard('')
     let text = ''
     try {
       await streamNextQuestion(sessionId, {
@@ -128,40 +197,80 @@ function InterviewRoomPage() {
       })
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '出题失败,请重试')
+      setPhase('idle')
+      return
     } finally {
       setPendingText('')
       setAsking(false)
-      await refresh()
     }
-  }, [asking, sessionId, refresh, handleExpired])
+    await refresh()
+    const question = text.trim()
+    if (!question) {
+      setPhase('idle')
+      return
+    }
+    setSubtitle(question)
+    setPhase('speaking')
+    await voice.speak(question)
+  }, [sessionId, refresh, handleExpired, voice])
 
-  /** 提交我的回答,成功返回 true 让对话面板清空输入框 */
-  const handleSubmitAnswer = useCallback(
-    async (answer: string) => {
+  /** 开始收音。收起对话记录时也能看到实时字幕 */
+  const startListening = useCallback(() => {
+    setPhase('listening')
+    setHeard('')
+    void asr.start()
+  }, [asr])
+
+  /** 提交一轮回答:有追问就继续答,没有就出下一题或生成复盘 */
+  const handleAnswer = useCallback(
+    async (answer: string): Promise<boolean> => {
       if (submitting) return false
       setSubmitting(true)
+      setPhase('thinking')
+      setHeard('')
       setActionError(null)
       try {
-        await submitAnswer(sessionId, answer)
+        const result = await submitAnswer(sessionId, answer)
         await refresh()
+        if (result.followUpQuestion) {
+          setSubtitle(result.followUpQuestion)
+          setPhase('speaking')
+          await voice.speak(result.followUpQuestion)
+          return true
+        }
+        if (result.nextAction === 'REPORT_READY') {
+          setPhase('idle')
+          await finishAndReport()
+          return true
+        }
+        await askNext()
         return true
       } catch (err) {
         setActionError(err instanceof Error ? err.message : '提交回答失败,请重试')
+        setPhase('idle')
         return false
       } finally {
         setSubmitting(false)
       }
     },
-    [submitting, sessionId, refresh],
+    // finishAndReport 定义在下面,用 ref 调用避免循环依赖
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [submitting, sessionId, refresh, askNext, voice],
   )
 
-  const handleLeave = useCallback(() => {
-    stop()
-    navigate('/records')
-  }, [stop, navigate])
+  useEffect(() => {
+    flowRef.current = {
+      ask: askNext,
+      listen: startListening,
+      answer: handleAnswer,
+    }
+  })
 
+  /** 手动结束(顶栏按钮) */
   const handleFinish = useCallback(async () => {
     if (finishing) return
+    voice.stop()
+    asr.cancel()
     setFinishing(true)
     setActionError(null)
     try {
@@ -177,7 +286,39 @@ function InterviewRoomPage() {
     } finally {
       setFinishing(false)
     }
-  }, [finishing, sessionId, refresh, navigate])
+  }, [finishing, sessionId, refresh, navigate, voice, asr])
+
+  /** 答完最后一题后自动出报告 */
+  const finishAndReport = useCallback(async () => {
+    if (finishing) return
+    setFinishing(true)
+    try {
+      const report = await finishInterview(sessionId)
+      await refresh()
+      if (report) setReportOpen(true)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : '生成复盘失败,请稍后重试')
+    } finally {
+      setFinishing(false)
+    }
+  }, [finishing, sessionId, refresh])
+
+  // 新会话进面试间就自动开始第一题
+  useEffect(() => {
+    if (!detail || autoStartedRef.current) return
+    if (detail.status !== SessionStatus.ONGOING) return
+    autoStartedRef.current = true
+    if (detail.questions.length === 0) {
+      void flowRef.current.ask()
+    }
+  }, [detail])
+
+  const handleLeave = useCallback(() => {
+    voice.stop()
+    asr.cancel()
+    stop()
+    navigate('/records')
+  }, [voice, asr, stop, navigate])
 
   const sessionFinished = detail?.status === SessionStatus.FINISHED
   const questions = detail?.questions ?? []
@@ -282,7 +423,7 @@ function InterviewRoomPage() {
             transcriptOpen ? 'md:pr-[380px]' : ''
           }`}
         >
-          <div className="min-w-0 flex-1">
+          <div className="relative min-w-0 flex-1">
             <ParticipantGrid count={participants.length}>
               {participants.map((participant) => {
                 if (participant.kind === 'self') {
@@ -305,6 +446,7 @@ function InterviewRoomPage() {
                       avatarId={avatarId}
                       onChangeAvatar={handleAvatarChange}
                       role={detail?.position}
+                      stageRef={stageRef}
                     />
                   )
                 }
@@ -322,6 +464,32 @@ function InterviewRoomPage() {
                 )
               })}
             </ParticipantGrid>
+
+            {/* 字幕条:对话记录默认收起,靠它看面试官问了什么、自己说了什么 */}
+            {(phase !== 'idle' || subtitle) && (
+              <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10 flex flex-col items-center gap-2">
+                <span className="rounded-full bg-black/55 px-3 py-1 text-[11px] text-white/70 backdrop-blur">
+                  {PHASE_LABELS[phase] || '等待开始'}
+                </span>
+                {(heard || subtitle || pendingText) && (
+                  <p className="max-w-3xl rounded-xl bg-black/60 px-4 py-2 text-center text-sm leading-6 text-white/90 shadow-lg backdrop-blur">
+                    {heard || pendingText || subtitle}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {phase === 'idle' && canAsk && !sessionFinished && (
+              <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => void flowRef.current.ask()}
+                  className="pointer-events-auto rounded-full bg-teal-600 px-4 py-1.5 text-xs font-medium text-white shadow-lg transition hover:bg-teal-700"
+                >
+                  继续面试
+                </button>
+              </div>
+            )}
           </div>
 
           <div
@@ -336,8 +504,8 @@ function InterviewRoomPage() {
               submitting={submitting}
               sessionFinished={Boolean(sessionFinished)}
               canAsk={canAsk}
-              onAsk={() => void handleAsk()}
-              onSubmit={handleSubmitAnswer}
+              onAsk={() => void flowRef.current.ask()}
+              onSubmit={handleAnswer}
               onClose={() => setTranscriptOpen(false)}
             />
           </div>

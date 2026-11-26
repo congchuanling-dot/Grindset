@@ -15,7 +15,7 @@ import org.springframework.web.socket.server.standard.ServletServerContainerFact
  */
 @Configuration
 @EnableWebSocket
-@EnableConfigurationProperties(AsrProperties.class)
+@EnableConfigurationProperties({AsrProperties.class, TtsProperties.class})
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final AsrWebSocketHandler asrHandler;
