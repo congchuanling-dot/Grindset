@@ -50,13 +50,16 @@ public class AiUsageService {
     private final LlmChannelMapper channelMapper;
     private final LlmModelMapper modelMapper;
     private final SnowflakeIdGenerator idGenerator;
+    private final WalletService walletService;
 
     public AiUsageService(AiUsageRecordMapper usageMapper, LlmChannelMapper channelMapper,
-                          LlmModelMapper modelMapper, SnowflakeIdGenerator idGenerator) {
+                          LlmModelMapper modelMapper, SnowflakeIdGenerator idGenerator,
+                          WalletService walletService) {
         this.usageMapper = usageMapper;
         this.channelMapper = channelMapper;
         this.modelMapper = modelMapper;
         this.idGenerator = idGenerator;
+        this.walletService = walletService;
     }
 
     // ------------------------------------------------------------------
@@ -89,6 +92,9 @@ public class AiUsageService {
             record.setOutputPrice(pricing.output());
             record.setCost(calculateCost(actual, pricing));
             usageMapper.insert(record);
+
+            // 记账后按本次成本扣余额;扣费失败不影响主流程(仍在下面的 catch 兜底)
+            walletService.consume(context.userId(), record.getCost(), record.getBizType(), record.getBizRef());
         } catch (Exception e) {
             log.warn("AI 用量记账失败 userId={} biz={} provider={} model={}",
                     context.userId(), context.bizType(), target.providerId(), model, e);

@@ -51,6 +51,7 @@ function LoginPage() {
       setSession({
         userId: result.userId,
         account: trimmedAccount,
+        nickname: result.nickname,
         accessToken: result.accessToken,
       })
       toast.success(isLogin ? '登录成功' : '注册成功，已自动登录')

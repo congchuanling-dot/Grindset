@@ -1,6 +1,6 @@
 // 认证接口封装。后端统一返回 {code, message, data},code=0 才算成功。
 // access token 在响应体,refresh token 由后端写入 HttpOnly Cookie,前端无需处理。
-import type { ApiResponse } from './http'
+import { authFetch, unwrapJson, type ApiResponse } from './http'
 
 export interface AuthResult {
   /** 雪花 ID,后端按字符串下发 */
@@ -9,6 +9,13 @@ export interface AuthResult {
   /** access token 有效期(秒) */
   expiresIn: number
   nickname: string
+}
+
+/** 当前用户资料 */
+export interface UserInfo {
+  userId: string
+  nickname: string
+  email: string | null
 }
 
 /** 统一请求:始终携带 Cookie,登录/刷新/登出都依赖它 */
@@ -60,6 +67,16 @@ export function refresh(): Promise<AuthResult> {
 /** 登出:后端删 Redis 里的 refresh 并清 Cookie */
 export function logout(): Promise<void> {
   return post<void>('/api/auth/logout')
+}
+
+/** 修改昵称,返回最新资料。需要带 access token,所以走 authFetch */
+export async function updateProfile(nickname: string): Promise<UserInfo> {
+  const res = await authFetch('/api/auth/profile', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nickname }),
+  })
+  return unwrapJson<UserInfo>(res, '保存昵称失败')
 }
 
 /** 跳转 GitHub 授权页:整页跳转,不经过 fetch */

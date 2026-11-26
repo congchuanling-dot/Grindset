@@ -2,6 +2,7 @@ package com.grindset.backend.llm;
 
 import com.grindset.backend.service.AiUsageService;
 import com.grindset.backend.service.LlmKeyService;
+import com.grindset.backend.service.WalletService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -23,11 +24,14 @@ public class LlmRouter {
     private final LlmClient client;
     private final LlmKeyService keyService;
     private final AiUsageService usageService;
+    private final WalletService walletService;
 
-    public LlmRouter(LlmClient client, LlmKeyService keyService, AiUsageService usageService) {
+    public LlmRouter(LlmClient client, LlmKeyService keyService, AiUsageService usageService,
+                     WalletService walletService) {
         this.client = client;
         this.keyService = keyService;
         this.usageService = usageService;
+        this.walletService = walletService;
     }
 
     /**
@@ -35,6 +39,10 @@ public class LlmRouter {
      */
     public void stream(List<LlmTarget> targets, String model, List<ChatMessage> messages,
                        Consumer<String> onDelta, LlmUsageContext context) {
+        // 余额闸门:所有模型调用都从这里过,不足时直接拦住,不调用上游
+        if (context != null) {
+            walletService.assertAffordable(context.userId());
+        }
         LlmException last = null;
         for (LlmTarget target : targets) {
             // started 一旦为 true,说明已经给前端吐过字;此后失败不能换 key,
@@ -78,6 +86,10 @@ public class LlmRouter {
                                            List<ChatMessage> messages,
                                            List<Map<String, Object>> tools,
                                            LlmUsageContext context) {
+        // 非流式同样先过余额闸门
+        if (context != null) {
+            walletService.assertAffordable(context.userId());
+        }
         LlmException last = null;
         for (LlmTarget target : targets) {
             try {

@@ -35,7 +35,9 @@ function AuthCallbackPage() {
       .then((result) => {
         setSession({
           userId: result.userId,
+          // OAuth 登录后端只返回昵称,没有单独的邮箱字段
           account: result.nickname,
+          nickname: result.nickname,
           accessToken: result.accessToken,
         })
         toast.success('登录成功')

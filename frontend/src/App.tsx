@@ -15,6 +15,7 @@ import QuestionBankLayout from './pages/questions/QuestionBankLayout'
 import QuestionOverview from './pages/questions/QuestionOverview'
 import ResumePage from './pages/ResumePage'
 import UsagePage from './pages/UsagePage'
+import WalletPage from './pages/WalletPage'
 
 function App() {
   return (
@@ -54,6 +55,9 @@ function App() {
         <Route path="/records" element={<InterviewRecordsPage />} />
         {/* Token 用量:汇总各业务场景的模型调用 */}
         <Route path="/usage" element={<UsagePage />} />
+
+        {/* 我的钱包:余额概览 + 流水 */}
+        <Route path="/wallet" element={<WalletPage />} />
       </Route>
 
       {/* 面试间要全屏沉浸,单独放在侧边栏外壳之外 */}

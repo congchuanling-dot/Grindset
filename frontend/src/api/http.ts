@@ -14,6 +14,7 @@ export function ensureRefreshed(): Promise<boolean> {
         setSession({
           userId: result.userId,
           account: current?.account ?? result.nickname,
+          nickname: result.nickname,
           accessToken: result.accessToken,
         })
         return true

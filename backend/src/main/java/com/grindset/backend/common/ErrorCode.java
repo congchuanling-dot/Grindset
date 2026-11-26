@@ -16,6 +16,8 @@ public final class ErrorCode {
     public static final int BAD_REQUEST = 400;
     /** 401 未登录、令牌失效、账号或密码错误 */
     public static final int UNAUTHORIZED = 401;
+    /** 402 余额不足 */
+    public static final int PAYMENT_REQUIRED = 402;
     /** 403 无权限、账号被禁用 */
     public static final int FORBIDDEN = 403;
     /** 404 资源不存在(归属校验失败也返回它,避免泄露资源是否存在) */

@@ -5,6 +5,7 @@ import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.entity.auth.User;
 import com.grindset.backend.entity.auth.UserIdentity;
 import com.grindset.backend.mapper.auth.UserMapper;
+import com.grindset.backend.service.WalletService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -31,6 +32,10 @@ public class AuthService {
     /** 密码 8~16 位,且必须同时含字母和数字 */
     private static final int MIN_PASSWORD_LENGTH = 8;
     private static final int MAX_PASSWORD_LENGTH = 16;
+
+    /** 昵称 2~20 个字符(按 code point 计,中文和 emoji 各算一个) */
+    private static final int MIN_NICKNAME_LENGTH = 2;
+    private static final int MAX_NICKNAME_LENGTH = 20;
     private static final Pattern PASSWORD_LETTER = Pattern.compile("[A-Za-z]");
     private static final Pattern PASSWORD_DIGIT = Pattern.compile("[0-9]");
 
@@ -41,11 +46,12 @@ public class AuthService {
     private final LoginRateLimiter loginRateLimiter;
     private final RegisterRateLimiter registerRateLimiter;
     private final TransactionTemplate transactionTemplate;
+    private final WalletService walletService;
 
     public AuthService(UserMapper userMapper, IdentityService identityService,
                        PasswordEncoder passwordEncoder, SnowflakeIdGenerator idGenerator,
                        LoginRateLimiter loginRateLimiter, RegisterRateLimiter registerRateLimiter,
-                       TransactionTemplate transactionTemplate) {
+                       TransactionTemplate transactionTemplate, WalletService walletService) {
         this.userMapper = userMapper;
         this.identityService = identityService;
         this.passwordEncoder = passwordEncoder;
@@ -53,6 +59,7 @@ public class AuthService {
         this.loginRateLimiter = loginRateLimiter;
         this.registerRateLimiter = registerRateLimiter;
         this.transactionTemplate = transactionTemplate;
+        this.walletService = walletService;
     }
 
     /**
@@ -86,6 +93,9 @@ public class AuthService {
 
             // 建 LOCAL 登录身份,密码用事务外算好的 BCrypt 密文
             identityService.createLocal(user.getId(), account, passwordHash);
+
+            // 注册即送 1 元,钱包与初始流水在同一事务内落库
+            walletService.initWallet(user.getId());
 
             return user.getId();
         });
@@ -121,6 +131,26 @@ public class AuthService {
         if (user.getStatus() != null && user.getStatus() == DISABLED) {
             throw new BizException(403, "账号已被禁用");
         }
+        return user;
+    }
+
+    /**
+     * 修改昵称。去首尾空白后按 code point 校验 2~20 个字符,不允许控制字符。
+     * 昵称不要求唯一,重复也能保存。
+     */
+    public User updateNickname(Long userId, String nickname) {
+        String value = nickname == null ? "" : nickname.strip();
+        int length = value.codePointCount(0, value.length());
+        if (length < MIN_NICKNAME_LENGTH || length > MAX_NICKNAME_LENGTH) {
+            throw new BizException(400,
+                    "昵称长度需为 " + MIN_NICKNAME_LENGTH + "-" + MAX_NICKNAME_LENGTH + " 个字符");
+        }
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new BizException(400, "昵称不能包含控制字符");
+        }
+        User user = requireActiveUser(userId);
+        user.setNickname(value);
+        userMapper.updateById(user);
         return user;
     }
 

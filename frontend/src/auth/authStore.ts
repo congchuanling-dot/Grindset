@@ -2,6 +2,8 @@
 export interface Session {
   userId: string
   account: string
+  /** 展示用昵称,登录/刷新时由后端返回 */
+  nickname: string
   /** 短期 access token,请求头 Authorization: Bearer 用 */
   accessToken: string
 }

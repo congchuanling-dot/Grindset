@@ -8,6 +8,7 @@ import com.grindset.backend.dto.auth.AuthResult;
 import com.grindset.backend.dto.auth.LoginRequest;
 import com.grindset.backend.dto.auth.RegisterRequest;
 import com.grindset.backend.dto.auth.UserInfo;
+import com.grindset.backend.dto.ProfileUpdateRequest;
 import com.grindset.backend.entity.auth.User;
 import com.grindset.backend.security.AuthCookieWriter;
 import com.grindset.backend.security.LoginUser;
@@ -18,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -97,6 +99,18 @@ public class AuthController {
             throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
         }
         User user = authService.requireActiveUser(loginUser.userId());
+        return ApiResponse.ok(new UserInfo(
+                String.valueOf(user.getId()), user.getNickname(), user.getEmail()));
+    }
+
+    /** 修改昵称,返回最新资料;校验规则见 AuthService.updateNickname */
+    @PatchMapping("/profile")
+    public ApiResponse<UserInfo> updateProfile(@AuthenticationPrincipal LoginUser loginUser,
+                                               @RequestBody ProfileUpdateRequest request) {
+        if (loginUser == null) {
+            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
+        }
+        User user = authService.updateNickname(loginUser.userId(), request.getNickname());
         return ApiResponse.ok(new UserInfo(
                 String.valueOf(user.getId()), user.getNickname(), user.getEmail()));
     }
