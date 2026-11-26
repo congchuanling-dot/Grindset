@@ -24,7 +24,7 @@ function AvatarPicker({ value, onSelect }: AvatarPickerProps) {
             <span className="block truncate text-xs text-white/90">{model.name}</span>
             <span className="block truncate text-[10px] text-white/40">{model.description}</span>
           </span>
-          {model.id === value && <Check size={14} className="shrink-0 text-teal-400" />}
+          {model.id === value && <Check size={14} className="shrink-0 text-brand-400" />}
         </button>
       ))}
     </div>

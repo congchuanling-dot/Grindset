@@ -46,7 +46,7 @@ function Pagination({
           <select
             value={size}
             onChange={(e) => onSizeChange(Number(e.target.value))}
-            className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] text-slate-500 outline-none focus:border-teal-400"
+            className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] text-slate-500 outline-none focus:border-brand-400"
           >
             {sizes.map((item) => (
               <option key={item} value={item}>
@@ -82,7 +82,7 @@ function Pagination({
                 disabled={item === page || loading}
                 className={`min-w-7 rounded-md border px-1.5 py-1 transition ${
                   item === page
-                    ? 'border-teal-300 bg-teal-50 font-medium text-teal-700'
+                    ? 'border-brand-300 bg-brand-50 font-medium text-brand-700'
                     : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
                 }`}
               >

@@ -161,7 +161,7 @@ function QuestionListPane() {
               type="button"
               onClick={() => void openRandom()}
               disabled={randomizing}
-              className="flex items-center gap-1 rounded-md border border-teal-200 bg-white px-2 py-0.5 text-[11px] font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-50 disabled:opacity-60"
+              className="flex items-center gap-1 rounded-md border border-brand-200 bg-white px-2 py-0.5 text-[11px] font-medium text-brand-700 transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60"
             >
               {randomizing ? <Loader2 size={11} className="animate-spin" /> : <Shuffle size={11} />}
               随机
@@ -169,7 +169,7 @@ function QuestionListPane() {
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
             <div
-              className="h-full rounded-full bg-teal-500 transition-all"
+              className="h-full rounded-full bg-brand-500 transition-all"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -194,7 +194,7 @@ function QuestionListPane() {
             value={keywordInput}
             onChange={(e) => setKeywordInput(e.target.value)}
             placeholder="搜索题目，回车确认"
-            className="w-full rounded-lg border border-slate-200 py-1.5 pl-7 pr-7 text-xs text-slate-700 outline-none transition focus:border-teal-400"
+            className="w-full rounded-lg border border-slate-200 py-1.5 pl-7 pr-7 text-xs text-slate-700 outline-none transition focus:border-brand-400"
           />
         </form>
 
@@ -202,7 +202,7 @@ function QuestionListPane() {
           <select
             value={domain}
             onChange={(e) => update({ domain: e.target.value || undefined })}
-            className="col-span-2 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-teal-400"
+            className="col-span-2 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-brand-400"
           >
             <option value="">全部领域 {total}</option>
             {facets?.domains.map((option) => (
@@ -214,7 +214,7 @@ function QuestionListPane() {
           <select
             value={difficulty}
             onChange={(e) => update({ difficulty: Number(e.target.value) || undefined })}
-            className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-teal-400"
+            className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-brand-400"
           >
             {DIFFICULTIES.map((option) => (
               <option key={option.value} value={option.value}>
@@ -225,7 +225,7 @@ function QuestionListPane() {
           <select
             value={type}
             onChange={(e) => update({ type: e.target.value || undefined })}
-            className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-teal-400"
+            className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-brand-400"
           >
             <option value="">全部题型</option>
             {facets?.types.map((option) => (
@@ -244,12 +244,12 @@ function QuestionListPane() {
               onClick={() => update({ status: tab.key === 'ALL' ? undefined : tab.key })}
               className={`rounded-full border px-2 py-0.5 text-[11px] transition ${
                 status === tab.key
-                  ? 'border-teal-300 bg-teal-50 font-medium text-teal-700'
+                  ? 'border-brand-300 bg-brand-50 font-medium text-brand-700'
                   : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
               }`}
             >
               {tab.label}
-              <span className={`ml-1 ${status === tab.key ? 'text-teal-600' : 'text-slate-400'}`}>
+              <span className={`ml-1 ${status === tab.key ? 'text-brand-600' : 'text-slate-400'}`}>
                 {statusCounts[tab.key]}
               </span>
             </button>
@@ -289,7 +289,7 @@ function QuestionListPane() {
                 to={questionLink(item.id)}
                 className={`flex items-start gap-2 border-b border-slate-100 px-3 py-2.5 transition ${
                   active
-                    ? 'border-l-2 border-l-teal-500 bg-teal-50'
+                    ? 'border-l-2 border-l-brand-500 bg-brand-50'
                     : 'border-l-2 border-l-transparent hover:bg-slate-50'
                 }`}
               >
@@ -299,7 +299,7 @@ function QuestionListPane() {
                 <div className="min-w-0 flex-1">
                   <p
                     className={`truncate text-sm ${
-                      active ? 'font-medium text-teal-800' : 'text-slate-700'
+                      active ? 'font-medium text-brand-800' : 'text-slate-700'
                     }`}
                   >
                     {item.title}
@@ -342,8 +342,8 @@ function ListSkeleton() {
     <div>
       {Array.from({ length: 8 }).map((_, index) => (
         <div key={index} className="border-b border-slate-100 px-3 py-3">
-          <div className="h-3.5 w-2/3 animate-pulse rounded bg-slate-100" />
-          <div className="mt-2 h-2.5 w-1/2 animate-pulse rounded bg-slate-100" />
+          <div className="skeleton h-3.5 w-2/3 rounded" />
+          <div className="skeleton mt-2 h-2.5 w-1/2 rounded" />
         </div>
       ))}
     </div>

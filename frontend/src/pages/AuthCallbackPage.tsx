@@ -52,7 +52,7 @@ function AuthCallbackPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="flex flex-col items-center gap-3 text-slate-500">
-        <span className="h-7 w-7 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
+        <span className="h-7 w-7 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
         <p className="text-sm">正在完成登录…</p>
       </div>
     </div>

@@ -18,7 +18,7 @@ function QuestionBankLayout() {
 
   return (
     <div className="flex h-full min-h-0 bg-slate-50">
-      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
+      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200/80 bg-white lg:flex">
         <ModeSwitch isCoding={isCoding} />
         {pane}
       </aside>
@@ -30,7 +30,7 @@ function QuestionBankLayout() {
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
-        className="fixed bottom-4 left-4 z-30 flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-lg transition hover:bg-teal-700 lg:hidden"
+        className="fixed bottom-4 left-4 z-30 flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-lg transition hover:bg-brand-700 lg:hidden"
       >
         <ListTree size={15} />
         题目列表
@@ -39,10 +39,10 @@ function QuestionBankLayout() {
       {drawerOpen && (
         <div className="fixed inset-0 z-40 flex lg:hidden">
           <div
-            className="absolute inset-0 bg-slate-900/30"
+            className="anim-fade-in absolute inset-0 bg-slate-900/30"
             onClick={() => setDrawerOpen(false)}
           />
-          <aside className="relative flex h-full w-[88%] max-w-sm flex-col bg-white shadow-xl">
+          <aside className="anim-slide-in-left relative flex h-full w-[88%] max-w-sm flex-col bg-white shadow-xl">
             <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-3 py-2.5">
               <span className="text-sm font-medium text-slate-700">题库</span>
               <button
@@ -73,7 +73,7 @@ function ModeSwitch({ isCoding }: { isCoding: boolean }) {
           className={`${base} ${
             isCoding
               ? 'text-slate-500 hover:text-slate-700'
-              : 'bg-white font-medium text-teal-700 shadow-sm'
+              : 'bg-white font-medium text-brand-700 shadow-sm'
           }`}
         >
           <BookOpen size={14} />
@@ -83,7 +83,7 @@ function ModeSwitch({ isCoding }: { isCoding: boolean }) {
           to="/questions/coding"
           className={`${base} ${
             isCoding
-              ? 'bg-white font-medium text-teal-700 shadow-sm'
+              ? 'bg-white font-medium text-brand-700 shadow-sm'
               : 'text-slate-500 hover:text-slate-700'
           }`}
         >

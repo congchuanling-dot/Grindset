@@ -255,7 +255,7 @@ function QuestionDetailPage() {
           type="button"
           onClick={() => void openRandom()}
           disabled={randomizing}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-teal-200 bg-white px-2.5 py-1 text-xs font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-50 disabled:opacity-60"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-2.5 py-1 text-xs font-medium text-brand-700 transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60"
         >
           {randomizing ? <Loader2 size={13} className="animate-spin" /> : <Shuffle size={13} />}
           随机一题
@@ -293,7 +293,7 @@ function QuestionDetailPage() {
                 <DifficultyBadge difficulty={detail.difficulty} />
                 <StatusBadge status={detail.status} />
                 {detail.knowledgePoints.map((point) => (
-                  <span key={point} className="rounded-full bg-teal-50 px-2 py-0.5 text-teal-700">
+                  <span key={point} className="rounded-full bg-brand-50 px-2 py-0.5 text-brand-700">
                     {point}
                   </span>
                 ))}
@@ -332,7 +332,7 @@ function QuestionDetailPage() {
                           className={`ml-auto rounded-full px-2 py-0.5 text-xs ${
                             result.status === 'WRONG'
                               ? 'bg-rose-50 text-rose-600'
-                              : 'bg-teal-50 text-teal-700'
+                              : 'bg-brand-50 text-brand-700'
                           }`}
                         >
                           {result.status === 'WRONG' ? '已收入错题本' : '已掌握'}
@@ -356,7 +356,7 @@ function QuestionDetailPage() {
                         <PointList
                           title="命中的要点"
                           points={result.hitPoints}
-                          tone="teal"
+                          tone="brand"
                           empty="这次没有识别到明显命中的要点"
                         />
                         <PointList
@@ -385,7 +385,7 @@ function QuestionDetailPage() {
                       <button
                         type="button"
                         onClick={again}
-                        className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-teal-700"
+                        className="rounded-lg bg-brand-600 px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-brand-700"
                       >
                         再答一次
                       </button>
@@ -406,7 +406,7 @@ function QuestionDetailPage() {
 
                     <div className="flex items-center justify-between gap-2 px-4 py-2.5 md:px-5">
                       <p className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                        <Sparkles size={15} className="text-teal-600" />
+                        <Sparkles size={15} className="text-brand-600" />
                         我的回答
                       </p>
                       <div className="flex items-center gap-2">
@@ -451,7 +451,7 @@ function QuestionDetailPage() {
                           }
                         }}
                         rows={10}
-                        className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm leading-6 text-slate-700 outline-none transition focus:border-teal-400"
+                        className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm leading-6 text-slate-700 outline-none transition focus:border-brand-400"
                         placeholder={
                           voice.state === 'recording'
                             ? '正在听你说…'
@@ -463,7 +463,7 @@ function QuestionDetailPage() {
                         <span className="text-xs text-slate-400">
                           至少 10 字 · Ctrl / ⌘ + Enter 提交 ·{' '}
                           {draftSaved ? (
-                            <span className="text-teal-600">草稿已保存</span>
+                            <span className="text-brand-600">草稿已保存</span>
                           ) : (
                             '草稿自动保存'
                           )}
@@ -489,7 +489,7 @@ function QuestionDetailPage() {
                             type="button"
                             onClick={() => void submit()}
                             disabled={answer.trim().length < 10 || submitting}
-                            className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                            className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                           >
                             {submitting ? (
                               <Loader2 size={14} className="animate-spin" />
@@ -574,7 +574,7 @@ function DetailTabs({
             type="button"
             onClick={() => onChange(item.key)}
             className={`relative flex shrink-0 items-center gap-1 px-3 py-2.5 text-sm transition ${
-              active ? 'font-medium text-teal-700' : 'text-slate-500 hover:text-slate-700'
+              active ? 'font-medium text-brand-700' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             {item.label}
@@ -583,7 +583,7 @@ function DetailTabs({
                 {item.badge}
               </span>
             )}
-            {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-teal-500" />}
+            {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-brand-500" />}
           </button>
         )
       })}
@@ -602,7 +602,7 @@ function HistoryTab({ detail, onAgain }: { detail: QuestionBankDetail; onAgain: 
         <button
           type="button"
           onClick={onAgain}
-          className="mt-4 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
+          className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
         >
           去作答
         </button>
@@ -623,7 +623,7 @@ function HistoryTab({ detail, onAgain }: { detail: QuestionBankDetail; onAgain: 
           <button
             type="button"
             onClick={onAgain}
-            className="ml-auto rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700 transition hover:bg-teal-100"
+            className="ml-auto rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition hover:bg-brand-100"
           >
             再答一次
           </button>
@@ -671,7 +671,7 @@ function HistoryItem({
           <span className="text-slate-400">{attempt.createdAt ?? ''}</span>
           <span
             className={`ml-auto rounded-full px-2 py-0.5 ${
-              attempt.score <= 2 ? 'bg-rose-50 text-rose-600' : 'bg-teal-50 text-teal-700'
+              attempt.score <= 2 ? 'bg-rose-50 text-rose-600' : 'bg-brand-50 text-brand-700'
             }`}
           >
             {attempt.score <= 2 ? '已收入错题本' : '已掌握'}
@@ -685,7 +685,7 @@ function HistoryItem({
         <button
           type="button"
           onClick={() => setExpanded((prev) => !prev)}
-          className="mt-1 text-xs font-medium text-teal-700 hover:text-teal-800"
+          className="mt-1 text-xs font-medium text-brand-700 hover:text-brand-800"
         >
           {expanded ? '收起' : '展开我的回答与 AI 结果'}
         </button>
@@ -699,7 +699,7 @@ function HistoryItem({
               </p>
             </div>
             {attempt.hitPoints.length > 0 && (
-              <PointLine title="命中" points={attempt.hitPoints} tone="teal" />
+              <PointLine title="命中" points={attempt.hitPoints} tone="brand" />
             )}
             {attempt.missedPoints.length > 0 && (
               <PointLine title="遗漏" points={attempt.missedPoints} tone="amber" />
@@ -773,15 +773,15 @@ function PointList({
 }: {
   title: string
   points: string[]
-  tone: 'teal' | 'amber'
+  tone: 'brand' | 'amber'
   empty: string
 }) {
-  const toneClass = tone === 'teal' ? 'border-teal-100 bg-teal-50/60' : 'border-amber-100 bg-amber-50/60'
-  const iconClass = tone === 'teal' ? 'text-teal-600' : 'text-amber-600'
+  const toneClass = tone === 'brand' ? 'border-brand-100 bg-brand-50/60' : 'border-amber-100 bg-amber-50/60'
+  const iconClass = tone === 'brand' ? 'text-brand-600' : 'text-amber-600'
   return (
     <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
       <p className="flex items-center gap-1 text-xs font-medium text-slate-600">
-        {tone === 'teal' ? (
+        {tone === 'brand' ? (
           <CheckCircle2 size={12} className={iconClass} />
         ) : (
           <AlertCircle size={12} className={iconClass} />
@@ -804,10 +804,10 @@ function PointList({
   )
 }
 
-function PointLine({ title, points, tone }: { title: string; points: string[]; tone: 'teal' | 'amber' }) {
+function PointLine({ title, points, tone }: { title: string; points: string[]; tone: 'brand' | 'amber' }) {
   return (
     <p className="text-xs leading-5 text-slate-500">
-      <span className={tone === 'teal' ? 'text-teal-600' : 'text-amber-600'}>{title}：</span>
+      <span className={tone === 'brand' ? 'text-brand-600' : 'text-amber-600'}>{title}：</span>
       {points.join('；')}
     </p>
   )
@@ -835,7 +835,7 @@ function ReferenceCard({
         className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium text-slate-600"
       >
         <span className="flex items-center gap-1.5">
-          <Sparkles size={14} className="text-teal-600" />
+          <Sparkles size={14} className="text-brand-600" />
           参考答案与关键要点
         </span>
         {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
@@ -845,7 +845,7 @@ function ReferenceCard({
           {keyPoints.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1">
               {keyPoints.map((point) => (
-                <span key={point} className="rounded bg-teal-50 px-2 py-0.5 text-xs text-teal-700">
+                <span key={point} className="rounded bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
                   {point}
                 </span>
               ))}
@@ -860,13 +860,13 @@ function ReferenceCard({
 }
 
 function scoreClass(score: number): string {
-  if (score >= 4) return 'text-teal-700'
+  if (score >= 4) return 'text-brand-700'
   if (score === 3) return 'text-amber-600'
   return 'text-rose-600'
 }
 
 function scoreDotClass(score: number): string {
-  if (score >= 4) return 'bg-teal-500'
+  if (score >= 4) return 'bg-brand-500'
   if (score === 3) return 'bg-amber-500'
   return 'bg-rose-500'
 }

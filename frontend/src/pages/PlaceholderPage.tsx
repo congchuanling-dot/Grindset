@@ -12,7 +12,7 @@ function PlaceholderPage({ title, description }: { title: string; description: s
       <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">{description}</p>
       <Link
         to="/"
-        className="mt-5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+        className="mt-5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
       >
         先去问问 AI 助手
       </Link>

@@ -46,11 +46,11 @@ function ProfileDialog({ initialNickname, onClose, onSaved }: ProfileDialogProps
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4"
+      className="anim-fade-in fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4"
       onMouseDown={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+        className="anim-pop-in w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -73,7 +73,7 @@ function ProfileDialog({ initialNickname, onClose, onSaved }: ProfileDialogProps
               onChange={(e) => setNickname(e.target.value)}
               maxLength={20}
               autoFocus
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-teal-400"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400"
               placeholder="2-20 个字符"
             />
           </label>
@@ -91,7 +91,7 @@ function ProfileDialog({ initialNickname, onClose, onSaved }: ProfileDialogProps
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving && <Loader2 size={14} className="animate-spin" />}
               保存

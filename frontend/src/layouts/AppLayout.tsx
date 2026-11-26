@@ -81,20 +81,20 @@ function AppLayout() {
   const displayName = session?.nickname || session?.account || '未登录'
   // OAuth 登录没有单独邮箱,account 与 nickname 相同时不重复展示
   const showEmail = Boolean(session?.account && session.account !== session.nickname)
+  // 只按一级路径做切页动画:题库内切题不重挂载,避免列表反复刷新、丢滚动位置
+  const pageKey = location.pathname.split('/')[1] || 'home'
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
-      <aside className="flex w-16 shrink-0 flex-col border-r border-slate-200 bg-slate-50 md:w-60">
-        <div className="flex h-14 items-center justify-center gap-2 md:justify-start md:px-4">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-sm font-bold text-white">
-            G
-          </span>
-          <span className="hidden text-sm font-semibold text-slate-800 md:inline">
+    <div className="press-scope flex h-screen overflow-hidden bg-white">
+      <aside className="flex w-16 shrink-0 flex-col border-r border-slate-200 bg-white md:w-60">
+        <div className="flex h-16 items-center justify-center gap-2.5 md:justify-start md:px-5">
+          <span aria-hidden className="h-2.5 w-2.5 shrink-0 bg-slate-900" />
+          <span className="hidden text-[14px] font-semibold tracking-tight text-slate-900 md:inline">
             面试复习闭环
           </span>
         </div>
 
-        <nav className="flex-1 space-y-1 px-2 py-2">
+        <nav className="flex-1 space-y-0.5 px-3 py-3">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
@@ -102,34 +102,61 @@ function AppLayout() {
               end={end}
               title={label}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                `group relative flex items-center gap-3 px-3 py-2 text-sm transition ${
                   isActive
-                    ? 'bg-teal-50 font-medium text-teal-700'
-                    : 'text-slate-600 hover:bg-slate-200/60'
+                    ? 'bg-slate-100 font-medium text-slate-900'
+                    : 'text-slate-500 hover:bg-slate-100/70 hover:text-slate-900'
                 }`
               }
             >
-              <Icon size={18} className="shrink-0" />
-              <span className="hidden md:inline">{label}</span>
+              {({ isActive }) => (
+                <>
+                  {/* 选中指示:2px 墨线,不用整块高亮 */}
+                  <span
+                    aria-hidden
+                    className={`absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 bg-slate-900 transition-opacity duration-150 ${
+                      isActive ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                  <Icon
+                    size={17}
+                    className={`shrink-0 ${isActive ? 'text-slate-900' : 'text-slate-400'}`}
+                  />
+                  <span className="hidden md:inline">{label}</span>
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
 
         {/* 侧边栏底部:用量统计 + 账号信息 + 退出 */}
-        <div className="border-t border-slate-200 px-2 pt-2">
+        <div className="border-t border-slate-200 px-3 pt-2">
           <NavLink
             to="/usage"
             title="Token 用量"
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+              `group relative flex items-center gap-3 px-3 py-2 text-sm transition ${
                 isActive
-                  ? 'bg-teal-50 font-medium text-teal-700'
-                  : 'text-slate-600 hover:bg-slate-200/60'
+                  ? 'bg-slate-100 font-medium text-slate-900'
+                  : 'text-slate-500 hover:bg-slate-100/70 hover:text-slate-900'
               }`
             }
           >
-            <Gauge size={18} className="shrink-0" />
-            <span className="hidden md:inline">Token 用量</span>
+            {({ isActive }) => (
+              <>
+                <span
+                  aria-hidden
+                  className={`absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 bg-slate-900 transition-opacity duration-150 ${
+                    isActive ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+                <Gauge
+                  size={17}
+                  className={`shrink-0 ${isActive ? 'text-slate-900' : 'text-slate-400'}`}
+                />
+                <span className="hidden md:inline">Token 用量</span>
+              </>
+            )}
           </NavLink>
         </div>
 
@@ -139,13 +166,13 @@ function AppLayout() {
             type="button"
             onClick={() => setProfileOpen(true)}
             title="编辑昵称"
-            className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-slate-200/60"
+            className="flex w-full items-center gap-3 px-2 py-2 text-left transition hover:bg-slate-100"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-600 text-sm font-semibold text-white">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-slate-900 text-sm font-semibold text-white">
               {displayName.slice(0, 1).toUpperCase()}
             </span>
             <span className="hidden min-w-0 flex-1 md:block">
-              <span className="block truncate text-sm font-medium text-slate-700">
+              <span className="block truncate text-sm font-medium text-slate-900">
                 {displayName}
               </span>
               {showEmail && (
@@ -154,16 +181,16 @@ function AppLayout() {
             </span>
           </button>
 
-          <div className="mt-1 flex items-center justify-between rounded-lg bg-white px-3 py-2 text-xs text-slate-500">
+          <div className="mt-1 flex items-center justify-between border-t border-slate-200 px-2 pt-2 text-xs text-slate-500">
             <span className="hidden md:inline">余额</span>
-            <span className="font-medium text-slate-700">{formatBalance(wallet?.balance)}</span>
+            <span className="font-medium tabular-nums text-slate-900">{formatBalance(wallet?.balance)}</span>
           </div>
 
           <button
             type="button"
             onClick={handleLogout}
             title="退出登录"
-            className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-200/60 hover:text-slate-700"
+            className="mt-1 flex w-full items-center gap-3 px-2 py-2 text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
           >
             <LogOut size={18} className="shrink-0" />
             <span className="hidden md:inline">退出登录</span>
@@ -171,7 +198,8 @@ function AppLayout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* 以一级路径为 key:切页时内容区淡入,不改变布局 */}
+      <div key={pageKey} className="anim-fade-in flex min-w-0 flex-1 flex-col">
         <Outlet />
       </div>
 

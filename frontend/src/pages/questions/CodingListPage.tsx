@@ -76,7 +76,7 @@ function CodingListPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-            <Code2 size={18} className="text-teal-600" />
+            <Code2 size={18} className="text-brand-600" />
             编程题
           </h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -166,7 +166,7 @@ function CodingRow({ item, index }: { item: QuestionBankItem; index: number }) {
         {item.knowledgePoints.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
             {item.knowledgePoints.slice(0, 3).map((point) => (
-              <span key={point} className="rounded bg-teal-50 px-1.5 py-0.5 text-[11px] text-teal-700">
+              <span key={point} className="rounded bg-brand-50 px-1.5 py-0.5 text-[11px] text-brand-700">
                 {point}
               </span>
             ))}
@@ -219,14 +219,14 @@ function CodingCard({ item, index }: { item: QuestionBankItem; index: number }) 
 
 function ModeTag() {
   return (
-    <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[11px] text-indigo-700">双模式</span>
+    <span className="rounded bg-brand-50 px-1.5 py-0.5 text-[11px] text-brand-700">双模式</span>
   )
 }
 
 function CodingStatus({ status }: { status: QuestionStatus }) {
   if (status === 'DONE') {
     return (
-      <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs text-teal-700">已通过</span>
+      <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">已通过</span>
     )
   }
   if (status === 'WRONG') {

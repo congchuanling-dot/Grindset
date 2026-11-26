@@ -360,14 +360,14 @@ function InterviewRoomPage() {
                   <MessageSquare size={13} />
                   对话记录
                   {!transcriptOpen && questions.length === 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-teal-400" />
+                    <span className="absolute -right-0.5 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-brand-400" />
                   )}
                 </button>
                 {detail?.report ? (
                   <button
                     type="button"
                     onClick={() => setReportOpen(true)}
-                    className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-teal-700"
+                    className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-700"
                   >
                     <Sparkles size={13} />
                     查看复盘
@@ -484,7 +484,7 @@ function InterviewRoomPage() {
                 <button
                   type="button"
                   onClick={() => void flowRef.current.ask()}
-                  className="pointer-events-auto rounded-full bg-teal-600 px-4 py-1.5 text-xs font-medium text-white shadow-lg transition hover:bg-teal-700"
+                  className="pointer-events-auto rounded-full bg-brand-600 px-4 py-1.5 text-xs font-medium text-white shadow-lg transition hover:bg-brand-700"
                 >
                   继续面试
                 </button>

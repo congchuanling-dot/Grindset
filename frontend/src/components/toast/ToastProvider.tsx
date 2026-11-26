@@ -27,9 +27,9 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null)
 
 const KIND_STYLES: Record<ToastKind, { icon: typeof CheckCircle2; iconClass: string; bar: string }> = {
-  success: { icon: CheckCircle2, iconClass: 'text-teal-600', bar: 'bg-teal-500' },
+  success: { icon: CheckCircle2, iconClass: 'text-brand-600', bar: 'bg-brand-500' },
   error: { icon: AlertCircle, iconClass: 'text-rose-500', bar: 'bg-rose-500' },
-  info: { icon: Info, iconClass: 'text-sky-500', bar: 'bg-sky-500' },
+  info: { icon: Info, iconClass: 'text-slate-500', bar: 'bg-slate-400' },
 }
 
 const AUTO_DISMISS_MS = 3000

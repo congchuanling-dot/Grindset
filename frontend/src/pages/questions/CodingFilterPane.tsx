@@ -118,14 +118,14 @@ function CodingFilterPane() {
               type="button"
               onClick={() => void openRandom()}
               disabled={randomizing}
-              className="flex items-center gap-1 rounded-md border border-teal-200 bg-white px-2 py-0.5 text-[11px] font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-50 disabled:opacity-60"
+              className="flex items-center gap-1 rounded-md border border-brand-200 bg-white px-2 py-0.5 text-[11px] font-medium text-brand-700 transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60"
             >
               {randomizing ? <Loader2 size={11} className="animate-spin" /> : <Shuffle size={11} />}
               随机
             </button>
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full rounded-full bg-teal-500 transition-all" style={{ width: `${percent}%` }} />
+            <div className="h-full rounded-full bg-brand-500 transition-all" style={{ width: `${percent}%` }} />
           </div>
           <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
             <span>{percent}%</span>
@@ -148,7 +148,7 @@ function CodingFilterPane() {
             value={keywordInput}
             onChange={(e) => setKeywordInput(e.target.value)}
             placeholder="搜索编程题，回车确认"
-            className="w-full rounded-lg border border-slate-200 py-1.5 pl-7 pr-7 text-xs text-slate-700 outline-none transition focus:border-teal-400"
+            className="w-full rounded-lg border border-slate-200 py-1.5 pl-7 pr-7 text-xs text-slate-700 outline-none transition focus:border-brand-400"
           />
         </form>
 
@@ -156,7 +156,7 @@ function CodingFilterPane() {
           <select
             value={domain}
             onChange={(e) => update({ domain: e.target.value || undefined })}
-            className="col-span-2 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-teal-400"
+            className="col-span-2 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-brand-400"
           >
             <option value="">全部领域 {total}</option>
             {facets?.domains.map((option) => (
@@ -168,7 +168,7 @@ function CodingFilterPane() {
           <select
             value={difficulty}
             onChange={(e) => update({ difficulty: Number(e.target.value) || undefined })}
-            className="col-span-2 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-teal-400"
+            className="col-span-2 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-brand-400"
           >
             {DIFFICULTIES.map((option) => (
               <option key={option.value} value={option.value}>
@@ -186,12 +186,12 @@ function CodingFilterPane() {
               onClick={() => update({ status: tab.key === 'ALL' ? undefined : tab.key })}
               className={`rounded-full border px-2 py-0.5 text-[11px] transition ${
                 status === tab.key
-                  ? 'border-teal-300 bg-teal-50 font-medium text-teal-700'
+                  ? 'border-brand-300 bg-brand-50 font-medium text-brand-700'
                   : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
               }`}
             >
               {tab.label}
-              <span className={`ml-1 ${status === tab.key ? 'text-teal-600' : 'text-slate-400'}`}>
+              <span className={`ml-1 ${status === tab.key ? 'text-brand-600' : 'text-slate-400'}`}>
                 {counts[tab.key]}
               </span>
             </button>

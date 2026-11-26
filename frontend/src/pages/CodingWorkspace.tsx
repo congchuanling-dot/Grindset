@@ -199,10 +199,10 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
             <span className={`rounded-full px-2 py-0.5 text-[11px] ${difficultyClass(detail.difficulty)}`}>
               {difficultyLabel(detail.difficulty)}
             </span>
-            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] text-indigo-700">
+            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
               {isFunction ? '力扣模式' : 'ACM 模式'}
             </span>
-            <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
+            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
               {detail.accepted ? '已通过' : detail.status === 'WRONG' ? '待通过' : '未作答'}
             </span>
           </div>
@@ -231,7 +231,7 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
           {/* 左侧:题面与例题 */}
           <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div className="flex shrink-0 items-center gap-1.5 border-b border-slate-200 px-4 py-2.5">
-              <FileText size={14} className="text-teal-600" />
+              <FileText size={14} className="text-brand-600" />
               <p className="text-xs font-semibold text-slate-700">题目描述</p>
               <span className="ml-auto text-[11px] text-slate-400">
                 时限 {detail.timeLimitMs || 2000}ms · 内存 {detail.memoryLimitMb || 256}MB
@@ -243,7 +243,7 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
 
               <div className="mt-6">
                 <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                  <Terminal size={13} className="text-teal-600" />
+                  <Terminal size={13} className="text-brand-600" />
                   示例
                   <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-normal text-slate-500">
                     {samples.length} 组
@@ -251,8 +251,8 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
                 </p>
 
                 {isFunction && (
-                  <div className="mt-2.5 rounded-lg border border-teal-100 bg-teal-50/60 px-3 py-2.5">
-                    <p className="text-[11px] font-medium text-teal-700">只需实现函数，不用写 main</p>
+                  <div className="mt-2.5 rounded-lg border border-brand-100 bg-brand-50/60 px-3 py-2.5">
+                    <p className="text-[11px] font-medium text-brand-700">只需实现函数，不用写 main</p>
                     <pre className="mt-1.5 overflow-x-auto whitespace-pre-wrap rounded-md bg-white px-2.5 py-1.5 font-mono text-xs leading-6 text-slate-700">
                       {signatureText}
                     </pre>
@@ -320,7 +320,7 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
                     onClick={() => changeMode(item)}
                     className={`rounded-md px-2 py-1 text-[11px] transition ${
                       mode === item
-                        ? 'bg-white font-medium text-teal-700 shadow-sm'
+                        ? 'bg-white font-medium text-brand-700 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
@@ -332,7 +332,7 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as CodeLanguage)}
-                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:border-teal-400"
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:border-brand-400"
               >
                 {(Object.keys(LANGUAGE_LABELS) as CodeLanguage[]).map((lang) => (
                   <option key={lang} value={lang}>
@@ -365,7 +365,7 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
                   type="button"
                   onClick={() => void submit()}
                   disabled={running || submitting || judging}
-                  className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                  className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                 >
                   {submitting || judging ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
                   {judging ? '判题中…' : '提交'}
@@ -492,12 +492,12 @@ function RunResultView({ result }: { result: CodeRunResult }) {
             <div
               key={item.index}
               className={`rounded-lg border px-3 py-2 ${
-                item.passed ? 'border-teal-100 bg-teal-50/50' : 'border-rose-100 bg-rose-50/50'
+                item.passed ? 'border-brand-100 bg-brand-50/50' : 'border-rose-100 bg-rose-50/50'
               }`}
             >
               <p className="flex items-center gap-1 text-[11px] font-medium text-slate-600">
                 {item.passed ? (
-                  <CheckCircle2 size={12} className="text-teal-600" />
+                  <CheckCircle2 size={12} className="text-brand-600" />
                 ) : (
                   <XCircle size={12} className="text-rose-500" />
                 )}
@@ -562,7 +562,7 @@ function StatusChip({ status }: { status: CodingStatus }) {
   const tone: Record<CodingStatus, string> = {
     PENDING: 'bg-slate-100 text-slate-500',
     RUNNING: 'bg-amber-50 text-amber-700',
-    ACCEPTED: 'bg-teal-50 text-teal-700',
+    ACCEPTED: 'bg-brand-50 text-brand-700',
     WRONG_ANSWER: 'bg-rose-50 text-rose-600',
     COMPILE_ERROR: 'bg-rose-50 text-rose-600',
     RUNTIME_ERROR: 'bg-rose-50 text-rose-600',

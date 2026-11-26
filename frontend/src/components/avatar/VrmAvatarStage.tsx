@@ -311,7 +311,7 @@ const VrmAvatarStage = forwardRef<VrmAvatarHandle, VrmAvatarStageProps>(function
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-xs text-white/60">
           <span className="h-1.5 w-32 overflow-hidden rounded-full bg-white/10">
             <span
-              className="block h-full rounded-full bg-teal-400 transition-all duration-300"
+              className="block h-full rounded-full bg-brand-400 transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </span>

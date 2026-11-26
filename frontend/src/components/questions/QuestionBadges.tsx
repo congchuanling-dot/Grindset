@@ -11,7 +11,7 @@ export const TYPE_LABELS: Record<QuestionType, string> = {
 export function StatusBadge({ status }: { status: QuestionStatus }) {
   if (status === 'DONE') {
     return (
-      <span className="flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-xs text-teal-700">
+      <span className="flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
         <CheckCircle2 size={11} />
         已做
       </span>
@@ -40,7 +40,7 @@ export function difficultyLabel(difficulty: number): string {
 }
 
 export function difficultyClass(difficulty: number): string {
-  if (difficulty === 1) return 'bg-teal-50 text-teal-700'
+  if (difficulty === 1) return 'bg-brand-50 text-brand-700'
   if (difficulty === 3) return 'bg-rose-50 text-rose-600'
   return 'bg-amber-50 text-amber-700'
 }

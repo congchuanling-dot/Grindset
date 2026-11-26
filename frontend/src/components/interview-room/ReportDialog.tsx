@@ -14,10 +14,10 @@ const DIMENSION_LABELS: Record<string, string> = {
   communication: '沟通表达',
 }
 
-function ReportList({ title, items, tone }: { title: string; items: string[]; tone: 'teal' | 'rose' | 'slate' }) {
+function ReportList({ title, items, tone }: { title: string; items: string[]; tone: 'brand' | 'rose' | 'slate' }) {
   if (items.length === 0) return null
   const dot =
-    tone === 'teal' ? 'bg-teal-500' : tone === 'rose' ? 'bg-rose-400' : 'bg-slate-400'
+    tone === 'brand' ? 'bg-brand-500' : tone === 'rose' ? 'bg-rose-400' : 'bg-slate-400'
   return (
     <section>
       <h3 className="mb-2 text-xs font-semibold text-slate-700">{title}</h3>
@@ -41,7 +41,7 @@ function ReportDialog({ report, position, onClose }: ReportDialogProps) {
         <div className="mb-4 flex items-start justify-between">
           <div>
             <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
-              <Sparkles size={15} className="text-teal-600" />
+              <Sparkles size={15} className="text-brand-600" />
               面试复盘
             </h2>
             {position && <p className="mt-0.5 text-[11px] text-slate-400">{position}</p>}
@@ -56,7 +56,7 @@ function ReportDialog({ report, position, onClose }: ReportDialogProps) {
         </div>
 
         <div className="mb-5 flex items-end gap-2">
-          <span className="text-4xl font-semibold tabular-nums text-teal-600">
+          <span className="text-4xl font-semibold tabular-nums text-brand-600">
             {report.overallScore}
           </span>
           <span className="pb-1 text-xs text-slate-400">/ 100 分</span>
@@ -71,7 +71,7 @@ function ReportDialog({ report, position, onClose }: ReportDialogProps) {
                 </span>
                 <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
                   <span
-                    className="block h-full rounded-full bg-teal-500"
+                    className="block h-full rounded-full bg-brand-500"
                     style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
                   />
                 </span>
@@ -84,7 +84,7 @@ function ReportDialog({ report, position, onClose }: ReportDialogProps) {
         )}
 
         <div className="space-y-4">
-          <ReportList title="亮点" items={report.highlights} tone="teal" />
+          <ReportList title="亮点" items={report.highlights} tone="brand" />
           <ReportList title="薄弱点" items={report.weakPoints} tone="rose" />
           <ReportList title="改进建议" items={report.advice} tone="slate" />
         </div>

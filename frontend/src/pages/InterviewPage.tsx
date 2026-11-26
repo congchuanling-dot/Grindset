@@ -159,21 +159,21 @@ function InterviewPage() {
   if (loadingList) {
     return (
       <div className="flex h-full items-center justify-center bg-slate-50">
-        <Loader2 size={22} className="animate-spin text-teal-600" />
+        <Loader2 size={22} className="animate-spin text-brand-600" />
       </div>
     )
   }
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-4 py-4 md:px-6">
-        <h1 className="text-base font-semibold text-slate-800">AI 面试</h1>
-        <p className="mt-1 text-xs text-slate-500">
+      <header className="border-b border-slate-200/80 bg-white px-4 py-5 md:px-8">
+        <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-slate-900">AI 面试</h1>
+        <p className="mt-1.5 text-sm text-slate-500">
           选择一份简历并配置面试参数，AI 面试官会按简历与岗位逐题提问，每题会追问 1~3 次。
         </p>
       </header>
 
-      <div className="flex-1 px-4 py-4 md:px-6">
+      <div className="flex-1 px-4 py-6 md:px-8">
         {error && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -194,7 +194,7 @@ function InterviewPage() {
                 <select
                   value={selectedId ?? ''}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="max-w-[300px] truncate rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-teal-400"
+                  className="max-w-[300px] truncate rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-400"
                 >
                   {resumes.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -215,7 +215,7 @@ function InterviewPage() {
               <div className="relative">
                 {loadingDetail && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70">
-                    <Loader2 size={22} className="animate-spin text-teal-600" />
+                    <Loader2 size={22} className="animate-spin text-brand-600" />
                   </div>
                 )}
                 {detail ? (
@@ -258,7 +258,7 @@ function ParseFailedPanel({ detail }: { detail: ResumeDetail }) {
       </p>
       <Link
         to="/resume"
-        className="mt-5 rounded-lg bg-teal-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
+        className="mt-5 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
       >
         去简历管理
       </Link>
@@ -269,7 +269,7 @@ function ParseFailedPanel({ detail }: { detail: ResumeDetail }) {
 function NoResumeState() {
   return (
     <div className="flex min-h-[360px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white px-6 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
         <FileText size={22} />
       </span>
       <h2 className="mt-4 text-sm font-semibold text-slate-800">还没有可用的简历</h2>
@@ -278,7 +278,7 @@ function NoResumeState() {
       </p>
       <Link
         to="/resume"
-        className="mt-5 rounded-lg bg-teal-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
+        className="mt-5 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
       >
         去上传简历
       </Link>
@@ -313,7 +313,7 @@ function InterviewSettings({
     <aside className="w-full shrink-0 xl:w-[300px]">
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-          <Sparkles size={16} className="text-teal-600" />
+          <Sparkles size={16} className="text-brand-600" />
           面试设置
         </div>
         <p className="mt-1 text-[11px] text-slate-400">岗位与简历决定出题方向</p>
@@ -323,7 +323,7 @@ function InterviewSettings({
           <select
             value={position}
             onChange={(e) => setPosition(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-teal-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-400"
           >
             {POSITIONS.map((item) => (
               <option key={item} value={item}>
@@ -343,7 +343,7 @@ function InterviewSettings({
                 onClick={() => setTone(item.value)}
                 className={`rounded-lg border px-1 py-1.5 text-xs transition ${
                   tone === item.value
-                    ? 'border-teal-300 bg-teal-50 font-medium text-teal-700'
+                    ? 'border-brand-300 bg-brand-50 font-medium text-brand-700'
                     : 'border-slate-200 text-slate-500 hover:border-slate-300'
                 }`}
               >
@@ -358,7 +358,7 @@ function InterviewSettings({
           <select
             value={round}
             onChange={(e) => setRound(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-teal-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-400"
           >
             {ROUNDS.map((item) => (
               <option key={item} value={item}>
@@ -373,7 +373,7 @@ function InterviewSettings({
           <select
             value={questionCount}
             onChange={(e) => onQuestionCountChange(Number(e.target.value))}
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-teal-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-400"
           >
             {QUESTION_COUNTS.map((item) => (
               <option key={item} value={item}>
@@ -393,7 +393,7 @@ function InterviewSettings({
                 onClick={() => toggleFocus(item)}
                 className={`rounded-full border px-2.5 py-1 text-xs transition ${
                   focus.includes(item)
-                    ? 'border-teal-300 bg-teal-50 text-teal-700'
+                    ? 'border-brand-300 bg-brand-50 text-brand-700'
                     : 'border-slate-200 text-slate-500 hover:border-slate-300'
                 }`}
               >
@@ -407,7 +407,7 @@ function InterviewSettings({
           type="button"
           disabled={!canStart || starting}
           onClick={() => onStart({ position, style: tone, round, focus })}
-          className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-teal-600 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+          className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-600 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
         >
           {starting ? <Loader2 size={15} className="animate-spin" /> : <Briefcase size={15} />}
           开始 AI 面试
@@ -442,12 +442,12 @@ function HistorySection({ items, loading }: { items: InterviewSummary[]; loading
             key={item.id}
             type="button"
             onClick={() => navigate(`/interview/${item.id}`)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-teal-300"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-brand-300"
           >
             <div className="flex items-start justify-between gap-2">
               <span className="line-clamp-1 text-sm font-medium text-slate-800">{item.position}</span>
               {item.status === SessionStatus.FINISHED ? (
-                <span className="shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
+                <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
                   {item.overallScore != null ? `${item.overallScore} 分` : '已结束'}
                 </span>
               ) : (

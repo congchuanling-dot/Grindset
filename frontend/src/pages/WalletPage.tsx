@@ -1,5 +1,5 @@
 import { AlertCircle, ArrowDownLeft, ArrowUpRight, Coins, Loader2, RefreshCw, Wallet } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getWallet, listWalletLogs, type WalletInfo, type WalletLogPage } from '../api/wallet'
 import Pagination from '../components/questions/Pagination'
 import { errMessage } from '../utils/error'
@@ -17,6 +17,47 @@ function formatChange(value: number): string {
 }
 
 /**
+ * 余额从上一个值滚动到新值。
+ * 纯展示动效,系统开启"减少动态效果"时直接跳到结果。
+ */
+function useCountUp(target: number | undefined, duration = 700): number | null {
+  const [value, setValue] = useState<number | null>(null)
+  const fromRef = useRef(0)
+
+  useEffect(() => {
+    if (target === undefined) {
+      return
+    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      fromRef.current = target
+      setValue(target)
+      return
+    }
+
+    const from = fromRef.current
+    const start = performance.now()
+    let frame = 0
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - start) / duration)
+      // easeOutCubic:起步快、结尾缓,数字滚动更自然
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setValue(from + (target - from) * eased)
+      if (progress < 1) {
+        frame = requestAnimationFrame(tick)
+      } else {
+        fromRef.current = target
+      }
+    }
+
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [target, duration])
+
+  return value
+}
+
+/**
  * 我的钱包:余额概览 + 流水明细分页。
  * 充值功能尚未开放,按钮只占位。
  */
@@ -29,6 +70,9 @@ function WalletPage() {
   const [loadingLogs, setLoadingLogs] = useState(true)
 
   const [error, setError] = useState<string | null>(null)
+
+  // 余额数字滚动:拿到数据后从 0 滚到实际值,刷新时从旧值滚到新值
+  const animatedBalance = useCountUp(wallet?.balance)
 
   const loadWallet = useCallback(async () => {
     setLoadingWallet(true)
@@ -67,18 +111,18 @@ function WalletPage() {
   const totalPages = Math.max(1, Math.ceil((logs?.total ?? 0) / PAGE_SIZE))
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-50 px-4 py-6 md:px-8">
-      <div className="mx-auto max-w-4xl space-y-5">
+    <div className="h-full overflow-y-auto bg-slate-50 px-4 py-8 md:px-10">
+      <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-slate-800">我的钱包</h1>
-            <p className="mt-0.5 text-xs text-slate-500">AI 调用按实际 token 成本扣费</p>
+            <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-slate-900">我的钱包</h1>
+            <p className="mt-1 text-sm text-slate-500">AI 调用按实际 token 成本扣费</p>
           </div>
           <button
             type="button"
             onClick={loadWallet}
             title="刷新余额"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 shadow-xs transition hover:border-slate-300 hover:text-slate-900"
           >
             <RefreshCw size={14} className={loadingWallet ? 'animate-spin' : ''} />
             刷新
@@ -92,35 +136,38 @@ function WalletPage() {
           </div>
         )}
 
-        {/* 余额卡片 + 充值占位 */}
-        <div className="rounded-2xl bg-gradient-to-br from-teal-600 to-teal-500 p-6 text-white shadow-sm">
-          <div className="flex items-center gap-2 text-sm text-teal-50/90">
-            <Coins size={16} />
+        {/* 余额：横向账本，强调色只用在一条马克笔标记上 */}
+        <section className="border border-slate-200 bg-white px-6 py-7">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Coins size={14} />
             账户余额
           </div>
-          <div className="mt-3 text-4xl font-semibold tracking-tight">
-            {loadingWallet && !wallet ? '--' : formatMoney(wallet?.balance ?? 0)}
+          <div className="mt-3 flex flex-wrap items-baseline justify-between gap-4">
+            <span className="text-[44px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-slate-900">
+              {wallet && animatedBalance !== null ? formatMoney(animatedBalance) : '--'}
+            </span>
+            <span className="text-xs text-slate-400">
+              {wallet?.updatedAt ? `更新于 ${wallet.updatedAt}` : '注册即送 1 元体验额度'}
+            </span>
           </div>
-          <div className="mt-2 text-xs text-teal-50/80">
-            {wallet?.updatedAt ? `更新于 ${wallet.updatedAt}` : '注册即送 1 元体验额度'}
-          </div>
-          <div className="mt-5 flex items-center gap-2">
+          <div className="mt-5 h-1 w-14 bg-marker" aria-hidden />
+          <div className="mt-4 flex items-center gap-3">
             <button
               type="button"
               disabled
               title="充值功能即将上线"
-              className="cursor-not-allowed rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white/80"
+              className="cursor-not-allowed border border-slate-200 px-4 py-2 text-sm text-slate-400"
             >
               充值
             </button>
-            <span className="text-xs text-teal-50/70">充值功能即将上线</span>
+            <span className="text-xs text-slate-400">充值功能即将上线</span>
           </div>
-        </div>
+        </section>
 
         {/* 流水明细 */}
-        <div className="rounded-2xl border border-slate-200 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-700">余额流水</h2>
+        <div className="border border-slate-200 bg-white">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <h2 className="text-sm font-semibold text-slate-800">余额流水</h2>
             <span className="text-xs text-slate-400">共 {logs?.total ?? 0} 条</span>
           </div>
 
@@ -135,16 +182,12 @@ function WalletPage() {
               还没有余额变动记录
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-200/70">
               {logs.items.map((item) => {
                 const income = item.changeAmount > 0
                 return (
-                  <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-                    <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                        income ? 'bg-teal-50 text-teal-600' : 'bg-rose-50 text-rose-500'
-                      }`}
-                    >
+                  <div key={item.id} className="flex items-center gap-3 px-5 py-3.5">
+                    <span className={`shrink-0 ${income ? 'text-slate-900' : 'text-rose-600'}`}>
                       {income ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -160,7 +203,7 @@ function WalletPage() {
                     <div className="text-right">
                       <div
                         className={`text-sm font-medium ${
-                          income ? 'text-teal-600' : 'text-rose-500'
+                          income ? 'text-brand-600' : 'text-rose-500'
                         }`}
                       >
                         {formatChange(item.changeAmount)}

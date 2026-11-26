@@ -51,11 +51,11 @@ function AgentToolCard({
         )}
         <span className="ml-auto shrink-0">
           {running ? (
-            <Loader2 size={13} className="animate-spin text-teal-600" />
+            <Loader2 size={13} className="animate-spin text-brand-600" />
           ) : failed ? (
             <AlertCircle size={13} className="text-rose-500" />
           ) : (
-            <Check size={13} className="text-teal-600" />
+            <Check size={13} className="text-brand-600" />
           )}
         </span>
       </div>
@@ -73,9 +73,9 @@ function AgentToolCard({
               type="button"
               disabled={!onSelect}
               onClick={() => onSelect?.(item.prompt, item.display ?? item.title)}
-              className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2 text-left transition hover:border-teal-300 hover:bg-teal-50/60 disabled:cursor-default disabled:hover:border-slate-200 disabled:hover:bg-transparent"
+              className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2 text-left transition hover:border-brand-300 hover:bg-brand-50/60 disabled:cursor-default disabled:hover:border-slate-200 disabled:hover:bg-transparent"
             >
-              <FileText size={14} className="shrink-0 text-teal-600" />
+              <FileText size={14} className="shrink-0 text-brand-600" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs font-medium text-slate-700">
                   {item.title}

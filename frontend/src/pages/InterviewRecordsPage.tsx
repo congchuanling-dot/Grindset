@@ -80,17 +80,17 @@ function InterviewRecordsPage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-50">
-      <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 md:px-6">
-        <h1 className="flex items-center gap-2 text-base font-semibold text-slate-800">
-          <History size={18} className="text-teal-600" />
+      <header className="shrink-0 border-b border-slate-200/80 bg-white px-4 py-5 md:px-8">
+        <h1 className="flex items-center gap-2 text-[22px] font-semibold leading-tight tracking-[-0.02em] text-slate-900">
+          <History size={18} className="text-brand-700" />
           面试记录
         </h1>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1.5 text-sm text-slate-500">
           每场面试的题目、回答、点评和复盘都会自动保存，可按简历筛选后查看。
         </p>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 md:flex-row md:p-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 md:flex-row md:p-8">
         {error && (
           <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 md:absolute md:right-6 md:top-20 md:z-10">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -113,7 +113,7 @@ function InterviewRecordsPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedResumeIds([])}
-                  className="text-[11px] text-teal-600 hover:text-teal-700"
+                  className="text-[11px] text-brand-600 hover:text-brand-700"
                 >
                   清空
                 </button>
@@ -125,7 +125,7 @@ function InterviewRecordsPage() {
               onClick={() => setSelectedResumeIds([])}
               className={`mt-2 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs transition ${
                 selectedResumeIds.length === 0
-                  ? 'bg-teal-50 font-medium text-teal-700'
+                  ? 'bg-brand-50 font-medium text-brand-700'
                   : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
@@ -140,7 +140,7 @@ function InterviewRecordsPage() {
             ) : resumes.length === 0 ? (
               <p className="px-2 py-3 text-xs leading-5 text-slate-400">
                 还没有简历，
-                <Link to="/resume" className="text-teal-600 hover:text-teal-700">
+                <Link to="/resume" className="text-brand-600 hover:text-brand-700">
                   去上传
                 </Link>
               </p>
@@ -155,7 +155,7 @@ function InterviewRecordsPage() {
                           type="checkbox"
                           checked={checked}
                           onChange={() => toggleResume(resume.id)}
-                          className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-teal-600"
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-brand-600"
                         />
                         <span className="min-w-0">
                           <span className="block truncate" title={resume.fileName}>
@@ -184,7 +184,7 @@ function InterviewRecordsPage() {
 
           {loadingSessions ? (
             <div className="flex h-40 items-center justify-center">
-              <Loader2 size={20} className="animate-spin text-teal-600" />
+              <Loader2 size={20} className="animate-spin text-brand-600" />
             </div>
           ) : sessions.length === 0 ? (
             <EmptyState filtered={selectedResumeIds.length > 0} />
@@ -203,7 +203,7 @@ function InterviewRecordsPage() {
                       navigate(`/interview/${session.id}`)
                     }
                   }}
-                  className="group cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-teal-300 hover:shadow-sm focus:outline-none focus-visible:border-teal-400"
+                  className="group cursor-pointer border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-slate-900 focus:outline-none focus-visible:border-slate-900"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="line-clamp-1 text-sm font-medium text-slate-800">
@@ -211,7 +211,7 @@ function InterviewRecordsPage() {
                     </span>
                     <div className="flex shrink-0 items-center gap-1">
                       {session.status === SessionStatus.FINISHED ? (
-                        <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[11px] text-teal-700">
+                        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
                           {session.overallScore != null ? `${session.overallScore} 分` : '已结束'}
                         </span>
                       ) : (
@@ -251,7 +251,7 @@ function InterviewRecordsPage() {
                       <Clock3 size={11} />
                       {session.createdAt}
                     </span>
-                    <span className="ml-auto flex items-center gap-0.5 text-teal-600">
+                    <span className="ml-auto flex items-center gap-0.5 text-brand-600">
                       {session.status === SessionStatus.FINISHED
                         ? session.overallScore != null
                           ? '查看复盘'
@@ -273,7 +273,7 @@ function InterviewRecordsPage() {
 function EmptyState({ filtered }: { filtered: boolean }) {
   return (
     <div className="flex h-60 flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white px-6 text-center">
-      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 text-brand-600">
         <History size={20} />
       </span>
       <h2 className="mt-3 text-sm font-semibold text-slate-800">
@@ -286,7 +286,7 @@ function EmptyState({ filtered }: { filtered: boolean }) {
       </p>
       <Link
         to="/interview"
-        className="mt-4 rounded-lg bg-teal-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
+        className="mt-4 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
       >
         去开始面试
       </Link>

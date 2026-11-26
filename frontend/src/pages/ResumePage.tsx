@@ -173,14 +173,14 @@ function ResumePage() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-4 py-4 md:px-6">
+      <header className="border-b border-slate-200/80 bg-white px-4 py-5 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-base font-semibold text-slate-800">简历管理</h1>
+          <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-slate-900">简历管理</h1>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 rounded-lg bg-teal-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-400"
+            className="flex items-center gap-2 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-400"
           >
             {uploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             {uploading ? '正在解析…' : '上传简历'}
@@ -195,7 +195,7 @@ function ResumePage() {
         </div>
       </header>
 
-      <div className="flex-1 px-4 py-4 md:px-6">
+      <div className="flex-1 px-4 py-6 md:px-8">
         {error && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -227,7 +227,7 @@ function ResumePage() {
             <div className="relative mt-4">
               {loadingDetail && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70">
-                  <Loader2 size={22} className="animate-spin text-teal-600" />
+                  <Loader2 size={22} className="animate-spin text-brand-600" />
                 </div>
               )}
               {detail ? (
@@ -287,10 +287,10 @@ function EmptyState({
         if (!uploading) onFile(e.dataTransfer.files?.[0])
       }}
       className={`flex min-h-[360px] flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 text-center transition ${
-        dragging ? 'border-teal-400 bg-teal-50' : 'border-slate-200 bg-white'
+        dragging ? 'border-brand-400 bg-brand-50' : 'border-slate-200 bg-white'
       }`}
     >
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
         {uploading ? <Loader2 size={22} className="animate-spin" /> : <FileText size={22} />}
       </span>
       <h2 className="mt-4 text-sm font-semibold text-slate-800">
@@ -301,7 +301,7 @@ function EmptyState({
         type="button"
         onClick={onPick}
         disabled={uploading}
-        className="mt-5 rounded-lg border border-teal-200 bg-teal-50 px-3.5 py-2 text-sm font-medium text-teal-700 transition hover:bg-teal-100 disabled:opacity-60"
+        className="mt-5 rounded-lg border border-brand-200 bg-brand-50 px-3.5 py-2 text-sm font-medium text-brand-700 transition hover:bg-brand-100 disabled:opacity-60"
       >
         {uploading ? '解析中…' : '选择简历文件'}
       </button>
@@ -329,7 +329,7 @@ function ResumeSwitcher({
       <select
         value={selectedId ?? ''}
         onChange={(e) => onSelect(e.target.value)}
-        className="max-w-[300px] truncate rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-teal-400"
+        className="max-w-[300px] truncate rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-brand-400"
       >
         {resumes.map((item) => (
           <option key={item.id} value={item.id}>
@@ -342,7 +342,7 @@ function ResumeSwitcher({
         <span
           className={`rounded-full px-2 py-0.5 text-xs ${
             status === ParseStatus.SUCCESS
-              ? 'bg-teal-50 text-teal-700'
+              ? 'bg-brand-50 text-brand-700'
               : status === ParseStatus.FAILED
                 ? 'bg-rose-50 text-rose-600'
                 : 'bg-amber-50 text-amber-700'
@@ -371,7 +371,7 @@ function ResumeSwitcher({
 function ParsingPanel({ fileName }: { fileName: string }) {
   return (
     <div className="flex min-h-[420px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
         <Loader2 size={22} className="animate-spin" />
       </span>
       <h2 className="mt-4 text-sm font-semibold text-slate-800">AI 正在解析简历</h2>
@@ -397,7 +397,7 @@ function ParseFailedPanel({ detail, onPick }: { detail: ResumeDetail; onPick: ()
         <button
           type="button"
           onClick={onPick}
-          className="rounded-lg bg-teal-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-teal-700"
+          className="rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
         >
           重新上传
         </button>
@@ -405,7 +405,7 @@ function ParseFailedPanel({ detail, onPick }: { detail: ResumeDetail; onPick: ()
           <a
             href={downloadUrl}
             download={detail.fileName}
-            className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+            className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
           >
             下载原件
           </a>

@@ -57,7 +57,7 @@ function ResumeViewer({ detail, originalUrl = null, editable = false, onSaved }:
               href={downloadUrl}
               download={detail.fileName}
               title="下载原件"
-              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
             >
               <Download size={14} />
               下载原件
@@ -99,7 +99,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition ${
-        active ? 'bg-teal-50 font-medium text-teal-700' : 'text-slate-500 hover:bg-slate-100'
+        active ? 'bg-brand-50 font-medium text-brand-700' : 'text-slate-500 hover:bg-slate-100'
       }`}
     >
       {icon}
@@ -197,7 +197,7 @@ function OriginalPreview({
       {isText ? (
         textLoading ? (
           <div className="flex flex-1 items-center justify-center">
-            <Loader2 size={22} className="animate-spin text-teal-600" />
+            <Loader2 size={22} className="animate-spin text-brand-600" />
           </div>
         ) : textError ? (
           <OriginalError message={textError} downloadUrl={downloadUrl} fileName={detail.fileName} />
@@ -212,7 +212,7 @@ function OriginalPreview({
         )
       ) : loading && !url ? (
         <div className="flex flex-1 items-center justify-center">
-          <Loader2 size={22} className="animate-spin text-teal-600" />
+          <Loader2 size={22} className="animate-spin text-brand-600" />
         </div>
       ) : canInline ? (
         <div className="flex-1 overflow-auto bg-slate-100 p-4">
@@ -294,7 +294,7 @@ function OriginalError({
         <a
           href={downloadUrl}
           download={fileName}
-          className="mt-4 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+          className="mt-4 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
         >
           下载原件
         </a>
@@ -500,7 +500,7 @@ function TextEditor({
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 transition hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving && <Loader2 size={13} className="animate-spin" />}
           {saving ? '保存中…' : '保存修改'}
@@ -533,7 +533,7 @@ function TextEditor({
                   })
                 }}
                 placeholder="章节标题"
-                className="w-full border-b border-slate-200 bg-transparent pb-1 text-sm font-semibold tracking-wide text-slate-700 outline-none focus:border-teal-400"
+                className="w-full border-b border-slate-200 bg-transparent pb-1 text-sm font-semibold tracking-wide text-slate-700 outline-none focus:border-brand-400"
               />
               {section.items.length === 0 && <p className="mt-2 text-xs text-slate-400">（无条目）</p>}
               {section.items.map((item, itemIndex) => {
@@ -543,7 +543,7 @@ function TextEditor({
                 return (
                   <div
                     key={itemIndex}
-                    className="mt-2 rounded-lg border border-slate-200/80 bg-white px-3 py-2 transition focus-within:border-teal-300 focus-within:bg-teal-50/20"
+                    className="mt-2 rounded-lg border border-slate-200/80 bg-white px-3 py-2 transition focus-within:border-brand-300 focus-within:bg-brand-50/20"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -618,7 +618,7 @@ function TextEditor({
                               draft.sections[sectionIndex].items[itemIndex].tags = value
                             })
                           }}
-                          className="min-w-0 flex-1 bg-transparent text-teal-700 outline-none"
+                          className="min-w-0 flex-1 bg-transparent text-brand-700 outline-none"
                         />
                       </div>
                     )}
@@ -635,7 +635,7 @@ function TextEditor({
               </h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {detail.skills.map((skill) => (
-                  <span key={skill.id} className="rounded bg-teal-50 px-2 py-0.5 text-xs text-teal-700">
+                  <span key={skill.id} className="rounded bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
                     {skill.name}
                     {skill.proficiency ? ` · ${skill.proficiency}/5` : ''}
                   </span>
@@ -650,7 +650,7 @@ function TextEditor({
       {hint && (
         <p
           className={`border-t border-slate-200 bg-white px-4 py-2 text-[11px] ${
-            hintError ? 'text-rose-600' : 'text-teal-600'
+            hintError ? 'text-rose-600' : 'text-brand-600'
           }`}
         >
           {hint}

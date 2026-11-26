@@ -36,7 +36,7 @@ function VoiceInputButton({ state, seconds, disabled, onClick }: VoiceInputButto
       className={`flex h-8 shrink-0 items-center justify-center rounded-lg transition ${
         recording
           ? 'gap-1 bg-rose-50 px-2 text-rose-600 hover:bg-rose-100'
-          : 'w-8 text-slate-400 hover:bg-slate-100 hover:text-teal-600'
+          : 'w-8 text-slate-400 hover:bg-slate-100 hover:text-brand-600'
       } disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent`}
     >
       {busy || finishing ? (

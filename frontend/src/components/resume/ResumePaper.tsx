@@ -55,7 +55,7 @@ function ResumePaper({ detail }: { detail: ResumeDetail }) {
           </h3>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {detail.skills.map((skill) => (
-              <span key={skill.id} className="rounded bg-teal-50 px-2 py-0.5 text-xs text-teal-700">
+              <span key={skill.id} className="rounded bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
                 {skill.name}
                 {skill.proficiency ? ` · ${skill.proficiency}/5` : ''}
               </span>

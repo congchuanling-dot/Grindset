@@ -1,9 +1,112 @@
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
 @import 'tailwindcss';
 @import 'highlight.js/styles/github-dark.css';
 
+/* ───────────── 设计 token · 考官评估表 ─────────────
+   冷调粉笔白 + 石墨黑 + 马克笔黄。
+   去掉圆角卡片、灰色投影和装饰渐变，层级靠字号、留白和细线表达 */
+@theme {
+  --font-sans:
+    'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-mono:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* 中性色：冷调粉笔灰，接近纸张而非奶油 */
+  --color-slate-50: #f2f2ef;
+  --color-slate-100: #e9e9e5;
+  --color-slate-200: #dadcd6;
+  --color-slate-300: #c2c4bd;
+  --color-slate-400: #63666a;
+  --color-slate-500: #55585c;
+  --color-slate-600: #414447;
+  --color-slate-700: #2e3134;
+  --color-slate-800: #1e2022;
+  --color-slate-900: #15171a;
+
+  /* 品牌色：石墨黑。主操作是黑色，颜色只留给标记和安全提示 */
+  --color-brand-50: #f2f2ef;
+  --color-brand-100: #e6e7e2;
+  --color-brand-200: #d3d4ce;
+  --color-brand-300: #b8bab3;
+  --color-brand-400: #8b8e88;
+  --color-brand-500: #5f6266;
+  --color-brand-600: #1b1d20;
+  --color-brand-700: #0e0f11;
+  --color-brand-800: #000000;
+  --color-brand-900: #000000;
+
+  /* 唯一强调色：马克笔黄，只用于标记当前项、进度和关键数字 */
+  --color-marker: #e7c45a;
+  --color-marker-ink: #6b5210;
+
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
+
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: 0 24px 64px -24px rgba(21, 23, 26, 0.28);
+  --shadow-2xl: 0 32px 80px -28px rgba(21, 23, 26, 0.35);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-800);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.005em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.025em;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-marker) 55%, transparent);
+  }
+
+  /* 细滚动条：不抢视觉，但保留可见性 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-slate-300) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-color: var(--color-slate-300);
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-slate-400);
+  }
+}
+
 /* 题库题干、参考答案、AI 点评使用的 Markdown 排版 */
 .markdown-body {
-  color: #334155;
+  color: #2e3134;
   font-size: 0.875rem;
   line-height: 1.75;
   overflow-wrap: anywhere;
@@ -27,7 +130,7 @@
 .markdown-body h4 {
   margin: 1.1rem 0 0.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #1e2022;
   line-height: 1.4;
 }
 
@@ -69,32 +172,32 @@
 
 .markdown-body strong {
   font-weight: 600;
-  color: #1e293b;
+  color: #1e2022;
 }
 
 .markdown-body a {
-  color: #0f766e;
+  color: #15171a;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .markdown-body blockquote {
   margin: 0.75rem 0;
-  border-left: 3px solid #99f6e4;
+  border-left: 3px solid #dadcd6;
   padding-left: 0.85rem;
-  color: #475569;
+  color: #414447;
 }
 
 .markdown-body hr {
   margin: 1rem 0;
-  border-color: #e2e8f0;
+  border-color: #dadcd6;
 }
 
 .markdown-body pre {
   margin: 0.75rem 0;
   padding: 0.85rem 1rem;
-  border-radius: 0.75rem;
-  background: #0f172a;
+  border-radius: 2px;
+  background: #15171a;
   overflow-x: auto;
 }
 
@@ -102,16 +205,16 @@
   display: block;
   padding: 0;
   background: transparent;
-  color: #e2e8f0;
+  color: #e9e9e5;
   font-size: 0.8125rem;
   line-height: 1.65;
 }
 
 .markdown-body :not(pre) > code {
   padding: 0.1rem 0.3rem;
-  border-radius: 0.25rem;
-  background: #f1f5f9;
-  color: #0f766e;
+  border-radius: 2px;
+  background: #e9e9e5;
+  color: #15171a;
   font-size: 0.8125rem;
 }
 
@@ -129,16 +232,16 @@
 
 .markdown-body th,
 .markdown-body td {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dadcd6;
   padding: 0.4rem 0.55rem;
   text-align: left;
   vertical-align: top;
 }
 
 .markdown-body th {
-  background: #f8fafc;
+  background: #f2f2ef;
   font-weight: 600;
-  color: #334155;
+  color: #2e3134;
 }
 
 .markdown-body img {
@@ -146,8 +249,8 @@
   max-width: 100%;
   height: auto;
   margin: 0.75rem auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
+  border: 1px solid #dadcd6;
+  border-radius: 2px;
   background: #fff;
 }
 
@@ -170,4 +273,136 @@
 
 .toast-in {
   animation: toast-in 180ms ease-out;
+}
+
+/* ───────────── 全局动效 ─────────────
+   统一只动 transform / opacity，不触发重排；
+   所有动画都放在 no-preference 里，系统开启"减少动态效果"时自动失效 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 思考中三个点的上下跳动 */
+@keyframes dot-bounce {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 骨架屏底色，动画在下面按需开启 */
+.skeleton {
+  background-color: #e9e9e5;
+}
+
+/* 思考中的三个点 */
+.thinking-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background-color: #6f7276;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .anim-fade-in {
+    animation: fade-in 200ms ease-out both;
+  }
+
+  .anim-pop-in {
+    animation: pop-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .anim-slide-in-left {
+    animation: slide-in-left 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* 骨架屏扫光 */
+  .skeleton {
+    background-image: linear-gradient(90deg, #e9e9e5 25%, #dadcd6 37%, #e9e9e5 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  /* 流式输出光标 */
+  .streaming-caret {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    margin-left: 2px;
+    vertical-align: -0.12em;
+    background: currentColor;
+    opacity: 0.6;
+    animation: caret-blink 1s steps(1) infinite;
+  }
+
+  .thinking-dot {
+    animation: dot-bounce 1s ease-in-out infinite;
+  }
+
+  .thinking-dot:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .thinking-dot:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  /* 按压反馈：只作用于内容区，面试间不套这层 */
+  .press-scope button:not(:disabled):active,
+  .press-scope [role='button']:not([aria-disabled='true']):active {
+    scale: 0.98;
+  }
 }

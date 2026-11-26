@@ -39,13 +39,13 @@ function MarkdownContent({ content, className = '' }: { content: string; classNa
 
       {preview && (
         <div
-          className="fixed inset-0 z-50 flex cursor-zoom-out items-center justify-center bg-slate-900/80 p-6"
+          className="anim-fade-in fixed inset-0 z-50 flex cursor-zoom-out items-center justify-center bg-slate-900/80 p-6"
           onClick={() => setPreview(null)}
         >
           <img
             src={preview}
             alt=""
-            className="max-h-full max-w-full rounded-lg bg-white object-contain shadow-2xl"
+            className="anim-pop-in max-h-full max-w-full rounded-lg bg-white object-contain shadow-2xl"
           />
         </div>
       )}

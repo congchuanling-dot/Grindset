@@ -466,12 +466,12 @@ function ChatPage() {
     <div className="relative flex h-full overflow-hidden bg-white">
       {/* 会话面板:窄屏是抽屉,md 以上固定在左侧 */}
       <aside
-        className={`absolute inset-y-0 left-0 z-30 flex w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-50 transition-transform md:static md:z-auto md:translate-x-0 ${
+        className={`absolute inset-y-0 left-0 z-30 flex w-64 shrink-0 flex-col border-r border-slate-200/80 bg-slate-50 transition-transform md:static md:z-auto md:translate-x-0 ${
           listOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex h-12 shrink-0 items-center gap-2 px-3">
-          <span className="text-sm font-semibold text-slate-700">对话记录</span>
+        <div className="flex h-14 shrink-0 items-center gap-2 px-4">
+          <span className="text-[15px] font-semibold tracking-tight text-slate-900">对话记录</span>
           <button
             type="button"
             onClick={() => setListOpen(false)}
@@ -487,7 +487,7 @@ function ChatPage() {
             type="button"
             onClick={handleNewChat}
             disabled={streaming}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:border-teal-300 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus size={15} />
             新建会话
@@ -509,10 +509,10 @@ function ChatPage() {
               {conversations.map((item) => (
                 <li
                   key={item.id}
-                  className={`group flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition ${
+                  className={`group flex items-center gap-1 rounded-xl px-3 py-2 text-sm transition ${
                     item.id === activeId
-                      ? 'bg-teal-50 text-teal-700'
-                      : 'text-slate-600 hover:bg-slate-200/60'
+                      ? 'bg-slate-100 font-medium text-slate-900'
+                      : 'text-slate-500 hover:bg-slate-100'
                   }`}
                 >
                   {editingId === item.id ? (
@@ -531,7 +531,7 @@ function ChatPage() {
                           setEditingId(null)
                         }
                       }}
-                      className="min-w-0 flex-1 rounded border border-teal-300 bg-white px-1.5 py-0.5 text-xs text-slate-700 outline-none"
+                      className="min-w-0 flex-1 rounded border border-brand-300 bg-white px-1.5 py-0.5 text-xs text-slate-700 outline-none"
                     />
                   ) : (
                     <button
@@ -551,7 +551,7 @@ function ChatPage() {
                         title="重命名"
                         disabled={streaming}
                         onClick={() => startRename(item)}
-                        className="rounded p-1 text-slate-400 transition hover:bg-white hover:text-teal-600 disabled:opacity-40"
+                        className="rounded p-1 text-slate-400 transition hover:bg-white hover:text-brand-600 disabled:opacity-40"
                       >
                         <Pencil size={12} />
                       </button>
@@ -581,7 +581,7 @@ function ChatPage() {
       )}
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b border-slate-200 px-3">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-slate-200/80 px-4">
           <button
             type="button"
             onClick={() => setListOpen(true)}
@@ -590,8 +590,8 @@ function ChatPage() {
           >
             <PanelLeft size={18} />
           </button>
-          <span className="truncate text-sm font-medium text-slate-700">{activeTitle}</span>
-          {detailLoading && <Loader2 size={14} className="animate-spin text-teal-500" />}
+          <span className="truncate text-sm font-medium text-slate-900">{activeTitle}</span>
+          {detailLoading && <Loader2 size={14} className="animate-spin text-brand-500" />}
         </header>
 
         {listError && (
@@ -610,11 +610,11 @@ function ChatPage() {
         <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto">
           {detailLoading ? (
             <div className="flex h-full items-center justify-center">
-              <Loader2 size={20} className="animate-spin text-teal-600" />
+              <Loader2 size={20} className="animate-spin text-brand-600" />
             </div>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
                 <Sparkles size={22} />
               </span>
               <h1 className="mt-4 text-xl font-semibold text-slate-800">
@@ -632,7 +632,7 @@ function ChatPage() {
                       setInput(item)
                       inputRef.current?.focus()
                     }}
-                    className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+                    className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
                   >
                     {item}
                   </button>
@@ -640,8 +640,8 @@ function ChatPage() {
               </div>
             </div>
           ) : (
-            <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6">
-              {messages.map((message) => {
+            <div className="mx-auto w-full max-w-3xl space-y-5 px-6 py-8">
+              {messages.map((message, index) => {
                 const steps = message.steps ?? []
                 // 选择卡片放在回答正文之后:先让用户看到现状说明,再看到可选项
                 const toolSteps = steps.filter((step) => !isSelectorStep(step))
@@ -654,7 +654,10 @@ function ChatPage() {
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} ${
+                      // 只给最新一条做淡入，表明"刚刚新增了什么"
+                      index === messages.length - 1 ? 'anim-fade-in' : ''
+                    }`}
                   >
                     <div
                       className={`flex flex-col gap-2 ${
@@ -673,16 +676,25 @@ function ChatPage() {
                         <div
                           className={`whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-6 ${
                             message.role === 'user'
-                              ? 'bg-teal-600 text-white'
+                              ? 'bg-brand-600 text-white'
                               : message.error
                                 ? 'bg-red-50 text-red-600'
                                 : 'bg-slate-100 text-slate-700'
                           }`}
                         >
                           {pending ? (
-                            <span className="text-slate-400">正在思考…</span>
+                            <span className="flex items-center gap-1 py-0.5" aria-label="正在思考">
+                              <span className="thinking-dot" />
+                              <span className="thinking-dot" />
+                              <span className="thinking-dot" />
+                            </span>
                           ) : (
-                            message.content
+                            <>
+                              {message.content}
+                              {message.role === 'assistant' && message.id === streamingId && (
+                                <span className="streaming-caret" aria-hidden />
+                              )}
+                            </>
                           )}
                         </div>
                       )}
@@ -709,7 +721,7 @@ function ChatPage() {
 
                       {message.status && !message.content && steps.length > 0 && (
                         <p className="flex items-center gap-1.5 px-1 text-xs text-slate-400">
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal-500" />
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500" />
                           {message.status}
                         </p>
                       )}
@@ -721,9 +733,9 @@ function ChatPage() {
           )}
         </div>
 
-        <div className="shrink-0 px-4 pb-5">
+        <div className="shrink-0 px-6 pb-6">
           <div className="mx-auto w-full max-w-3xl">
-            <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus-within:border-teal-400">
+            <div className="flex items-end gap-2 rounded-3xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm transition focus-within:border-brand-500/60 focus-within:shadow-md">
               {/* 附件入口:先占位,后续接上传 */}
               <button
                 type="button"
@@ -795,7 +807,7 @@ function ChatPage() {
                   onClick={handleSend}
                   disabled={!input.trim() || !selection}
                   title="发送"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   <ArrowUp size={16} />
                 </button>

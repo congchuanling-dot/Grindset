@@ -93,14 +93,14 @@ function UsagePage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-slate-50">
-      <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 md:px-6">
+      <header className="shrink-0 border-b border-slate-200/80 bg-white px-4 py-5 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="flex items-center gap-2 text-base font-semibold text-slate-800">
-              <Gauge size={18} className="text-teal-600" />
+            <h1 className="flex items-center gap-2 text-[22px] font-semibold leading-tight tracking-[-0.02em] text-slate-900">
+              <Gauge size={18} className="text-brand-700" />
               Token 用量
             </h1>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1.5 text-sm text-slate-500">
               统计你的全部 AI 调用:首页对话、AI 助手、面试、题库评分与简历解析。
             </p>
           </div>
@@ -112,7 +112,7 @@ function UsagePage() {
                 onClick={() => setDays(item.days)}
                 className={`rounded-md px-3 py-1 text-xs transition ${
                   days === item.days
-                    ? 'bg-white font-medium text-teal-700 shadow-sm'
+                    ? 'bg-white font-medium text-brand-700 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -123,7 +123,7 @@ function UsagePage() {
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 md:p-6">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 md:p-8">
         {error && (
           <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -188,7 +188,7 @@ function UsagePage() {
                       </div>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
                         <div
-                          className="h-full rounded-full bg-teal-500"
+                          className="h-full rounded-full bg-brand-500"
                           style={{ width: `${Math.max(4, (tokens / maxBizTokens) * 100)}%` }}
                         />
                       </div>
@@ -349,7 +349,7 @@ function StatCard({
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center gap-2 text-xs text-slate-500">
-        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
+        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
           <Icon size={14} />
         </span>
         {label}
