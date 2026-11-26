@@ -8,7 +8,6 @@ import {
   Sparkles,
   Square,
   Trash2,
-  Wallet,
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -23,7 +22,7 @@ import {
   type AgentHistoryMessage,
   type AgentToolStep,
 } from '../api/agent'
-import { fetchModels, type BalanceInfo, type ProviderInfo } from '../api/chat'
+import { fetchModels, type ProviderInfo } from '../api/chat'
 import AgentToolCard from '../components/AgentToolCard'
 import VoiceInputButton from '../components/VoiceInputButton'
 import { useVoiceInput } from '../hooks/useVoiceInput'
@@ -453,9 +452,6 @@ function ChatPage() {
     }
   }
 
-  // 当前选中厂商(余额是厂商账号级的,跟着下拉框选择走)
-  const selectedProviderId = selection.split('::')[0]
-  const selectedProvider = providers.find((item) => item.id === selectedProviderId)
   const activeTitle = conversations.find((item) => item.id === activeId)?.title ?? 'AI 助手'
 
   const caption = voiceError
@@ -727,20 +723,6 @@ function ChatPage() {
 
         <div className="shrink-0 px-4 pb-5">
           <div className="mx-auto w-full max-w-3xl">
-            {selectedProvider?.balance && (
-              <div className="mb-2 flex items-center justify-end gap-1.5 text-xs text-slate-400">
-                <Wallet size={13} />
-                <span>
-                  {selectedProvider.name} 余额 {formatBalance(selectedProvider.balance)}
-                </span>
-                {selectedProvider.balance.updatedAt && (
-                  <>
-                    <span className="text-slate-300">·</span>
-                    <span>{selectedProvider.balance.updatedAt} 更新</span>
-                  </>
-                )}
-              </div>
-            )}
             <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus-within:border-teal-400">
               {/* 附件入口:先占位,后续接上传 */}
               <button
@@ -787,14 +769,7 @@ function ChatPage() {
                   <option value="">未配置模型</option>
                 ) : (
                   providers.map((provider) => (
-                    <optgroup
-                      key={provider.id}
-                      label={
-                        provider.balance
-                          ? `${provider.name}（余额 ${formatBalance(provider.balance)}）`
-                          : provider.name
-                      }
-                    >
+                    <optgroup key={provider.id} label={provider.name}>
                       {provider.models.map((item) => (
                         <option key={`${provider.id}::${item.id}`} value={`${provider.id}::${item.id}`}>
                           {item.displayName}
@@ -857,15 +832,6 @@ function toMessage(message: AgentHistoryMessage): Message {
       data: step.data,
     })),
   }
-}
-
-/** 余额展示:CNY 用 ¥、USD 用 $,其余币种跟在数字后面 */
-function formatBalance(balance: BalanceInfo): string {
-  const amount = Number(balance.amount)
-  const text = Number.isFinite(amount) ? amount.toFixed(2) : String(balance.amount)
-  if (balance.currency === 'CNY') return `¥${text}`
-  if (balance.currency === 'USD') return `$${text}`
-  return `${text} ${balance.currency}`
 }
 
 export default ChatPage
