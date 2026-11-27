@@ -7,6 +7,7 @@ export interface InterviewSummary {
   id: string
   resumeFileName: string
   position: string
+  company: string | null
   style: string
   round: string | null
   questionCount: number
@@ -35,6 +36,8 @@ export interface InterviewQuestion {
   followUpCount: number
   score: number | null
   knowledgePoints: string[]
+  competency: string | null
+  jdGap: string | null
   comment: string | null
   suggestion: string | null
   codingQuestionId: string | null
@@ -64,7 +67,64 @@ export interface InterviewReport {
   weakPoints: string[]
   highlights: string[]
   advice: string[]
+  jdMatchScore?: number | null
+  jdCoverage?: JdCoverage[]
+  jdGaps?: string[]
   coding?: InterviewCodingReport | null
+}
+
+export interface JdCoverage {
+  name: string
+  weight: number
+  score: number | null
+  evidence: string | null
+}
+
+export interface JdCompetency {
+  name: string
+  weight: number
+  expectation: string | null
+}
+
+export interface JdProfile {
+  title: string | null
+  company: string | null
+  level: string | null
+  mustHave: string[]
+  niceToHave: string[]
+  responsibilities: string[]
+  competencies: JdCompetency[]
+  resumeGaps: string[]
+}
+
+export interface InterviewPlanItem {
+  type: string
+  label: string
+  count: number
+}
+
+export interface InterviewPlanCompetency {
+  name: string
+  weight: number
+  source: string
+}
+
+export interface InterviewPlan {
+  mode: string
+  round: string
+  durationMin: number
+  questionCount: number
+  mix: InterviewPlanItem[]
+  competencies: InterviewPlanCompetency[]
+  style: string
+  rationale: string[]
+  warnings: string[]
+}
+
+export interface InterviewPlanPreview {
+  position: string
+  jdProfile: JdProfile | null
+  plan: InterviewPlan
 }
 
 export interface InterviewDetail {
@@ -72,6 +132,10 @@ export interface InterviewDetail {
   resumeId: string
   resumeFileName: string
   position: string
+  company: string | null
+  jobLevel: string | null
+  jdEnabled: boolean
+  jdProfile: JdProfile | null
   style: string
   round: string | null
   focus: string[]
@@ -104,12 +168,32 @@ export interface AnswerResult {
 export interface CreateInterviewPayload {
   resumeId: string
   position: string
+  company?: string
+  jobLevel?: string
+  jdText?: string
+  jdProfile?: JdProfile
   style: string
   round: string
   focus: string[]
   questionCount: number
   codingEnabled?: boolean
   codingTimeLimitSec?: number
+}
+
+export interface InterviewPlanPayload {
+  resumeId: string
+  mode: string
+  position?: string
+  company?: string
+  jobLevel?: string
+  jdText?: string
+  style: string
+  round: string
+  durationMin: number
+  questionCount: number
+  focus: string[]
+  codingEnabled: boolean
+  codingTimeLimitSec: number
 }
 
 async function request(path: string, init?: RequestInit): Promise<Response> {
@@ -131,6 +215,12 @@ function jsonInit(method: string, body: unknown): RequestInit {
 export async function createInterview(payload: CreateInterviewPayload): Promise<InterviewDetail> {
   const res = await request('/api/interviews', jsonInit('POST', payload))
   return unwrapJson<InterviewDetail>(res, '创建面试失败')
+}
+
+/** 创建前预览:解析 JD 并生成推荐计划,不创建会话 */
+export async function previewInterviewPlan(payload: InterviewPlanPayload): Promise<InterviewPlanPreview> {
+  const res = await request('/api/interviews/plan', jsonInit('POST', payload))
+  return unwrapJson<InterviewPlanPreview>(res, '生成面试计划失败')
 }
 
 /** 面试记录列表,可按简历 id 过滤(多个简历取并集) */

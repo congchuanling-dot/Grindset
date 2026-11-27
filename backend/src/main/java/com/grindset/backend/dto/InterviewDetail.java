@@ -12,6 +12,10 @@ public record InterviewDetail(
         String resumeId,
         String resumeFileName,
         String position,
+        String company,
+        String jobLevel,
+        boolean jdEnabled,
+        JdProfile jdProfile,
         String style,
         String round,
         List<String> focus,
@@ -33,6 +37,8 @@ public record InterviewDetail(
             int followUpCount,
             Integer score,
             List<String> knowledgePoints,
+            String competency,
+            String jdGap,
             String comment,
             String suggestion,
             String codingQuestionId,
@@ -60,7 +66,18 @@ public record InterviewDetail(
             List<String> weakPoints,
             List<String> highlights,
             List<String> advice,
+            Integer jdMatchScore,
+            List<JdCoverageView> jdCoverage,
+            List<String> jdGaps,
             CodingView coding) {
+    }
+
+    /** JD 各能力项的复盘结果;score 为空表示本场未考察到 */
+    public record JdCoverageView(
+            String name,
+            Integer weight,
+            Integer score,
+            String evidence) {
     }
 
     /** 复盘里的手撕代码结果,由数据库真实运行结果填充,不依赖模型输出 */

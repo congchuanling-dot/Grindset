@@ -12,6 +12,7 @@ import com.grindset.backend.dto.AnswerRequest;
 import com.grindset.backend.dto.AnswerResult;
 import com.grindset.backend.dto.InterviewDetail;
 import com.grindset.backend.dto.InterviewTurnDecision;
+import com.grindset.backend.dto.JdProfile;
 import com.grindset.backend.entity.InterviewMessage;
 import com.grindset.backend.entity.InterviewQuestion;
 import com.grindset.backend.entity.InterviewSession;
@@ -57,6 +58,7 @@ public class InterviewTurnService {
     private final InterviewMessageMapper messageMapper;
     private final InterviewLlmService llmService;
     private final InterviewContextBuilder contextBuilder;
+    private final InterviewJdService jdService;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
@@ -68,6 +70,7 @@ public class InterviewTurnService {
                                 InterviewMessageMapper messageMapper,
                                 InterviewLlmService llmService,
                                 InterviewContextBuilder contextBuilder,
+                                InterviewJdService jdService,
                                 SnowflakeIdGenerator idGenerator,
                                 TransactionTemplate transactionTemplate,
                                 ObjectMapper objectMapper) {
@@ -78,6 +81,7 @@ public class InterviewTurnService {
         this.messageMapper = messageMapper;
         this.llmService = llmService;
         this.contextBuilder = contextBuilder;
+        this.jdService = jdService;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
@@ -88,6 +92,7 @@ public class InterviewTurnService {
      * 生成过程中不写库;客户端断开则放弃本题,可重试。
      */
     public InterviewDetail.QuestionView nextQuestion(long userId, long id, Consumer<String> onDelta) {
+        //todo:这里是可重入锁，后续改成分布式锁
         ReentrantLock lock = locks.lockOf(id);
         if (!lock.tryLock()) {
             throw new BizException(ErrorCode.CONFLICT, "当前会话正在处理中,请稍后再试");
@@ -110,15 +115,22 @@ public class InterviewTurnService {
             if (intValue(session.getCodingEnabled()) == 1 && seq == intValue(session.getQuestionCount())) {
                 throw new BizException(ErrorCode.CONFLICT, "请进入手撕代码环节");
             }
-
             String resumeText = contextBuilder.resumeText(userId, session.getResumeId());
+            //todo：按已经出过的题目去重，后续要改
             List<String> covered = coveredPoints(id);
+            boolean hrRound = isHrRound(session);
+            JdProfile jdProfile = hrRound ? null : jdService.profileOf(session);
+            int verbalCount = intValue(session.getQuestionCount())
+                    - (intValue(session.getCodingEnabled()) == 1 ? 1 : 0);
+            String competency = hrRound ? null
+                    : InterviewJdPlan.competencyFor(jdProfile, seq, verbalCount);
 
             StringBuilder buffer = new StringBuilder();
-            llmService.streamQuestion(session, resumeText, seq, covered, text -> {
-                buffer.append(text);
-                onDelta.accept(text);
-            });
+            llmService.streamQuestion(session, resumeText, seq, covered, jdProfile, competency,
+                    text -> {
+                        buffer.append(text);
+                        onDelta.accept(text);
+                    });
 
             String questionText = buffer.toString().strip();
             if (questionText.isEmpty()) {
@@ -133,6 +145,7 @@ public class InterviewTurnService {
             question.setQuestionType(InterviewQuestionType.VERBAL);
             question.setStatus(QuestionStatus.ANSWERED);
             question.setFollowUpCount(0);
+            question.setCompetency(competency);
             questionMapper.insert(question);
 
             InterviewMessage message = newMessage(questionId, 1, ROLE_INTERVIEWER, TYPE_QUESTION, questionText);
@@ -140,8 +153,8 @@ public class InterviewTurnService {
 
             return new InterviewDetail.QuestionView(String.valueOf(questionId), seq,
                     InterviewQuestionType.VERBAL.name(),
-                    QuestionStatus.ANSWERED, 0, null, List.of(), null, null,
-                    null, null, null, null, null, null, null, List.of(toView(message)));
+                    QuestionStatus.ANSWERED, 0, null, List.of(), competency, null,
+                    null, null, null, null, null, null, null, null, null, List.of(toView(message)));
         } finally {
             lock.unlock();
         }
@@ -184,8 +197,10 @@ public class InterviewTurnService {
             thread.add(userMessage);
 
             String resumeText = contextBuilder.resumeText(userId, session.getResumeId());
+            JdProfile jdProfile = isHrRound(session) ? null : jdService.profileOf(session);
 
-            InterviewTurnDecision decision = llmService.decide(session, resumeText, question, thread);
+            InterviewTurnDecision decision = llmService.decide(session, resumeText, question, thread,
+                    jdProfile);
             String feedback = decision.getFeedback();
             int followUpCount = intValue(question.getFollowUpCount());
 
@@ -216,7 +231,7 @@ public class InterviewTurnService {
 
             InterviewTurnDecision.Evaluation evaluation = decision.getEvaluation();
             if (evaluation == null) {
-                evaluation = llmService.evaluateOnly(session, resumeText, question, thread);
+                evaluation = llmService.evaluateOnly(session, resumeText, question, thread, jdProfile);
             }
             InterviewTurnDecision.Evaluation finalEvaluation = evaluation;
             int completed = intValue(session.getCompletedQuestions()) + 1;
@@ -319,5 +334,10 @@ public class InterviewTurnService {
         } catch (JsonProcessingException e) {
             throw new BizException(ErrorCode.INTERNAL_ERROR, "结果序列化失败");
         }
+    }
+
+    /** HR 面只考察行为与动机,不参与 JD 技术能力项分配 */
+    private static boolean isHrRound(InterviewSession session) {
+        return session.getRound() != null && session.getRound().contains("HR");
     }
 }

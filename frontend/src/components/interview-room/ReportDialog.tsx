@@ -34,8 +34,11 @@ function ReportList({ title, items, tone }: { title: string; items: string[]; to
   )
 }
 
-/** 复盘报告弹窗:总分 + 维度分 + 薄弱点/亮点/建议 */
+/** 复盘报告弹窗:总分 + 维度分 + JD 匹配度 + 薄弱点/亮点/建议 */
 function ReportDialog({ report, position, onClose }: ReportDialogProps) {
+  const coverage = report.jdCoverage ?? []
+  const jdGaps = report.jdGaps ?? []
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
@@ -81,6 +84,50 @@ function ReportDialog({ report, position, onClose }: ReportDialogProps) {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {(report.jdMatchScore != null || coverage.length > 0) && (
+          <div className="mb-5 rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3">
+            <div className="mb-2 flex items-end justify-between">
+              <div>
+                <span className="text-xs font-semibold text-slate-700">JD 匹配度</span>
+                <p className="mt-0.5 text-[10px] text-slate-400">按岗位能力项加权计算</p>
+              </div>
+              <span className="text-2xl font-semibold tabular-nums text-brand-700">
+                {report.jdMatchScore ?? '—'}
+              </span>
+            </div>
+
+            {coverage.length > 0 && (
+              <div className="space-y-1.5">
+                {coverage.map((item) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <span
+                      className="w-24 shrink-0 truncate text-[11px] text-slate-500"
+                      title={item.name}
+                    >
+                      {item.name}
+                    </span>
+                    <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white">
+                      <span
+                        className="block h-full rounded-full bg-brand-500"
+                        style={{ width: `${Math.max(0, Math.min(100, item.score ?? 0))}%` }}
+                      />
+                    </span>
+                    <span className="w-7 text-right text-[11px] tabular-nums text-slate-500">
+                      {item.score ?? '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {jdGaps.length > 0 && (
+              <div className="mt-3">
+                <ReportList title="JD 差距" items={jdGaps} tone="rose" />
+              </div>
+            )}
           </div>
         )}
 

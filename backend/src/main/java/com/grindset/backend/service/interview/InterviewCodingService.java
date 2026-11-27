@@ -270,7 +270,8 @@ public class InterviewCodingService {
                 try {
                     InterviewLlmService.CodingFeedback feedback = llmService.codingFeedback(
                             session, question, code, coding.getJudgeStatus(),
-                            coding.getRunStdout(), coding.getRunStderr(), coding.getRunExitCode());
+                            coding.getRunStdout(), coding.getRunStderr(),
+                            intValue(coding.getRunExitCode()));
                     if (feedback != null) {
                         if (feedback.score() != null && feedback.score() >= 1 && feedback.score() <= 5) {
                             score = feedback.score();

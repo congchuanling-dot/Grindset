@@ -95,7 +95,14 @@ function TranscriptPanel({
 
         {questions.map((question) => (
           <div key={question.id} className="space-y-2">
-            <p className="text-[11px] text-white/30">第 {question.seq} 题</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <p className="text-[11px] text-white/30">第 {question.seq} 题</p>
+              {question.competency && (
+                <span className="rounded-full bg-brand-500/15 px-1.5 py-0.5 text-[10px] text-brand-200/80">
+                  考察：{question.competency}
+                </span>
+              )}
+            </div>
             {question.messages.map((message) => {
               if (message.type === 'FEEDBACK') {
                 return (
@@ -128,6 +135,12 @@ function TranscriptPanel({
                 本题得分 {question.score}/5
                 {question.knowledgePoints.length > 0 &&
                   ` · ${question.knowledgePoints.join('、')}`}
+              </p>
+            )}
+
+            {question.jdGap && (
+              <p className="rounded-lg border-l-2 border-rose-400/50 bg-rose-400/5 px-2.5 py-1.5 text-[11px] leading-5 text-rose-100/70">
+                JD 差距：{question.jdGap}
               </p>
             )}
           </div>

@@ -12,10 +12,13 @@ import com.grindset.backend.dto.CreateInterviewRequest;
 import com.grindset.backend.dto.InterviewCodingResultView;
 import com.grindset.backend.dto.InterviewCodingView;
 import com.grindset.backend.dto.InterviewDetail;
+import com.grindset.backend.dto.InterviewPlanPreview;
+import com.grindset.backend.dto.InterviewPlanRequest;
 import com.grindset.backend.dto.InterviewSummary;
 import com.grindset.backend.llm.LlmException;
 import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.service.interview.InterviewCodingService;
+import com.grindset.backend.service.interview.InterviewPlanService;
 import com.grindset.backend.service.interview.InterviewReportService;
 import com.grindset.backend.service.interview.InterviewSessionService;
 import com.grindset.backend.service.interview.InterviewTurnService;
@@ -41,6 +44,7 @@ import static com.grindset.backend.common.constant.SseTimeouts.STREAM_TIMEOUT_5_
 /**
  * AI 面试接口。
  * POST   /api/interviews                        创建会话
+ * POST   /api/interviews/plan                   创建前预览岗位画像与推荐计划
  * GET    /api/interviews                        历史会话
  * GET    /api/interviews/{id}                   会话详情(刷新恢复)
  * POST   /api/interviews/{id}/questions         SSE 生成下一道主问题
@@ -63,18 +67,28 @@ public class InterviewController {
     private final InterviewTurnService turnService;
     private final InterviewReportService reportService;
     private final InterviewCodingService codingService;
+    private final InterviewPlanService planService;
     private final ObjectMapper objectMapper;
 
     public InterviewController(InterviewSessionService sessionService,
                                InterviewTurnService turnService,
                                InterviewReportService reportService,
                                InterviewCodingService codingService,
+                               InterviewPlanService planService,
                                ObjectMapper objectMapper) {
         this.sessionService = sessionService;
         this.turnService = turnService;
         this.reportService = reportService;
         this.codingService = codingService;
+        this.planService = planService;
         this.objectMapper = objectMapper;
+    }
+
+    /** 创建前预览:解析 JD 并返回推荐计划,不落库 */
+    @PostMapping("/plan")
+    public ApiResponse<InterviewPlanPreview> plan(@AuthenticationPrincipal LoginUser loginUser,
+                                                  @RequestBody InterviewPlanRequest request) {
+        return ApiResponse.ok(planService.preview(userId(loginUser), request));
     }
 
     @PostMapping

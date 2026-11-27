@@ -9,5 +9,15 @@ public record InterviewReport(
         Map<String, Integer> dimensionScores,
         List<String> weakPoints,
         List<String> highlights,
-        List<String> advice) {
+        List<String> advice,
+        List<Coverage> jdCoverage,
+        List<String> jdGaps) {
+
+    /** 单个 JD 能力项的覆盖情况,evidence 为候选人原话依据 */
+    public record Coverage(
+            String name,
+            Integer weight,
+            Integer score,
+            String evidence) {
+    }
 }

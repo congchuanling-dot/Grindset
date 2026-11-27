@@ -3,6 +3,7 @@ package com.grindset.backend.service.interview;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.dto.InterviewDetail;
+import com.grindset.backend.dto.InterviewTurnDecision;
 import com.grindset.backend.entity.InterviewMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,20 @@ final class InterviewViews {
 
     static int intValue(Integer value) {
         return value == null ? 0 : value;
+    }
+
+    /** 从 evaluation_json 里取本题的 JD 差距;旧数据或坏 JSON 返回 null */
+    static String jdGapOf(ObjectMapper objectMapper, String evaluationJson) {
+        if (evaluationJson == null || evaluationJson.isBlank()) {
+            return null;
+        }
+        try {
+            InterviewTurnDecision.Evaluation evaluation =
+                    objectMapper.readValue(evaluationJson, InterviewTurnDecision.Evaluation.class);
+            return evaluation == null ? null : evaluation.getJdGap();
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 
     static String format(LocalDateTime time) {

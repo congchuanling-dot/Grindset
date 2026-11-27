@@ -5,6 +5,7 @@ public record InterviewSummary(
         String id,
         String resumeFileName,
         String position,
+        String company,
         String style,
         String round,
         int questionCount,

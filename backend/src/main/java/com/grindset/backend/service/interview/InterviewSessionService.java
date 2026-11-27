@@ -6,10 +6,12 @@ import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.common.InterviewQuestionType;
 import com.grindset.backend.common.InterviewStyle;
+import com.grindset.backend.common.JobLevel;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.CreateInterviewRequest;
 import com.grindset.backend.dto.InterviewDetail;
 import com.grindset.backend.dto.InterviewSummary;
+import com.grindset.backend.dto.JdProfile;
 import com.grindset.backend.entity.InterviewMessage;
 import com.grindset.backend.entity.InterviewQuestion;
 import com.grindset.backend.entity.InterviewSession;
@@ -49,6 +51,7 @@ public class InterviewSessionService {
     private final InterviewMessageMapper messageMapper;
     private final ResumeMapper resumeMapper;
     private final ResumeService resumeService;
+    private final InterviewJdService jdService;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
@@ -58,6 +61,7 @@ public class InterviewSessionService {
                                    InterviewMessageMapper messageMapper,
                                    ResumeMapper resumeMapper,
                                    ResumeService resumeService,
+                                   InterviewJdService jdService,
                                    SnowflakeIdGenerator idGenerator,
                                    TransactionTemplate transactionTemplate,
                                    ObjectMapper objectMapper) {
@@ -66,6 +70,7 @@ public class InterviewSessionService {
         this.messageMapper = messageMapper;
         this.resumeMapper = resumeMapper;
         this.resumeService = resumeService;
+        this.jdService = jdService;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
@@ -78,8 +83,11 @@ public class InterviewSessionService {
         }
         long resumeId = parseId(request.getResumeId(), "简历 ID 不合法");
 
+        String company = jdService.normalizeCompany(request.getCompany());
+        String jdText = jdService.normalizeJdText(request.getJdText());
+
         String position = request.getPosition() == null ? "" : request.getPosition().strip();
-        if (position.isEmpty()) {
+        if (position.isEmpty() && jdText == null) {
             throw new BizException(ErrorCode.BAD_REQUEST, "请选择面试岗位");
         }
         if (position.length() > 64) {
@@ -101,6 +109,11 @@ public class InterviewSessionService {
 
         List<String> focus = normalizeFocus(request.getFocus());
 
+        JobLevel jobLevel = JobLevel.from(request.getJobLevel());
+        if (request.getJobLevel() != null && !request.getJobLevel().isBlank() && jobLevel == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "岗位级别不合法");
+        }
+
         int questionCount = request.getQuestionCount() == null ? 5 : request.getQuestionCount();
         if (!QUESTION_COUNTS.contains(questionCount)) {
             throw new BizException(ErrorCode.BAD_REQUEST, "题数只能是 3 / 5 / 8");
@@ -111,17 +124,43 @@ public class InterviewSessionService {
             throw new BizException(ErrorCode.BAD_REQUEST, "这份简历还没有解析成功,请先在简历管理页重新上传");
         }
 
+        if (jobLevel == null) {
+            jobLevel = JobLevel.fromCandidateType(resume.candidateType());
+        }
+        // 前端预览过就直接用回传画像,避免创建时再调一次模型;否则现场解析
+        JdProfile jdProfile = jdText == null ? null
+                : jdService.normalizeProvided(request.getJdProfile(), position, company, jobLevel);
+        if (jdProfile == null) {
+            jdProfile = jdService.parseProfile(userId, resumeId,
+                    position.isEmpty() ? "目标岗位" : position, jdText, company, jobLevel);
+        }
+        if (position.isEmpty() && jdProfile != null && jdProfile.title() != null) {
+            position = jdProfile.title();
+        }
+        if (position.isEmpty()) {
+            position = "目标岗位";
+        }
+        if (company == null && jdProfile != null) {
+            company = jdProfile.company();
+        }
+
         long sessionId = idGenerator.nextId();
         InterviewSession session = new InterviewSession();
         session.setId(sessionId);
         session.setUserId(userId);
         session.setResumeId(resumeId);
         session.setPosition(position);
+        session.setCompany(company);
+        session.setJobLevel(jobLevel);
+        session.setJdText(jdText);
+        session.setJdProfileJson(jdService.toJson(jdProfile));
         session.setStyle(style);
         session.setRound(round);
         session.setFocus(focus);
         session.setQuestionCount(questionCount);
-        session.setCodingEnabled(Boolean.TRUE.equals(request.getCodingEnabled()) ? 1 : 0);
+        // 产品约定:非 HR 面必须包含一道手撕代码,HR 面自动关闭,不信任前端开关
+        boolean hrRound = round != null && round.contains("HR");
+        session.setCodingEnabled(hrRound ? 0 : 1);
         session.setCodingTimeLimitSec(normalizeCodingLimit(request.getCodingTimeLimitSec()));
         session.setCompletedQuestions(0);
         session.setStatus(ONGOING);
@@ -157,7 +196,7 @@ public class InterviewSessionService {
         for (InterviewSession session : sessions) {
             result.add(new InterviewSummary(String.valueOf(session.getId()),
                     names.getOrDefault(session.getResumeId(), "已删除的简历"),
-                    session.getPosition(), styleCode(session), session.getRound(),
+                    session.getPosition(), session.getCompany(), styleCode(session), session.getRound(),
                     intValue(session.getQuestionCount()), intValue(session.getCompletedQuestions()),
                     intValue(session.getStatus()), session.getOverallScore(), format(session.getCreatedAt())));
         }
@@ -225,6 +264,8 @@ public class InterviewSessionService {
                     intValue(question.getStatus()),
                     intValue(question.getFollowUpCount()), question.getScore(),
                     question.getKnowledgePoints() == null ? List.of() : question.getKnowledgePoints(),
+                    question.getCompetency(),
+                    InterviewViews.jdGapOf(objectMapper, question.getEvaluationJson()),
                     question.getComment(), question.getSuggestion(),
                     question.getCodingQuestionId() == null ? null : String.valueOf(question.getCodingQuestionId()),
                     question.getCodingTitle(), question.getJudgeStatus(),
@@ -238,8 +279,13 @@ public class InterviewSessionService {
             report = InterviewViews.parseReport(objectMapper, session.getReportJson());
         }
 
+        JdProfile jdProfile = jdService.profileOf(session);
+        boolean jdEnabled = session.getJdText() != null && !session.getJdText().isBlank();
         return new InterviewDetail(String.valueOf(session.getId()), String.valueOf(session.getResumeId()),
-                resumeFileName, session.getPosition(), styleCode(session), session.getRound(),
+                resumeFileName, session.getPosition(), session.getCompany(),
+                session.getJobLevel() == null ? null : session.getJobLevel().code(),
+                jdEnabled, jdProfile,
+                styleCode(session), session.getRound(),
                 session.getFocus() == null ? List.of() : session.getFocus(),
                 intValue(session.getQuestionCount()),
                 intValue(session.getCodingEnabled()) == 1,

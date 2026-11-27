@@ -58,6 +58,9 @@ public class InterviewTurnDecision {
 
         private String suggestion;
 
+        /** 与 JD 期望的差距,未启用 JD 时为空 */
+        private String jdGap;
+
         public Integer getScore() {
             return score;
         }
@@ -88,6 +91,14 @@ public class InterviewTurnDecision {
 
         public void setSuggestion(String suggestion) {
             this.suggestion = suggestion;
+        }
+
+        public String getJdGap() {
+            return jdGap;
+        }
+
+        public void setJdGap(String jdGap) {
+            this.jdGap = jdGap;
         }
     }
 }

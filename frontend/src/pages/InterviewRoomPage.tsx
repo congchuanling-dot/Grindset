@@ -1,4 +1,4 @@
-import { AlertCircle, CircleStop, Loader2, MessageSquare, RotateCw, Sparkles } from 'lucide-react'
+import { AlertCircle, Briefcase, CircleStop, Loader2, MessageSquare, RotateCw, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
@@ -22,6 +22,7 @@ import { AVATAR_MODELS, AVATAR_STORAGE_KEY } from '../components/avatar/avatarMo
 import type { VrmAvatarHandle } from '../components/avatar/VrmAvatarStage'
 import ControlBar from '../components/interview-room/ControlBar'
 import InterviewerTile from '../components/interview-room/InterviewerTile'
+import JdProfileDialog from '../components/interview-room/JdProfileDialog'
 import ParticipantGrid from '../components/interview-room/ParticipantGrid'
 import ParticipantTile from '../components/interview-room/ParticipantTile'
 import ReportDialog from '../components/interview-room/ReportDialog'
@@ -43,6 +44,13 @@ const STYLE_LABELS: Record<string, string> = {
   pressure: '压力面',
   middle: '适中',
   relaxed: '轻松',
+}
+
+const JOB_LEVEL_LABELS: Record<string, string> = {
+  intern: '实习',
+  campus: '校招',
+  experienced: '社招',
+  senior: '高级/专家',
 }
 
 const PHASE_LABELS: Record<RoomPhase, string> = {
@@ -76,6 +84,7 @@ function InterviewRoomPage() {
   const [submitting, setSubmitting] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [jdOpen, setJdOpen] = useState(false)
   // 对话记录默认收起,需要时再展开
   const [transcriptOpen, setTranscriptOpen] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -492,6 +501,9 @@ function InterviewRoomPage() {
 
   const subtitleParts = [
     detail?.resumeFileName,
+    detail?.company,
+    detail?.jobLevel ? (JOB_LEVEL_LABELS[detail.jobLevel] ?? detail.jobLevel) : null,
+    detail?.jdEnabled ? 'JD 定制' : null,
     detail ? (STYLE_LABELS[detail.style] ?? detail.style) : null,
     detail?.round,
     detail
@@ -512,6 +524,16 @@ function InterviewRoomPage() {
             onBack={() => navigate('/interview')}
             actions={
               <>
+                {detail?.jdEnabled && detail.jdProfile && (
+                  <button
+                    type="button"
+                    onClick={() => setJdOpen(true)}
+                    className="flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10"
+                  >
+                    <Briefcase size={13} />
+                    JD 定制
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setTranscriptOpen((open) => !open)}
@@ -706,6 +728,14 @@ function InterviewRoomPage() {
           report={detail.report}
           position={detail.position}
           onClose={() => setReportOpen(false)}
+        />
+      )}
+
+      {jdOpen && detail?.jdProfile && (
+        <JdProfileDialog
+          profile={detail.jdProfile}
+          position={detail.position}
+          onClose={() => setJdOpen(false)}
         />
       )}
     </>

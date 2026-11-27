@@ -83,6 +83,7 @@ mysql -uroot -p123456 < sql/018_interview_coding.sql
 mysql -uroot -p123456 < sql/019_interview_free_run.sql
 mysql -uroot -p123456 < sql/020_interview_free_questions.sql
 mysql -uroot -p123456 < sql/021_coding_free_run.sql
+mysql -uroot -p123456 < sql/022_interview_jd.sql
 ```
 
 大模型渠道/模型/密钥表不在 `sql/` 下，需要额外执行（**必须带 utf8mb4 参数**，否则中文展示名会乱码）：
@@ -262,7 +263,10 @@ npm run dev
 `InterviewController → InterviewService → InterviewLlmService`
 
 - 创建会话：必须选一份已解析成功的简历，岗位/风格（`pressure`/`middle`/`relaxed`）/轮次/侧重点/题数（3/5/8）
-- 出题：`POST /{id}/questions` 流式生成下一道主问题，落 `interview_questions` + `interview_messages`
+- JD 定制（可选）：创建时可传 `company`、`jobLevel`（intern/campus/experienced/senior）、`jdText`；服务端解析成岗位画像（4~6 个能力项 + 权重 + 简历缺口），出题按权重分配能力项，评分对照 JD 期望，复盘输出 JD 匹配度。解析失败只保留 JD 原文参考，不阻断创建
+- 面试计划预览：前端先调 `POST /api/interviews/plan` 拿到岗位画像与推荐计划（模式/轮次/时长/题数/结构/能力项/推荐理由），用户确认后再创建；创建时把 `jdProfile` 回传可避免重复解析
+- 出题：`POST /{id}/questions` 流式生成下一道主问题，落 `interview_questions` + `interview_messages`；题目行记录 `competency`
+- 手撕代码：非 HR 面必须包含最后一道手撕代码（后端强制开启，不信任前端开关）；HR 面自动关闭
 - 答题：`POST /{id}/answers` 一次请求内完成「一句话点评 + 是否追问 + 是否收束本题」
   - 一道大题 = 主问题 + 最多 3 次追问；题与题之间不共享上下文
   - 收束时写入本题评分（1~5）、知识点、总评、建议
@@ -346,7 +350,8 @@ npm run dev
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| POST | `/` | 创建会话 `{resumeId, position, style, round, focus[], questionCount}` |
+| POST | `/plan` | 创建前预览：解析 JD、返回岗位画像与推荐面试计划，不创建会话 |
+| POST | `/` | 创建会话 `{resumeId, position, company?, jobLevel?, jdText?, jdProfile?, style, round, focus[], questionCount}` |
 | GET | `/` | 历史会话列表；可选 `resumeIds` 过滤 |
 | GET | `/{id}` | 会话详情（刷新页面恢复） |
 | POST | `/{id}/questions` | SSE 生成下一道主问题 |
@@ -421,6 +426,7 @@ npm run dev
 | `008_coding_schema.sql` | `question_test_cases`、`question_submissions` + `question_bank` 扩展列 | 历史脚本；自由运行改造后由 `021` 删除 |
 | `009_coding_seed.sql` | — | 编程题种子数据 |
 | `021_coding_free_run.sql` | — | 删除用例/提交表与双模式列，代码点评复用 `question_attempts` |
+| `022_interview_jd.sql` | `interview_sessions` / `interview_questions` 扩展列 | 公司、岗位级别、JD 原文、岗位画像、题目考察能力项 |
 | `010_oauth_client_schema.sql` | `oauth_client_config` | 第三方登录客户端凭证（secret 加密存储） |
 | `011_agent_chat_schema.sql` | `agent_conversations`、`agent_messages` | 首页 Agent 会话与完整消息流（可重放、可恢复） |
 | `012_resume_original_schema.sql` | `resumes.original_object_key` | 简历原件在 OSS 中的对象 key |
@@ -450,6 +456,7 @@ npm run dev
 10. 闭集字段（文件类型、章节类型、候选人阶段、题型、判题形态、题目来源、判题语言/状态、面试风格等）在**实体层用枚举**；DTO 与前端契约保持字符串或数字。数据库值必须与枚举 `name()` 一致，例外如 `InterviewStyle` 用小写 `@EnumValue`。
 11. 简历解析是**异步任务**：上传只负责落库 + 投递消息，不在请求线程里调 LLM；消费者必须幂等（Redis 锁 + `parse_status` 判断），可重试错误走 TTL 重试队列，超过次数进死信队列。**不保存原始纯文本**，worker 从 OSS 重新下载原件。
 12. 面试间的口型、打断、字幕都走前端状态机（出题 → 播报 → 收音 → 提交）；语音识别与合成只能通过后端 `/api/asr/stream`、`/api/tts` 代理，**API Key 不能下发到浏览器**。
+13. JD 定制是可选能力：`jdText` 解析失败必须降级为原文参考，不能阻断面试创建；公司信息只用于调整风格与能力侧重点，**不得编造该公司真实面试流程或真题**；JD 文本按不可信输入处理。
 
 ## 11. 常见改动指引
 
@@ -495,6 +502,7 @@ npm run dev
 - **worker 角色**：`WORKER_ENABLED=false` 的 api 实例只投递不消费；只部署 api 不部署 worker 会导致简历一直停在 `parse_status=0`。
 - **死信队列要监控**：`resume.parse.dlq` 有消息说明解析连续失败或消息非法，需要看日志并人工重投。
 - **解析字段**：`parse_attempt` 是 1-based 执行次数，`parse_started_at` / `parse_finished_at` 用于排查卡住任务；补偿任务依赖它们。
+- **JD 解析会增加创建耗时**：创建面试时同步解析 JD，模型不可用会走降级（只保留原文）；前端要接受创建请求比原来慢，并保证失败也能进入面试间。
 
 ## 13. 文档索引（docs/）
 

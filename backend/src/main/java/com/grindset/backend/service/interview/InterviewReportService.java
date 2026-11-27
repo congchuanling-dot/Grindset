@@ -10,6 +10,7 @@ import com.grindset.backend.common.Texts;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.InterviewDetail;
 import com.grindset.backend.dto.InterviewReport;
+import com.grindset.backend.dto.JdProfile;
 import com.grindset.backend.entity.InterviewMessage;
 import com.grindset.backend.entity.InterviewQuestion;
 import com.grindset.backend.entity.InterviewSession;
@@ -21,7 +22,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_USER;
@@ -43,6 +48,7 @@ public class InterviewReportService {
     private final InterviewMessageMapper messageMapper;
     private final InterviewLlmService llmService;
     private final InterviewContextBuilder contextBuilder;
+    private final InterviewJdService jdService;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
 
@@ -54,6 +60,7 @@ public class InterviewReportService {
                                   InterviewMessageMapper messageMapper,
                                   InterviewLlmService llmService,
                                   InterviewContextBuilder contextBuilder,
+                                  InterviewJdService jdService,
                                   TransactionTemplate transactionTemplate,
                                   ObjectMapper objectMapper) {
         this.sessionService = sessionService;
@@ -64,12 +71,14 @@ public class InterviewReportService {
         this.messageMapper = messageMapper;
         this.llmService = llmService;
         this.contextBuilder = contextBuilder;
+        this.jdService = jdService;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
     }
 
     /** 生成复盘报告;已生成过直接返回,支持提前结束或 0 题结束 */
     public InterviewDetail.ReportView finish(long userId, long id) {
+        //todo:这里是可重入锁，后续改成分布式锁
         ReentrantLock lock = locks.lockOf(id);
         if (!lock.tryLock()) {
             throw new BizException(ErrorCode.CONFLICT, "当前会话正在处理中,请稍后再试");
@@ -112,9 +121,10 @@ public class InterviewReportService {
 
             String resumeText = contextBuilder.resumeText(userId, current.getResumeId());
             String threadsText = threadsText(questions);
-            InterviewReport report = llmService.report(current, resumeText, threadsText, hasCoding);
+            JdProfile jdProfile = isHrRound(current) ? null : jdService.profileOf(current);
+            InterviewReport report = llmService.report(current, resumeText, threadsText, hasCoding, jdProfile);
 
-            InterviewDetail.ReportView reportView = toReportView(report, questions);
+            InterviewDetail.ReportView reportView = toReportView(report, questions, jdProfile);
             current.setReportJson(toJson(reportView));
             current.setOverallScore(report.overallScore());
             sessionMapper.updateById(current);
@@ -153,6 +163,9 @@ public class InterviewReportService {
                     builder.append(",知识点:").append(String.join("、", question.getKnowledgePoints()));
                 }
                 builder.append(")");
+            }
+            if (question.getCompetency() != null && !question.getCompetency().isBlank()) {
+                builder.append(" [能力项:").append(question.getCompetency()).append(']');
             }
             builder.append('\n');
             for (InterviewMessage message : threadOf(question.getId())) {
@@ -213,7 +226,8 @@ public class InterviewReportService {
         builder.append('\n');
     }
 
-    private InterviewDetail.ReportView toReportView(InterviewReport report, List<InterviewQuestion> questions) {
+    private InterviewDetail.ReportView toReportView(InterviewReport report, List<InterviewQuestion> questions,
+                                                    JdProfile profile) {
         InterviewDetail.CodingView coding = null;
         for (InterviewQuestion question : questions) {
             if (question.getQuestionType() != InterviewQuestionType.CODING) {
@@ -230,8 +244,93 @@ public class InterviewReportService {
                     question.getComment());
             break;
         }
+
+        Integer jdMatchScore = null;
+        List<InterviewDetail.JdCoverageView> coverageViews = new ArrayList<>();
+        List<String> jdGaps = new ArrayList<>();
+        if (profile != null && profile.competencies() != null && !profile.competencies().isEmpty()) {
+            Map<String, Integer> selfScores = selfScores(questions);
+            int weightSum = 0;
+            int weighted = 0;
+            for (JdProfile.Competency competency : profile.competencies()) {
+                if (competency == null || competency.name() == null || competency.name().isBlank()) {
+                    continue;
+                }
+                InterviewReport.Coverage llmCoverage = findCoverage(report.jdCoverage(), competency.name());
+                Integer score = llmCoverage == null ? null : llmCoverage.score();
+                if (score == null) {
+                    score = selfScores.get(competency.name());
+                }
+                int weight = competency.weight() == null ? 0 : Math.max(0, competency.weight());
+                coverageViews.add(new InterviewDetail.JdCoverageView(competency.name(), weight, score,
+                        llmCoverage == null ? null : llmCoverage.evidence()));
+                if (score != null && weight > 0) {
+                    weightSum += weight;
+                    weighted += weight * score;
+                }
+            }
+            if (weightSum > 0) {
+                jdMatchScore = Math.round((float) weighted / weightSum);
+            }
+
+            if (report.jdGaps() != null) {
+                jdGaps.addAll(report.jdGaps());
+            }
+            if (jdGaps.isEmpty()) {
+                for (InterviewQuestion question : questions) {
+                    String gap = InterviewViews.jdGapOf(objectMapper, question.getEvaluationJson());
+                    if (gap != null && !gap.isBlank()) {
+                        jdGaps.add(gap);
+                    }
+                }
+            }
+            jdGaps = new ArrayList<>(new LinkedHashSet<>(jdGaps));
+            if (jdGaps.size() > 3) {
+                jdGaps = new ArrayList<>(jdGaps.subList(0, 3));
+            }
+        }
+
         return new InterviewDetail.ReportView(report.overallScore(), report.dimensionScores(),
-                report.weakPoints(), report.highlights(), report.advice(), coding);
+                report.weakPoints(), report.highlights(), report.advice(),
+                jdMatchScore, coverageViews, jdGaps, coding);
+    }
+
+    /** 每道题 1~5 分转成 0~100,按能力项求平均,作为模型没给覆盖分时的兜底 */
+    private static Map<String, Integer> selfScores(List<InterviewQuestion> questions) {
+        Map<String, int[]> accumulator = new HashMap<>();
+        for (InterviewQuestion question : questions) {
+            if (question.getCompetency() == null || question.getCompetency().isBlank()
+                    || question.getScore() == null) {
+                continue;
+            }
+            int[] value = accumulator.computeIfAbsent(question.getCompetency(), key -> new int[2]);
+            value[0] += question.getScore();
+            value[1]++;
+        }
+        Map<String, Integer> result = new HashMap<>();
+        for (Map.Entry<String, int[]> entry : accumulator.entrySet()) {
+            int[] value = entry.getValue();
+            result.put(entry.getKey(), Math.round(value[0] * 20f / value[1]));
+        }
+        return result;
+    }
+
+    private static InterviewReport.Coverage findCoverage(List<InterviewReport.Coverage> coverage, String name) {
+        if (coverage == null || coverage.isEmpty()) {
+            return null;
+        }
+        for (InterviewReport.Coverage item : coverage) {
+            if (item != null && item.name() != null && item.name().equalsIgnoreCase(name)) {
+                return item;
+            }
+        }
+        for (InterviewReport.Coverage item : coverage) {
+            if (item != null && item.name() != null
+                    && (item.name().contains(name) || name.contains(item.name()))) {
+                return item;
+            }
+        }
+        return null;
     }
 
     private String toJson(Object value) {
@@ -240,5 +339,10 @@ public class InterviewReportService {
         } catch (JsonProcessingException e) {
             throw new BizException(ErrorCode.INTERNAL_ERROR, "结果序列化失败");
         }
+    }
+
+    /** HR 面不做 JD 技术能力项覆盖统计 */
+    private static boolean isHrRound(InterviewSession session) {
+        return session.getRound() != null && session.getRound().contains("HR");
     }
 }

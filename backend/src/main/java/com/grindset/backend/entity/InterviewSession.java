@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.grindset.backend.common.InterviewStyle;
+import com.grindset.backend.common.JobLevel;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,6 +26,18 @@ public class InterviewSession {
     private Long resumeId;
 
     private String position;
+
+    /** 目标公司,可为空 */
+    private String company;
+
+    /** 岗位级别,可为空 */
+    private JobLevel jobLevel;
+
+    /** JD 原文,最多 8000 字 */
+    private String jdText;
+
+    /** JD 解析后的岗位画像 JSON;为空表示未启用或解析失败 */
+    private String jdProfileJson;
 
     /** pressure / middle / relaxed */
     private InterviewStyle style;
@@ -85,6 +98,38 @@ public class InterviewSession {
 
     public void setPosition(String position) {
         this.position = position;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+
+    public JobLevel getJobLevel() {
+        return jobLevel;
+    }
+
+    public void setJobLevel(JobLevel jobLevel) {
+        this.jobLevel = jobLevel;
+    }
+
+    public String getJdText() {
+        return jdText;
+    }
+
+    public void setJdText(String jdText) {
+        this.jdText = jdText;
+    }
+
+    public String getJdProfileJson() {
+        return jdProfileJson;
+    }
+
+    public void setJdProfileJson(String jdProfileJson) {
+        this.jdProfileJson = jdProfileJson;
     }
 
     public InterviewStyle getStyle() {

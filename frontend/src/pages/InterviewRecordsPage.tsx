@@ -206,9 +206,16 @@ function InterviewRecordsPage() {
                   className="group cursor-pointer border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-slate-900 focus:outline-none focus-visible:border-slate-900"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="line-clamp-1 text-sm font-medium text-slate-800">
-                      {session.position}
-                    </span>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <span className="line-clamp-1 text-sm font-medium text-slate-800">
+                        {session.position}
+                      </span>
+                      {session.company && (
+                        <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">
+                          {session.company}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex shrink-0 items-center gap-1">
                       {session.status === SessionStatus.FINISHED ? (
                         <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">

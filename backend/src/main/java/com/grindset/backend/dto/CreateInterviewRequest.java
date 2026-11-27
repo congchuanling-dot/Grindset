@@ -11,6 +11,18 @@ public class CreateInterviewRequest {
 
     private String position;
 
+    /** 目标公司,可选 */
+    private String company;
+
+    /** intern / campus / experienced / senior,可选;为空时按简历推断 */
+    private String jobLevel;
+
+    /** 粘贴的岗位 JD,可选 */
+    private String jdText;
+
+    /** 前端预览后回传的岗位画像,可选;带这里就不再重复解析 JD */
+    private JdProfile jdProfile;
+
     private String style;
 
     private String round;
@@ -40,6 +52,38 @@ public class CreateInterviewRequest {
 
     public void setPosition(String position) {
         this.position = position;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+
+    public String getJobLevel() {
+        return jobLevel;
+    }
+
+    public void setJobLevel(String jobLevel) {
+        this.jobLevel = jobLevel;
+    }
+
+    public String getJdText() {
+        return jdText;
+    }
+
+    public void setJdText(String jdText) {
+        this.jdText = jdText;
+    }
+
+    public JdProfile getJdProfile() {
+        return jdProfile;
+    }
+
+    public void setJdProfile(JdProfile jdProfile) {
+        this.jdProfile = jdProfile;
     }
 
     public String getStyle() {

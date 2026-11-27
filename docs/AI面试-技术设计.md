@@ -15,6 +15,7 @@
 | 能力 | 说明 |
 |---|---|
 | 创建会话 | 选简历 + 岗位/风格/轮次/侧重 + 题数(3/5/8),`POST /api/interviews` |
+| JD 定制 | 可选传目标公司、岗位级别、JD 原文;解析成岗位画像,出题按能力项权重分配,评分对照 JD 期望,复盘输出 JD 匹配度 |
 | 主问题生成 | SSE 流式输出,基于简历全部结构化内容与面试配置 |
 | 追问 | 每题最少 1 次、最多 3 次,由 LLM 在本线程上下文内决定是否继续 |
 | 答题点评 | 每次回答给一句话点评;本题收束时给 1~5 分、知识点、总评、建议 |
@@ -84,6 +85,10 @@ POST /api/interviews/{id}/finish        生成复盘报告
 | user_id | BIGINT | 所属用户 |
 | resume_id | BIGINT | 使用的简历 |
 | position | VARCHAR(64) | 面试岗位 |
+| company | VARCHAR(64) | 目标公司,可空 |
+| job_level | VARCHAR(32) | intern / campus / experienced / senior |
+| jd_text | MEDIUMTEXT | JD 原文,最多 8000 字 |
+| jd_profile_json | JSON | 解析后的岗位画像;解析失败为空,降级只参考原文 |
 | style | VARCHAR(16) | pressure / middle / relaxed |
 | round | VARCHAR(32) | 一面 / 二面 / HR 面 |
 | focus | JSON | 侧重方向数组 |
@@ -106,6 +111,7 @@ POST /api/interviews/{id}/finish        生成复盘报告
 | knowledge_points | JSON | 命中知识点 |
 | comment / suggestion | VARCHAR(500) | 总评 / 建议 |
 | evaluation_json | JSON | 完整点评,便于扩展字段 |
+| competency | VARCHAR(64) | 本题考察的 JD 能力项,未启用 JD 时为空 |
 | finished_at | DATETIME | 收束时间 |
 
 `UNIQUE(session_id, seq)` 保证同题号只有一条,防止重复出题。
@@ -137,7 +143,8 @@ POST /api/interviews/{id}/finish        生成复盘报告
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/interviews` | 创建会话,返回详情 |
+| POST | `/api/interviews/plan` | 创建前预览:解析 JD 并返回推荐计划,不落库 |
+| POST | `/api/interviews` | 创建会话,返回详情;可选 `company` / `jobLevel` / `jdText` / `jdProfile` |
 | GET | `/api/interviews` | 最近 50 场,含简历名、进度、总分 |
 | GET | `/api/interviews/{id}` | 会话 + 全部题目线程 + 报告 |
 | POST | `/api/interviews/{id}/questions` | SSE 生成下一题 |
@@ -257,6 +264,17 @@ data: {"message":"..."}
 - 线程内消息全部带上;跨题不带对话,只带知识点标题。
 - 追问/点评 `max_tokens` 控制在 600 内,报告 1500 内。
 
+### 6.5 JD 定制
+
+- 创建时把 JD + 简历喂给模型,输出固定 JSON 岗位画像:`title / company / level / mustHave / niceToHave / responsibilities / competencies[] / resumeGaps[]`。
+- `competencies` 4~6 项,`weight` 归一化到合计 100;每项带一句 `expectation`。
+- 口述题数按权重用最大余数法分配,再轮询展开,结果写入 `interview_questions.competency`。
+- 出题 prompt 指定"本题考察能力项 + 该能力项 JD 期望";评分对照同一期望,收束时额外输出 `jdGap`。
+- 复盘输出 `jdCoverage` 与 `jdGaps`,`jdMatchScore` 由后端按能力项权重加权计算,避免模型乱给分。
+- JD 解析失败只保留 `jd_text`,prompt 降级为原文参考;公司信息只调整风格和侧重点,不得编造真实面试流程或真题。
+- 创建前先调 `POST /api/interviews/plan` 预览岗位画像与推荐计划;用户确认后创建,创建时回传 `jdProfile` 可避免重复解析。
+- 非 HR 面固定包含最后一道手撕代码,由后端强制开启;HR 面自动关闭,前端不再提供关闭开关。
+
 ---
 
 ## 7. 后端实现
@@ -357,6 +375,8 @@ app:
 | 会话锁 | 单实例内存锁 | 多实例部署改 Redis 分布式锁 |
 | 提前结束 | 未答完的题保留在库中(状态 2) | 增加"放弃当前题"状态与统计口径 |
 | 学情沉淀 | 仅存每道题的知识点标签 | 需要按知识点聚合时再另建统计表 |
+| JD 解析 | 创建时同步解析,失败降级为原文 | 可改为异步解析 + 前端预览确认 |
+| JD 文件 | 只支持粘贴文本 | 后续支持 PDF/Word 上传 |
 
 ---
 
@@ -365,3 +385,4 @@ app:
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | v0.1 | 2026-11-16 | 首版:会话/题目线程/消息三表,出题 SSE,答题点评与 1~3 次追问,复盘报告,前端对话页与历史列表 |
+| v0.2 | 2026-11-27 | 支持 JD / 公司 / 岗位级别定制:岗位画像解析、能力项分配、JD 差距与复盘匹配度 |

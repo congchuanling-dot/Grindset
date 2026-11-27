@@ -70,6 +70,9 @@ public class InterviewQuestion {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> knowledgePoints;
 
+    /** 本题考察的 JD 能力项,未启用 JD 时为空 */
+    private String competency;
+
     private String comment;
 
     private String suggestion;
@@ -266,6 +269,14 @@ public class InterviewQuestion {
 
     public void setKnowledgePoints(List<String> knowledgePoints) {
         this.knowledgePoints = knowledgePoints;
+    }
+
+    public String getCompetency() {
+        return competency;
+    }
+
+    public void setCompetency(String competency) {
+        this.competency = competency;
     }
 
     public String getComment() {
