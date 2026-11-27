@@ -223,7 +223,7 @@ function CodingFilterPane() {
       </div>
 
       <div className="px-3 py-3 text-[11px] leading-5 text-slate-400">
-        右侧列表按难度和状态筛选；点击题目进入左右分栏的判题工作台，代码和提交记录都在同一页。
+        右侧列表按难度和状态筛选；点击题目进入左右分栏的编程工作台，代码、运行与 AI 点评都在同一页。
       </div>
     </div>
   )

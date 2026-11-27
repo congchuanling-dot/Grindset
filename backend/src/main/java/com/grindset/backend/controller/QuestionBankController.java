@@ -6,7 +6,8 @@ import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.dto.CodeRunRequest;
 import com.grindset.backend.dto.CodeRunResult;
 import com.grindset.backend.dto.CodingDetail;
-import com.grindset.backend.dto.CodingSubmissionView;
+import com.grindset.backend.dto.CodingReviewResult;
+import com.grindset.backend.dto.CodingReviewView;
 import com.grindset.backend.dto.QuestionAnswerRequest;
 import com.grindset.backend.dto.QuestionAttemptResult;
 import com.grindset.backend.dto.QuestionBankDetail;
@@ -37,11 +38,10 @@ import java.util.List;
  * GET  /api/questions/{id}/neighbors 默认排序下的前后相邻题
  * GET  /api/questions/{id}/attempts  某道题的作答历史
  * POST /api/questions/{id}/attempts  提交作答，AI 评分
- * GET  /api/questions/{id}/coding    编程题详情（题面 + 例题 + 初始代码）
- * POST /api/questions/{id}/run       运行例题，同步返回结果
- * POST /api/questions/{id}/submissions 提交代码判题（异步，返回 PENDING）
- * GET  /api/questions/submissions/{submissionId} 轮询判题结果
- * GET  /api/questions/{id}/submissions 我的提交历史
+ * GET  /api/questions/{id}/coding    编程题详情（题面 + main 骨架 + 最近点评）
+ * POST /api/questions/{id}/run       自由运行完整代码，同步返回控制台输出
+ * POST /api/questions/{id}/review    运行代码并让 AI 点评，回写做题进度
+ * GET  /api/questions/{id}/reviews   我的点评历史
  */
 @RestController
 @RequestMapping("/api/questions")
@@ -124,23 +124,17 @@ public class QuestionBankController {
         return ApiResponse.ok(codingService.run(userId(loginUser), id, request));
     }
 
-    @PostMapping("/{id}/submissions")
-    public ApiResponse<CodingSubmissionView> submit(@AuthenticationPrincipal LoginUser loginUser,
-                                                    @PathVariable long id,
-                                                    @RequestBody CodeRunRequest request) {
-        return ApiResponse.ok(codingService.submit(userId(loginUser), id, request));
+    @PostMapping("/{id}/review")
+    public ApiResponse<CodingReviewResult> review(@AuthenticationPrincipal LoginUser loginUser,
+                                                  @PathVariable long id,
+                                                  @RequestBody CodeRunRequest request) {
+        return ApiResponse.ok(codingService.review(userId(loginUser), id, request));
     }
 
-    @GetMapping("/submissions/{submissionId}")
-    public ApiResponse<CodingSubmissionView> submission(@AuthenticationPrincipal LoginUser loginUser,
-                                                        @PathVariable long submissionId) {
-        return ApiResponse.ok(codingService.submission(userId(loginUser), submissionId));
-    }
-
-    @GetMapping("/{id}/submissions")
-    public ApiResponse<List<CodingSubmissionView>> submissions(
+    @GetMapping("/{id}/reviews")
+    public ApiResponse<List<CodingReviewView>> reviews(
             @AuthenticationPrincipal LoginUser loginUser, @PathVariable long id) {
-        return ApiResponse.ok(codingService.history(userId(loginUser), id));
+        return ApiResponse.ok(codingService.reviews(userId(loginUser), id));
     }
 
     private static long userId(LoginUser loginUser) {

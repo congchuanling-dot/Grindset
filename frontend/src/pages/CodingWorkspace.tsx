@@ -6,28 +6,29 @@ import {
   CheckCircle2,
   Clock,
   FileText,
+  Lightbulb,
   Loader2,
   Play,
-  Send,
+  Sparkles,
   Terminal,
   XCircle,
 } from 'lucide-react'
 import * as monaco from 'monaco-editor'
 import editorWorker from 'monaco-editor/editor/editor.worker?worker'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getCodingDetail,
-  getCodingSubmissions,
-  getSubmission,
+  getCodingReviews,
+  reviewCode,
   runCode,
-  submitCode,
   type CodeLanguage,
-  type CodeMode,
   type CodeRunResult,
   type CodingDetail,
-  type CodingStatus,
-  type CodingSubmission,
+  type CodingReviewResult,
+  type CodingReviewView,
+  type FreeRunStatus,
+  type QuestionStatus,
 } from '../api/questionBank'
 import MarkdownContent from '../components/MarkdownContent'
 import { difficultyClass, difficultyLabel } from '../components/questions/QuestionBadges'
@@ -41,131 +42,60 @@ const LANGUAGE_LABELS: Record<CodeLanguage, string> = {
   PYTHON: 'Python',
 }
 
-const STATUS_LABELS: Record<CodingStatus, string> = {
-  PENDING: '排队中',
-  RUNNING: '判题中',
-  ACCEPTED: '通过',
-  WRONG_ANSWER: '答案错误',
+const RUN_STATUS_LABELS: Record<FreeRunStatus, string> = {
+  SUCCESS: '运行成功',
   COMPILE_ERROR: '编译错误',
   RUNTIME_ERROR: '运行错误',
   TIME_LIMIT_EXCEEDED: '超出时间限制',
   SYSTEM_ERROR: '系统错误',
 }
 
-const PENDING_STATUSES: CodingStatus[] = ['PENDING', 'RUNNING']
-
-export interface CodingAdapter {
-  getDetail: (questionId: string) => Promise<CodingDetail>
-  getHistory: (questionId: string) => Promise<CodingSubmission[]>
-  run: (questionId: string, language: CodeLanguage, code: string, mode: CodeMode) => Promise<CodeRunResult>
-  submit: (questionId: string, language: CodeLanguage, code: string, mode: CodeMode) => Promise<CodingSubmission>
-  poll: (submissionId: string) => Promise<CodingSubmission>
-}
-
-export interface CodingDraftState {
-  code: string
-  language: CodeLanguage
-  mode: CodeMode
+const PROGRESS_LABELS: Record<QuestionStatus, string> = {
+  TODO: '未作答',
+  DONE: '已掌握',
+  WRONG: '待改进',
 }
 
 export interface CodingWorkspaceProps {
   questionId: string
-  /** 题库页不传,使用题库接口;面试页传面试 adapter */
-  adapter?: CodingAdapter
-  /** 面试页直接把 round.coding 传进来,避免重复请求 */
-  initialDetail?: CodingDetail | null
-  initialDraft?: CodingDraftState | null
-  preferredMode?: CodeMode
-  hideModeSwitch?: boolean
-  headerless?: boolean
-  onBack?: () => void
-  onDraftChange?: (draft: CodingDraftState) => void
-  onComplete?: (submission: CodingSubmission) => Promise<void> | void
-}
-
-const bankAdapter: CodingAdapter = {
-  getDetail: getCodingDetail,
-  getHistory: getCodingSubmissions,
-  run: (id, language, code, mode) => runCode(id, language, code, mode),
-  submit: (id, language, code, mode) => submitCode(id, language, code, mode),
-  poll: getSubmission,
 }
 
 /**
- * 编程题工作台:左侧题面与例题,右侧 Monaco 编辑器,可运行样例、提交判题。
- * 提交是异步的,前端轮询判题结果,隐藏用例只回传通过数。
+ * 编程题工作台:左侧题面,右侧 Monaco 编辑器。
+ * 用户写完整 main、自己构造输入并运行;点「AI 点评」由大模型检查逻辑与边界。
  */
-function CodingWorkspace({
-  questionId,
-  adapter = bankAdapter,
-  initialDetail = null,
-  initialDraft = null,
-  preferredMode,
-  hideModeSwitch = false,
-  headerless = false,
-  onBack,
-  onDraftChange,
-  onComplete,
-}: CodingWorkspaceProps) {
+function CodingWorkspace({ questionId }: CodingWorkspaceProps) {
   const navigate = useNavigate()
-  const draftCallbackRef = useRef(onDraftChange)
-  draftCallbackRef.current = onDraftChange
 
   const [detail, setDetail] = useState<CodingDetail | null>(null)
+  const [reviews, setReviews] = useState<CodingReviewView[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const [language, setLanguage] = useState<CodeLanguage>('JAVA')
-  const [mode, setMode] = useState<CodeMode>('ACM')
-  // 代码按「模式:语言」分别保存,切换模式不会丢失另一边的草稿
-  const [codes, setCodes] = useState<Record<string, string>>({})
+  const [codes, setCodes] = useState<Partial<Record<CodeLanguage, string>>>({})
 
   const [running, setRunning] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [completing, setCompleting] = useState(false)
+  const [reviewing, setReviewing] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [runResult, setRunResult] = useState<CodeRunResult | null>(null)
-  const [submission, setSubmission] = useState<CodingSubmission | null>(null)
-  const [history, setHistory] = useState<CodingSubmission[]>([])
+  const [reviewResult, setReviewResult] = useState<CodingReviewResult | null>(null)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setLoadError(null)
 
-    if (initialDetail) {
-      const initialMode = initialDraft?.mode
-        ?? preferredMode
-        ?? initialDetail.codeModes[0]
-        ?? 'ACM'
-      const starter = starterFor(initialDetail, initialMode)
-      const initialLanguage = initialDraft?.language ?? (starter.JAVA || !starter.PYTHON ? 'JAVA' : 'PYTHON')
-      setDetail(initialDetail)
-      setHistory([])
-      setMode(initialMode)
-      setLanguage(initialLanguage)
-      setCodes({
-        ...starterCodes(initialDetail, initialMode),
-        ...(initialDraft && initialDraft.code
-          ? { [codeKey(initialDraft.mode, initialDraft.language)]: initialDraft.code }
-          : {}),
-      })
-      setLoading(false)
-      return () => {
-        cancelled = true
-      }
-    }
-
-    Promise.all([adapter.getDetail(questionId), adapter.getHistory(questionId)])
-      .then(([coding, submissions]) => {
+    Promise.all([getCodingDetail(questionId), getCodingReviews(questionId)])
+      .then(([coding, history]) => {
         if (cancelled) return
         setDetail(coding)
-        setHistory(submissions)
-        const initialMode = preferredMode ?? coding.codeModes[0] ?? 'ACM'
-        setMode(initialMode)
-        setCodes(starterCodes(coding, initialMode))
-        const starter = starterFor(coding, initialMode)
-        if (!starter.JAVA && starter.PYTHON) {
+        setReviews(history)
+        setCodes({
+          JAVA: coding.starterCode.JAVA ?? '',
+          PYTHON: coding.starterCode.PYTHON ?? '',
+        })
+        if (!coding.starterCode.JAVA && coding.starterCode.PYTHON) {
           setLanguage('PYTHON')
         }
       })
@@ -178,122 +108,88 @@ function CodingWorkspace({
     return () => {
       cancelled = true
     }
-  }, [questionId, adapter, initialDetail, initialDraft, preferredMode])
+  }, [questionId])
 
-  // 提交后轮询判题结果
-  useEffect(() => {
-    if (!submission || !PENDING_STATUSES.includes(submission.status)) return
-    const timer = window.setInterval(async () => {
-      try {
-        const latest = await adapter.poll(submission.id)
-        setSubmission(latest)
-        if (!PENDING_STATUSES.includes(latest.status)) {
-          window.clearInterval(timer)
-          const [nextHistory, nextDetail] = await Promise.all([
-            adapter.getHistory(questionId),
-            adapter.getDetail(questionId),
-          ])
-          setHistory(nextHistory)
-          setDetail(nextDetail)
-        }
-      } catch {
-        // 查询失败继续轮询,直到超时或成功
-      }
-    }, 1200)
-    return () => window.clearInterval(timer)
-  }, [questionId, submission, adapter])
-
-  const code = codes[codeKey(mode, language)] ?? ''
-  const samples = detail?.samples[mode] ?? []
-
-  // 面试页用它做服务端草稿同步,题库页不传
-  useEffect(() => {
-    if (!detail) return
-    draftCallbackRef.current?.({ code, language, mode })
-  }, [code, language, mode, detail])
-  const isFunction = mode === 'LEETCODE'
-  const signatureText = detail?.functionName
-    ? `${detail.returnType ?? 'Object'} ${detail.functionName}(${detail.paramTypes.join(', ')})`
-    : ''
+  const code = codes[language] ?? ''
 
   function changeCode(next: string) {
-    setCodes((prev) => ({ ...prev, [codeKey(mode, language)]: next }))
-  }
-
-  /** 切模式:保留两边代码,只重置换模式和切换语言的空槽位 */
-  function changeMode(next: CodeMode) {
-    if (!detail || next === mode) return
-    setMode(next)
-    setCodes((prev) => ({ ...prev, ...starterCodes(detail, next) }))
-    setRunResult(null)
-    setSubmission(null)
-    setActionError(null)
+    setCodes((prev) => ({ ...prev, [language]: next }))
   }
 
   const run = useCallback(async () => {
-    if (!detail || running || submitting) return
+    if (!detail || running || reviewing) return
     setRunning(true)
     setActionError(null)
-    setRunResult(null)
     try {
-      setRunResult(await adapter.run(questionId, language, code, mode))
+      setRunResult(await runCode(questionId, language, code))
+      setReviewResult(null)
     } catch (e) {
       setActionError(errMessage(e))
     } finally {
       setRunning(false)
     }
-  }, [adapter, code, detail, language, mode, questionId, running, submitting])
+  }, [code, detail, language, questionId, reviewing, running])
 
-  const submit = useCallback(async () => {
-    if (!detail || running || submitting) return
-    setSubmitting(true)
+  const review = useCallback(async () => {
+    if (!detail || running || reviewing) return
+    setReviewing(true)
     setActionError(null)
-    setRunResult(null)
     try {
-      setSubmission(await adapter.submit(questionId, language, code, mode))
+      const result = await reviewCode(questionId, language, code)
+      setReviewResult(result)
+      setRunResult(null)
+      setDetail((prev) => (prev
+        ? { ...prev, status: result.progressStatus }
+        : prev))
+      setReviews((prev) => [
+        {
+          id: result.createdAt ?? String(Date.now()),
+          code,
+          score: result.score,
+          hitPoints: result.hitPoints,
+          missedPoints: result.missedPoints,
+          comment: result.comment,
+          suggestion: result.suggestion,
+          createdAt: result.createdAt,
+        },
+        ...prev,
+      ])
     } catch (e) {
       setActionError(errMessage(e))
     } finally {
-      setSubmitting(false)
+      setReviewing(false)
     }
-  }, [adapter, code, detail, language, mode, questionId, running, submitting])
-
-  const judging = submission != null && PENDING_STATUSES.includes(submission.status)
+  }, [code, detail, language, questionId, reviewing, running])
 
   return (
-    <div className={`flex h-full flex-col overflow-hidden ${headerless ? 'bg-transparent' : 'bg-slate-50'}`}>
-      {!headerless && (
-        <header className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5 md:px-6">
-          <button
-            type="button"
-            onClick={() => {
-              if (onBack) onBack()
-              else navigate('/questions/coding')
-            }}
-            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-          >
-            <ArrowLeft size={14} />
-            返回编程题
-          </button>
-          {detail && (
-            <div className="ml-1 flex min-w-0 flex-wrap items-center gap-1.5">
-              <h1 className="truncate text-sm font-semibold text-slate-800">{detail.title}</h1>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
-                {detail.domain}
-              </span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] ${difficultyClass(detail.difficulty)}`}>
-                {difficultyLabel(detail.difficulty)}
-              </span>
-              <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
-                {isFunction ? '力扣模式' : 'ACM 模式'}
-              </span>
-              <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
-                {detail.accepted ? '已通过' : detail.status === 'WRONG' ? '待通过' : '未作答'}
-              </span>
-            </div>
-          )}
-        </header>
-      )}
+    <div className="flex h-full flex-col overflow-hidden bg-slate-50">
+      <header className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5 md:px-6">
+        <button
+          type="button"
+          onClick={() => navigate('/questions/coding')}
+          className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+        >
+          <ArrowLeft size={14} />
+          返回编程题
+        </button>
+        {detail && (
+          <div className="ml-1 flex min-w-0 flex-wrap items-center gap-1.5">
+            <h1 className="truncate text-sm font-semibold text-slate-800">{detail.title}</h1>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+              {detail.domain}
+            </span>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] ${difficultyClass(detail.difficulty)}`}>
+              {difficultyLabel(detail.difficulty)}
+            </span>
+            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
+              自由运行
+            </span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+              {PROGRESS_LABELS[detail.status]}
+            </span>
+          </div>
+        )}
+      </header>
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-xs text-slate-400">
@@ -306,10 +202,7 @@ function CodingWorkspace({
           <p className="text-sm text-slate-600">{loadError || '题目不存在或已下架'}</p>
           <button
             type="button"
-            onClick={() => {
-              if (onBack) onBack()
-              else navigate('/questions/coding')
-            }}
+            onClick={() => navigate('/questions/coding')}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600"
           >
             返回编程题
@@ -317,108 +210,49 @@ function CodingWorkspace({
         </div>
       ) : (
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:grid-cols-2 lg:overflow-hidden">
-          {/* 左侧:题面与例题 */}
+          {/* 左侧:题面与点评历史 */}
           <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div className="flex shrink-0 items-center gap-1.5 border-b border-slate-200 px-4 py-2.5">
               <FileText size={14} className="text-brand-600" />
               <p className="text-xs font-semibold text-slate-700">题目描述</p>
               <span className="ml-auto text-[11px] text-slate-400">
-                时限 {detail.timeLimitMs || 2000}ms · 内存 {detail.memoryLimitMb || 256}MB
+                时限 {detail.timeLimitMs || 5000}ms · 内存 {detail.memoryLimitMb || 256}MB
               </span>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
               <MarkdownContent content={normalizeQuestionContent(detail.content)} />
 
-              <div className="mt-6">
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                  <Terminal size={13} className="text-brand-600" />
-                  示例
-                  <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-normal text-slate-500">
-                    {samples.length} 组
-                  </span>
+              <div className="mt-4 rounded-lg border border-brand-100 bg-brand-50/60 px-3 py-2.5">
+                <p className="flex items-center gap-1.5 text-[11px] font-medium text-brand-700">
+                  <Lightbulb size={12} />
+                  开放式编码
                 </p>
-
-                {isFunction && (
-                  <div className="mt-2.5 rounded-lg border border-brand-100 bg-brand-50/60 px-3 py-2.5">
-                    <p className="text-[11px] font-medium text-brand-700">只需实现函数，不用写 main</p>
-                    <pre className="mt-1.5 overflow-x-auto whitespace-pre-wrap rounded-md bg-white px-2.5 py-1.5 font-mono text-xs leading-6 text-slate-700">
-                      {signatureText}
-                    </pre>
-                    <p className="mt-1.5 text-[11px] leading-5 text-slate-500">
-                      判题器会自动读入参数并调用它，返回值按 JSON 与期望输出比较。
-                    </p>
-                  </div>
-                )}
-
-                <div className="mt-2.5 space-y-3">
-                  {samples.length === 0 && (
-                    <p className="rounded-lg border border-dashed border-slate-200 px-3 py-3 text-center text-[11px] text-slate-400">
-                      该题暂未提供公开示例
-                    </p>
-                  )}
-                  {samples.map((sample, index) => (
-                    <div key={index} className="overflow-hidden rounded-lg border border-slate-200">
-                      <p className="border-b border-slate-100 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-500">
-                        示例 {index + 1}
-                      </p>
-                      <div className="divide-y divide-slate-100">
-                        <SampleBlock
-                          label={isFunction ? '参数' : '输入'}
-                          hint={isFunction ? 'JSON 数组，按签名顺序' : undefined}
-                          value={sample.input || '(空)'}
-                        />
-                        <SampleBlock
-                          label={isFunction ? '期望返回值' : '期望输出'}
-                          value={sample.expectedOutput}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <p className="mt-1 text-[11px] leading-5 text-slate-600">
+                  平台不提供测试用例。请在自己的 main 里构造输入、调用解法，用控制台输出结果；
+                  点「AI 点评」会检查逻辑是否正确、有没有漏掉的边界或潜在 bug。
+                </p>
               </div>
 
-              {history.length > 0 && (
+              {reviews.length > 0 && (
                 <div className="mt-6">
                   <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                     <Clock size={13} className="text-slate-400" />
-                    提交历史（最近 {history.length} 次）
+                    点评历史（最近 {reviews.length} 次）
                   </p>
                   <div className="mt-2 space-y-1.5">
-                    {history.map((item) => (
-                      <SubmissionRow key={item.id} item={item} />
+                    {reviews.map((item) => (
+                      <ReviewRow key={item.id} item={item} />
                     ))}
                   </div>
                 </div>
               )}
-
-              <p className="mt-6 border-t border-dashed border-slate-200 pt-3 text-[11px] leading-5 text-slate-400">
-                相似题目、题解与评论功能正在开发中。
-              </p>
             </div>
           </section>
 
           {/* 右侧:编辑器 + 操作 + 结果 */}
           <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 px-3 py-2">
-              <div className="flex rounded-lg bg-slate-100 p-0.5">
-                {(detail.codeModes.length > 0 ? detail.codeModes : (['ACM'] as CodeMode[])).map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => changeMode(item)}
-                    disabled={hideModeSwitch}
-                    className={`rounded-md px-2 py-1 text-[11px] transition ${
-                      mode === item
-                        ? 'bg-white font-medium text-brand-700 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                    } ${hideModeSwitch && mode !== item ? 'hidden' : ''}`}
-                  >
-                    {item === 'LEETCODE' ? '力扣模式' : 'ACM 模式'}
-                  </button>
-                ))}
-              </div>
-
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as CodeLanguage)}
@@ -432,53 +266,30 @@ function CodingWorkspace({
               </select>
 
               <span className="text-[11px] text-slate-400">
-                {isFunction
-                  ? language === 'JAVA'
-                    ? 'Solution.java · 只写 class Solution，不用 main'
-                    : 'solution.py · 只写 class Solution，不用 main'
-                  : language === 'JAVA'
-                    ? 'Main.java · 类名必须是 Main，从 stdin 读入'
-                    : 'main.py · 从 stdin 读入'}
+                {language === 'JAVA'
+                  ? 'Main.java · 完整程序，自己构造输入'
+                  : 'main.py · 完整程序，自己构造输入'}
               </span>
 
               <div className="ml-auto flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => void run()}
-                  disabled={running || submitting || judging}
+                  disabled={running || reviewing}
                   className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
                 >
                   {running ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
-                  运行样例
+                  运行
                 </button>
                 <button
                   type="button"
-                  onClick={() => void submit()}
-                  disabled={running || submitting || judging}
+                  onClick={() => void review()}
+                  disabled={running || reviewing}
                   className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                 >
-                  {submitting || judging ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-                  {judging ? '判题中…' : '提交'}
+                  {reviewing ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                  {reviewing ? '点评中…' : 'AI 点评'}
                 </button>
-                {onComplete && submission && !PENDING_STATUSES.includes(submission.status) && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (completing) return
-                      setCompleting(true)
-                      try {
-                        await onComplete(submission)
-                      } finally {
-                        setCompleting(false)
-                      }
-                    }}
-                    disabled={completing}
-                    className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                  >
-                    {completing ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
-                    完成本题
-                  </button>
-                )}
               </div>
             </div>
 
@@ -508,13 +319,13 @@ function CodingWorkspace({
                   <span>{actionError}</span>
                 </div>
               )}
-              {runResult ? (
-                <RunResultView result={runResult} />
-              ) : submission ? (
-                <SubmissionView submission={submission} />
+              {reviewResult ? (
+                <ReviewResultView result={reviewResult} />
+              ) : runResult ? (
+                <ConsoleView result={runResult} />
               ) : (
                 <p className="py-2 text-[11px] text-slate-400">
-                  点“运行样例”只跑例题，点“提交”会跑全部用例并记录到提交历史；未通过自动进错题本。
+                  点「运行」执行代码并查看控制台输出；点「AI 点评」会请求大模型检查逻辑与边界，并记录做题进度。
                 </p>
               )}
             </div>
@@ -523,24 +334,6 @@ function CodingWorkspace({
       )}
     </div>
   )
-}
-
-function codeKey(mode: CodeMode, language: CodeLanguage) {
-  return `${mode}:${language}`
-}
-
-/** 该模式下的初始代码,力扣模式取 starterCodeFunction */
-function starterFor(detail: CodingDetail, mode: CodeMode) {
-  return mode === 'LEETCODE' ? detail.starterCodeFunction : detail.starterCode
-}
-
-/** 把某个模式的两种语言初始代码展开成 codeKey 索引 */
-function starterCodes(detail: CodingDetail, mode: CodeMode): Record<string, string> {
-  const starter = starterFor(detail, mode)
-  return {
-    [codeKey(mode, 'JAVA')]: starter.JAVA ?? '',
-    [codeKey(mode, 'PYTHON')]: starter.PYTHON ?? '',
-  }
 }
 
 /**
@@ -562,117 +355,126 @@ function normalizeQuestionContent(content: string): string {
     .join('\n')
 }
 
-function SampleBlock({ label, hint, value }: { label: string; hint?: string; value: string }) {
-  return (
-    <div className="px-3 py-2">
-      <p className="text-[11px] text-slate-400">
-        <span className="font-medium text-slate-500">{label}</span>
-        {hint && <span className="ml-1">{hint}</span>}
-      </p>
-      <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded-md bg-slate-50 px-2.5 py-1.5 font-mono text-xs leading-6 text-slate-800">
-        {value}
-      </pre>
-    </div>
-  )
-}
-
-function RunResultView({ result }: { result: CodeRunResult }) {
+function ReviewResultView({ result }: { result: CodingReviewResult }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <StatusChip status={result.status} />
-        <span className="text-[11px] text-slate-500">
-          通过 {result.passed} / {result.total}
-        </span>
+        <RunStatusChip status={result.runStatus} />
+        <span className="text-[11px] text-slate-500">{PROGRESS_LABELS[result.progressStatus]}</span>
         {result.runtimeMs > 0 && (
           <span className="text-[11px] text-slate-400">{result.runtimeMs}ms</span>
         )}
-      </div>
-
-      {result.errorMessage && (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-900 px-3 py-2 font-mono text-[11px] leading-5 text-rose-200">
-          {result.errorMessage}
-        </pre>
-      )}
-
-      {result.cases.length > 0 && (
-        <div className="mt-2 space-y-1.5">
-          {result.cases.map((item) => (
-            <div
-              key={item.index}
-              className={`rounded-lg border px-3 py-2 ${
-                item.passed ? 'border-brand-100 bg-brand-50/50' : 'border-rose-100 bg-rose-50/50'
-              }`}
-            >
-              <p className="flex items-center gap-1 text-[11px] font-medium text-slate-600">
-                {item.passed ? (
-                  <CheckCircle2 size={12} className="text-brand-600" />
-                ) : (
-                  <XCircle size={12} className="text-rose-500" />
-                )}
-                示例 {item.index} · {item.message}
-              </p>
-              <div className="mt-1 grid gap-1 md:grid-cols-3">
-                <Field label="输入" value={item.input} />
-                <Field label="期望" value={item.expectedOutput} />
-                <Field label="实际" value={item.actualOutput || '(无输出)'} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function SubmissionView({ submission }: { submission: CodingSubmission }) {
-  const pending = PENDING_STATUSES.includes(submission.status)
-  return (
-    <div>
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusChip status={submission.status} />
-        <span className="text-[11px] text-slate-500">
-          通过 {submission.passed} / {submission.total}
+        <span className="ml-auto rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+          AI 评分 {result.score} / 5
         </span>
-        {submission.runtimeMs != null && (
-          <span className="text-[11px] text-slate-400">{submission.runtimeMs}ms</span>
-        )}
-        {submission.createdAt && <span className="text-[11px] text-slate-400">{submission.createdAt}</span>}
       </div>
-      {pending && (
-        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500">
-          <Loader2 size={12} className="animate-spin" />
-          正在排队判题，结果会自动刷新…
+
+      {result.comment && (
+        <p className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+          {result.comment}
         </p>
       )}
-      {submission.errorMessage && (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-900 px-3 py-2 font-mono text-[11px] leading-5 text-rose-200">
-          {submission.errorMessage}
+
+      <div className="mt-2 grid gap-2 md:grid-cols-2">
+        <PointList
+          title="已处理"
+          tone="ok"
+          points={result.hitPoints}
+          empty="模型暂未识别到明确的亮点"
+        />
+        <PointList
+          title="需要注意的边界 / 风险"
+          tone="warn"
+          points={result.missedPoints}
+          empty="没有发现明显的遗漏边界"
+        />
+      </div>
+
+      {result.suggestion && (
+        <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-brand-100 bg-brand-50/50 px-3 py-2 text-xs text-brand-800">
+          <Lightbulb size={13} className="mt-0.5 shrink-0" />
+          <span>{result.suggestion}</span>
+        </p>
+      )}
+
+      <ConsoleView result={result} />
+    </div>
+  )
+}
+
+function PointList({
+  title,
+  tone,
+  points,
+  empty,
+}: {
+  title: string
+  tone: 'ok' | 'warn'
+  points: string[]
+  empty: string
+}) {
+  const toneClass = tone === 'ok' ? 'text-brand-700' : 'text-amber-700'
+  const Icon = tone === 'ok' ? CheckCircle2 : XCircle
+  return (
+    <div className="rounded-lg border border-slate-200 px-3 py-2">
+      <p className={`flex items-center gap-1 text-[11px] font-medium ${toneClass}`}>
+        <Icon size={12} />
+        {title}
+      </p>
+      {points.length > 0 ? (
+        <ul className="mt-1 space-y-0.5">
+          {points.map((point, index) => (
+            <li key={index} className="flex gap-1 text-[11px] leading-5 text-slate-600">
+              <span className="text-slate-300">·</span>
+              <span>{point}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1 text-[11px] text-slate-400">{empty}</p>
+      )}
+    </div>
+  )
+}
+
+function ConsoleView({ result }: { result: CodeRunResult }) {
+  const hasStderr = result.stderr.trim().length > 0
+  return (
+    <div className="mt-2">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600">
+        <Terminal size={12} className="text-slate-400" />
+        控制台输出
+        <span className="ml-1 text-slate-400">退出码 {result.exitCode}</span>
+      </p>
+      <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-900 px-3 py-2 font-mono text-[11px] leading-5 text-slate-100">
+        {result.stdout.trim() || '(无标准输出)'}
+      </pre>
+      {hasStderr && (
+        <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-900 px-3 py-2 font-mono text-[11px] leading-5 text-rose-200">
+          {result.stderr}
         </pre>
       )}
     </div>
   )
 }
 
-function SubmissionRow({ item }: { item: CodingSubmission }) {
+function ReviewRow({ item }: { item: CodingReviewView }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
-      <StatusChip status={item.status} />
-      <span className="text-[11px] text-slate-500">
-        {item.passed} / {item.total}
-      </span>
-      <span className="text-[11px] text-slate-400">{LANGUAGE_LABELS[item.language] ?? item.language}</span>
-      <span className="ml-auto text-[11px] text-slate-400">{item.createdAt ?? ''}</span>
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+          {item.score} / 5
+        </span>
+        <span className="ml-auto text-[11px] text-slate-400">{item.createdAt ?? ''}</span>
+      </div>
+      {item.comment && <p className="mt-1 text-[11px] leading-5 text-slate-600">{item.comment}</p>}
     </div>
   )
 }
 
-function StatusChip({ status }: { status: CodingStatus }) {
-  const tone: Record<CodingStatus, string> = {
-    PENDING: 'bg-slate-100 text-slate-500',
-    RUNNING: 'bg-amber-50 text-amber-700',
-    ACCEPTED: 'bg-brand-50 text-brand-700',
-    WRONG_ANSWER: 'bg-rose-50 text-rose-600',
+function RunStatusChip({ status }: { status: FreeRunStatus }) {
+  const tone: Record<FreeRunStatus, string> = {
+    SUCCESS: 'bg-brand-50 text-brand-700',
     COMPILE_ERROR: 'bg-rose-50 text-rose-600',
     RUNTIME_ERROR: 'bg-rose-50 text-rose-600',
     TIME_LIMIT_EXCEEDED: 'bg-amber-50 text-amber-700',
@@ -680,21 +482,9 @@ function StatusChip({ status }: { status: CodingStatus }) {
   }
   return (
     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${tone[status]}`}>
-      {STATUS_LABELS[status] ?? status}
+      {RUN_STATUS_LABELS[status] ?? status}
     </span>
   )
 }
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded bg-white px-2 py-1">
-      <p className="text-[10px] text-slate-400">{label}</p>
-      <pre className="mt-0.5 max-h-24 overflow-auto whitespace-pre-wrap font-mono text-[11px] text-slate-700">
-        {value}
-      </pre>
-    </div>
-  )
-}
-
 
 export default CodingWorkspace

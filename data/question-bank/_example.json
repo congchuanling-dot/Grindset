@@ -2,7 +2,7 @@
   "questions": [
     {
       "title": "两数之和",
-      "content": "## 题目描述\n\n给定一个整数数组 `nums` 和一个整数目标值 `target`，请你在该数组中找出和为目标值 `target` 的两个整数，并返回它们的数组下标。\n\n题目保证每种输入只会对应一个答案，同一个元素不能重复使用。返回的下标必须按升序排列（`i < j`）。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,7,11,15], target = 9`\n\n输出：`[0,1]`\n\n解释：`nums[0] + nums[1] = 2 + 7 = 9`。\n\n**示例 2**\n\n输入：`nums = [3,2,4], target = 6`\n\n输出：`[1,2]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `target`，`n` 表示数组长度；\n- 第二行 `n` 个整数，表示数组 `nums`；\n- 输出一行两个整数 `i j`（`i < j`），表示答案下标。\n\n## 提示\n\n- `2 <= nums.length <= 10^4`\n- `-10^9 <= nums[i], target <= 10^9`\n- 只存在一个有效答案\n\n> 力扣模式下只需实现 `twoSum` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个整数数组 `nums` 和一个整数目标值 `target`，请你在该数组中找出和为目标值 `target` 的两个整数，并返回它们的数组下标。\n\n题目保证每种输入只会对应一个答案，同一个元素不能重复使用。返回的下标必须按升序排列（`i < j`）。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,7,11,15], target = 9`\n\n输出：`[0,1]`\n\n解释：`nums[0] + nums[1] = 2 + 7 = 9`。\n\n**示例 2**\n\n输入：`nums = [3,2,4], target = 6`\n\n输出：`[1,2]`\n\n## 提示\n\n- `2 <= nums.length <= 10^4`\n- `-10^9 <= nums[i], target <= 10^9`\n- 只存在一个有效答案\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
@@ -12,28 +12,12 @@
       "kpNames": ["哈希表", "数组"],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/two-sum/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "twoSum",
-      "paramTypes": ["int[]", "int"],
-      "returnType": "int[]",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n target，第二行 n 个整数\n        // TODO 输出 i j（i < j）\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n target，第二行 n 个整数\n    # TODO 输出 i j（i < j）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // TODO\n        return new int[]{0, 0};\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[2,7,11,15],9]", "expectedOutput": "[0,1]", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[3,2,4],6]", "expectedOutput": "[1,2]", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[3,3],6]", "expectedOutput": "[0,1]", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4 9\n2 7 11 15", "expectedOutput": "0 1", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3 6\n3 2 4", "expectedOutput": "1 2", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "2 6\n3 3", "expectedOutput": "0 1", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     }
   ]
 }

@@ -2,487 +2,393 @@
   "questions": [
     {
       "title": "移动零",
-      "content": "## 题目描述\n\n给定一个整数数组 `nums`，请把所有 `0` 移动到数组末尾，同时保证所有非零元素的相对顺序保持不变。\n\n例如 `[0,1,0,3,12]` 处理后变成 `[1,3,12,0,0]`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n0 1 0 3 12\n```\n\n输出：\n\n```\n1 3 12 0 0\n```\n\n**示例 2**\n\n输入：\n\n```\n3\n0 0 1\n```\n\n输出：\n\n```\n1 0 0\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个整数，用空格分隔；\n- 输出一行 `n` 个整数：先按原相对顺序输出所有非零元素，再输出全部 `0`。\n\n## 提示\n\n- `1 <= n <= 10^4`\n- `-10^9 <= nums[i] <= 10^9`\n- 建议用双指针原地移动后再一次性输出。",
+      "content": "## 题目描述\n\n给定一个整数数组 `nums`，请把所有 `0` 移动到数组末尾，同时保证所有非零元素的相对顺序保持不变。\n\n例如 `[0,1,0,3,12]` 处理后变成 `[1,3,12,0,0]`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n0 1 0 3 12\n```\n\n输出：\n\n```\n1 3 12 0 0\n```\n\n**示例 2**\n\n输入：\n\n```\n3\n0 0 1\n```\n\n输出：\n\n```\n1 0 0\n```\n\n## 提示\n\n- `1 <= n <= 10^4`\n- `-10^9 <= nums[i] <= 10^9`\n- 建议用双指针原地移动后再一次性输出。\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "双指针",
       "referenceAnswer": "用一个写指针 `k` 指向下一个非零元素应该放置的位置。遍历数组，遇到非零元素就把它写到 `nums[k]` 并让 `k` 加一；遍历结束后把 `k` 及之后的位置全部置 0。时间复杂度 O(n)，空间复杂度 O(1)，且非零元素相对顺序不变。",
-      "keyPoints": ["写指针", "原地移动", "保持相对顺序"],
-      "kpNames": ["双指针", "数组"],
+      "keyPoints": [
+        "写指针",
+        "原地移动",
+        "保持相对顺序"
+      ],
+      "kpNames": [
+        "双指针",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/move-zeroes/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个整数\n        // TODO 把 0 移到末尾并输出一行 n 个整数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是数组\n    # TODO 把 0 移到末尾并输出一行 n 个整数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "5\n0 1 0 3 12", "expectedOutput": "1 3 12 0 0", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3\n0 0 1", "expectedOutput": "1 0 0", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n0", "expectedOutput": "0", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n1 2 3 4", "expectedOutput": "1 2 3 4", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "4\n4 0 5 0", "expectedOutput": "4 5 0 0", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "盛最多水的容器",
-      "content": "## 题目描述\n\n给定一个长度为 `n` 的整数数组 `height`，第 `i` 条线的两个端点是 `(i, 0)` 和 `(i, height[i])`。从中选出两条线，与 x 轴一起围成一个容器，求容器能容纳的最大水量。\n\n容器容量 = `min(height[i], height[j]) * (j - i)`，其中 `i < j`。\n\n## 示例\n\n**示例 1**\n\n输入：`height = [1,8,6,2,5,4,8,3,7]`\n\n输出：`49`\n\n解释：取下标 1 与 8 的两条线，容量为 `min(8,7) * 7 = 49`。\n\n**示例 2**\n\n输入：`height = [1,1]`\n\n输出：`1`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个整数 `height[i]`，用空格分隔；\n- 输出一个整数，表示最大容量。\n\n## 提示\n\n- `2 <= n <= 10^5`\n- `0 <= height[i] <= 10^4`\n\n> 力扣模式下只需实现 `maxArea` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个长度为 `n` 的整数数组 `height`，第 `i` 条线的两个端点是 `(i, 0)` 和 `(i, height[i])`。从中选出两条线，与 x 轴一起围成一个容器，求容器能容纳的最大水量。\n\n容器容量 = `min(height[i], height[j]) * (j - i)`，其中 `i < j`。\n\n## 示例\n\n**示例 1**\n\n输入：`height = [1,8,6,2,5,4,8,3,7]`\n\n输出：`49`\n\n解释：取下标 1 与 8 的两条线，容量为 `min(8,7) * 7 = 49`。\n\n**示例 2**\n\n输入：`height = [1,1]`\n\n输出：`1`\n\n## 提示\n\n- `2 <= n <= 10^5`\n- `0 <= height[i] <= 10^4`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "双指针",
       "referenceAnswer": "左右指针从两端向中间收缩，每次用 `min(height[l], height[r]) * (r - l)` 更新答案，然后移动高度较小的一端：宽度只会变小，只有把短板换成长板才可能得到更大容量。时间复杂度 O(n)，空间复杂度 O(1)。",
-      "keyPoints": ["左右指针", "移动短边", "贪心"],
-      "kpNames": ["双指针", "贪心"],
+      "keyPoints": [
+        "左右指针",
+        "移动短边",
+        "贪心"
+      ],
+      "kpNames": [
+        "双指针",
+        "贪心"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/container-with-most-water/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "maxArea",
-      "paramTypes": ["int[]"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个高度\n        // TODO 输出最大容量\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是高度\n    # TODO 输出最大容量\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int maxArea(int[] height) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def maxArea(self, height: List[int]) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[1,8,6,2,5,4,8,3,7]]", "expectedOutput": "49", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[1,1]]", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[2,3,4,5,18,17,6]]", "expectedOutput": "17", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "9\n1 8 6 2 5 4 8 3 7", "expectedOutput": "49", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "2\n1 1", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "7\n2 3 4 5 18 17 6", "expectedOutput": "17", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "三数之和",
-      "content": "## 题目描述\n\n给定一个整数数组 `nums`，找出所有和为 `0` 且下标互不相同的三元组 `[a, b, c]`，返回所有不重复的三元组。\n\n**输出顺序规则（必须遵守）**：\n\n1. 每个三元组内部按升序排列，即 `a <= b <= c`；\n2. 所有三元组之间按字典序升序排列：先比较第一个元素，相同再比较第二个，再比较第三个。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [-1,0,1,2,-1,-4]`\n\n输出：`[[-1,-1,2],[-1,0,1]]`\n\n**示例 2**\n\n输入：`nums = [0,0,0]`\n\n输出：`[[0,0,0]]`\n\n**示例 3**\n\n输入：`nums = [0,1,1]`\n\n输出：`[]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个整数；\n- 输出第一行一个整数 `k`，表示三元组个数；随后 `k` 行，每行三个升序整数，整体按字典序升序；`k = 0` 时只输出 `0`。\n\n## 提示\n\n- `3 <= n <= 3000`\n- `-10^5 <= nums[i] <= 10^5`\n- 答案中不能包含重复的三元组\n\n> 力扣模式下只需实现 `threeSum` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个整数数组 `nums`，找出所有和为 `0` 且下标互不相同的三元组 `[a, b, c]`，返回所有不重复的三元组。\n\n**输出顺序规则（必须遵守）**：\n\n1. 每个三元组内部按升序排列，即 `a <= b <= c`；\n2. 所有三元组之间按字典序升序排列：先比较第一个元素，相同再比较第二个，再比较第三个。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [-1,0,1,2,-1,-4]`\n\n输出：`[[-1,-1,2],[-1,0,1]]`\n\n**示例 2**\n\n输入：`nums = [0,0,0]`\n\n输出：`[[0,0,0]]`\n\n**示例 3**\n\n输入：`nums = [0,1,1]`\n\n输出：`[]`\n\n## 提示\n\n- `3 <= n <= 3000`\n- `-10^5 <= nums[i] <= 10^5`\n- 答案中不能包含重复的三元组\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "双指针",
       "referenceAnswer": "先对数组排序。枚举第一个数 `nums[i]`，在它右侧用左右双指针寻找两数之和等于 `-nums[i]`：和偏小左指针右移，偏大右指针左移，命中后两端都跳过相同值。外层遇到与上一个相同的 `nums[i]` 直接跳过，保证三元组不重复。时间复杂度 O(n^2)，空间复杂度 O(1)（不计结果）。",
-      "keyPoints": ["排序后双指针", "去重", "字典序输出"],
-      "kpNames": ["双指针", "排序"],
+      "keyPoints": [
+        "排序后双指针",
+        "去重",
+        "字典序输出"
+      ],
+      "kpNames": [
+        "双指针",
+        "排序"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/3sum/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "threeSum",
-      "paramTypes": ["int[]"],
-      "returnType": "List<List<Integer>>",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个整数\n        // TODO 输出 k 以及 k 行三元组（每行升序，整体字典序升序）\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是数组\n    # TODO 输出 k 以及 k 行三元组（每行升序，整体字典序升序）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> threeSum(int[] nums) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def threeSum(self, nums: List[int]) -> List[List[int]]:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[-1,0,1,2,-1,-4]]", "expectedOutput": "[[-1,-1,2],[-1,0,1]]", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[0,0,0]]", "expectedOutput": "[[0,0,0]]", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[-2,0,1,1,2]]", "expectedOutput": "[[-2,0,2],[-2,1,1]]", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "6\n-1 0 1 2 -1 -4", "expectedOutput": "2\n-1 -1 2\n-1 0 1", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3\n0 0 0", "expectedOutput": "1\n0 0 0", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n0 1 1", "expectedOutput": "0", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "接雨水",
-      "content": "## 题目描述\n\n给定 `n` 个非负整数表示宽度均为 1 的柱子的高度，计算按此排列的柱子在雨天能接住多少雨水。\n\n位置 `i` 的积水量为 `min(左侧最高柱, 右侧最高柱) - height[i]`（结果不小于 0），把所有位置的积水量加起来就是答案。\n\n## 示例\n\n**示例 1**\n\n输入：`height = [0,1,0,2,1,0,1,3,2,1,2,1]`\n\n输出：`6`\n\n**示例 2**\n\n输入：`height = [4,2,0,3,2,5]`\n\n输出：`9`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 第二行 `n` 个非负整数，表示每根柱子的高度；\n- 输出一个整数，表示能接住的雨水总量。\n\n## 提示\n\n- `1 <= n <= 2 * 10^4`\n- `0 <= height[i] <= 10^5`\n\n> 力扣模式下只需实现 `trap` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定 `n` 个非负整数表示宽度均为 1 的柱子的高度，计算按此排列的柱子在雨天能接住多少雨水。\n\n位置 `i` 的积水量为 `min(左侧最高柱, 右侧最高柱) - height[i]`（结果不小于 0），把所有位置的积水量加起来就是答案。\n\n## 示例\n\n**示例 1**\n\n输入：`height = [0,1,0,2,1,0,1,3,2,1,2,1]`\n\n输出：`6`\n\n**示例 2**\n\n输入：`height = [4,2,0,3,2,5]`\n\n输出：`9`\n\n## 提示\n\n- `1 <= n <= 2 * 10^4`\n- `0 <= height[i] <= 10^5`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 3,
       "domain": "双指针",
       "referenceAnswer": "每个位置的积水量由左右两侧最高柱中较低的那个决定。可以预处理前缀最大值与后缀最大值数组，逐列累加；也可以用左右双指针维护 `leftMax` 与 `rightMax`，每次处理较低的一侧并更新对应最大高度。时间复杂度 O(n)，空间可做到 O(1)。",
-      "keyPoints": ["左右最大高度", "逐列累加", "双指针优化空间"],
-      "kpNames": ["双指针", "单调性"],
+      "keyPoints": [
+        "左右最大高度",
+        "逐列累加",
+        "双指针优化空间"
+      ],
+      "kpNames": [
+        "双指针",
+        "单调性"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/trapping-rain-water/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "trap",
-      "paramTypes": ["int[]"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个高度\n        // TODO 输出接住的雨水总量\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是高度\n    # TODO 输出接住的雨水总量\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int trap(int[] height) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def trap(self, height: List[int]) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[0,1,0,2,1,0,1,3,2,1,2,1]]", "expectedOutput": "6", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[4,2,0,3,2,5]]", "expectedOutput": "9", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[3,0,0,2]]", "expectedOutput": "4", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "12\n0 1 0 2 1 0 1 3 2 1 2 1", "expectedOutput": "6", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "6\n4 2 0 3 2 5", "expectedOutput": "9", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "4\n3 0 0 2", "expectedOutput": "4", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "验证回文串",
-      "content": "## 题目描述\n\n给定一个字符串 `s`，判断它是否为回文串。判断时只考虑字母和数字字符，其它字符全部忽略，并且不区分大小写。\n\n空字符串视为回文串。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"A man, a plan, a canal: Panama\"`\n\n输出：`true`\n\n解释：去掉非字母数字并统一小写后为 `amanaplanacanalpanama`，是回文串。\n\n**示例 2**\n\n输入：`s = \"race a car\"`\n\n输出：`false`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行字符串（可能包含空格和标点，读到行末为止）；\n- 输出 `true` 或 `false`。\n\n## 提示\n\n- `0 <= s.length <= 2 * 10^5`\n- `s` 只包含可打印的 ASCII 字符\n\n> 力扣模式下只需实现 `isPalindrome` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个字符串 `s`，判断它是否为回文串。判断时只考虑字母和数字字符，其它字符全部忽略，并且不区分大小写。\n\n空字符串视为回文串。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"A man, a plan, a canal: Panama\"`\n\n输出：`true`\n\n解释：去掉非字母数字并统一小写后为 `amanaplanacanalpanama`，是回文串。\n\n**示例 2**\n\n输入：`s = \"race a car\"`\n\n输出：`false`\n\n## 提示\n\n- `0 <= s.length <= 2 * 10^5`\n- `s` 只包含可打印的 ASCII 字符\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "双指针",
       "referenceAnswer": "左右双指针分别从两端向中间移动：遇到非字母数字字符就跳过，其余字符统一转小写后比较，一旦不同立即返回 false。指针相遇即说明是回文串。时间复杂度 O(n)，空间复杂度 O(1)。",
-      "keyPoints": ["跳过非字母数字", "忽略大小写", "左右指针"],
-      "kpNames": ["双指针", "字符串"],
+      "keyPoints": [
+        "跳过非字母数字",
+        "忽略大小写",
+        "左右指针"
+      ],
+      "kpNames": [
+        "双指针",
+        "字符串"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/valid-palindrome/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "isPalindrome",
-      "paramTypes": ["String"],
-      "returnType": "boolean",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 读入一整行字符串（可能含空格）\n        String s = sc.hasNextLine() ? sc.nextLine() : \"\";\n        // TODO 输出 true 或 false\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    s = sys.stdin.readline().strip()\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public boolean isPalindrome(String s) {\n        // TODO\n        return false;\n    }\n}",
-        "PYTHON": "class Solution:\n    def isPalindrome(self, s: str) -> bool:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"A man, a plan, a canal: Panama\"]", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"race a car\"]", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"0P\"]", "expectedOutput": "false", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "A man, a plan, a canal: Panama", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "race a car", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "0P", "expectedOutput": "false", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "判断子序列",
-      "content": "## 题目描述\n\n给定两个字符串 `s` 和 `t`，判断 `s` 是否为 `t` 的子序列。\n\n子序列指从 `t` 中删除若干（可以为 0 个）字符、且不改变剩余字符相对位置后得到的新字符串。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"abc\", t = \"ahbgdc\"`\n\n输出：`true`\n\n**示例 2**\n\n输入：`s = \"axc\", t = \"ahbgdc\"`\n\n输出：`false`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个字符串 `s`；\n- 第二行一个字符串 `t`；\n- 输出 `true` 或 `false`。\n\n## 提示\n\n- `1 <= s.length <= 100`\n- `1 <= t.length <= 10^4`\n- 两个字符串都只包含小写英文字母\n\n> 力扣模式下只需实现 `isSubsequence` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定两个字符串 `s` 和 `t`，判断 `s` 是否为 `t` 的子序列。\n\n子序列指从 `t` 中删除若干（可以为 0 个）字符、且不改变剩余字符相对位置后得到的新字符串。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"abc\", t = \"ahbgdc\"`\n\n输出：`true`\n\n**示例 2**\n\n输入：`s = \"axc\", t = \"ahbgdc\"`\n\n输出：`false`\n\n## 提示\n\n- `1 <= s.length <= 100`\n- `1 <= t.length <= 10^4`\n- 两个字符串都只包含小写英文字母\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "双指针",
       "referenceAnswer": "用指针 `i` 指向 `s`，另一个指针 `j` 顺序扫描 `t`。当 `t[j] == s[i]` 时让 `i` 前进一位，扫描结束后判断 `i` 是否已经到达 `s` 末尾即可。时间复杂度 O(|t|)，空间复杂度 O(1)。",
-      "keyPoints": ["贪心匹配", "单次扫描", "双指针"],
-      "kpNames": ["双指针", "字符串"],
+      "keyPoints": [
+        "贪心匹配",
+        "单次扫描",
+        "双指针"
+      ],
+      "kpNames": [
+        "双指针",
+        "字符串"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/is-subsequence/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "isSubsequence",
-      "paramTypes": ["String", "String"],
-      "returnType": "boolean",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 s，第二行 t\n        // TODO 输出 true 或 false\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    lines = sys.stdin.read().split()\n    # lines[0] 是 s，lines[1] 是 t\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public boolean isSubsequence(String s, String t) {\n        // TODO\n        return false;\n    }\n}",
-        "PYTHON": "class Solution:\n    def isSubsequence(self, s: str, t: str) -> bool:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"abc\",\"ahbgdc\"]", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"axc\",\"ahbgdc\"]", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"b\",\"abc\"]", "expectedOutput": "true", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "abc\nahbgdc", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "axc\nahbgdc", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "b\nabc", "expectedOutput": "true", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "两数之和 II - 输入有序数组",
-      "content": "## 题目描述\n\n给定一个**非递减**整数数组 `numbers` 和一个目标值 `target`，请找出两个数使它们的和等于 `target`，并返回它们的下标。\n\n**下标规则（必须遵守）**：下标从 `1` 开始计数，且第一个下标小于第二个下标。题目保证恰好存在一个答案，同一个元素不能使用两次。\n\n## 示例\n\n**示例 1**\n\n输入：`numbers = [2,7,11,15], target = 9`\n\n输出：`[1,2]`\n\n解释：`2 + 7 = 9`，对应 1-based 下标 `1` 和 `2`。\n\n**示例 2**\n\n输入：`numbers = [2,3,4], target = 6`\n\n输出：`[1,3]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `target`；\n- 第二行 `n` 个非递减整数；\n- 输出一行两个整数 `i j`（从 `1` 开始计数，`i < j`）。\n\n## 提示\n\n- `2 <= n <= 3 * 10^4`\n- `-1000 <= numbers[i] <= 1000`\n\n> 力扣模式下只需实现 `twoSum` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个**非递减**整数数组 `numbers` 和一个目标值 `target`，请找出两个数使它们的和等于 `target`，并返回它们的下标。\n\n**下标规则（必须遵守）**：下标从 `1` 开始计数，且第一个下标小于第二个下标。题目保证恰好存在一个答案，同一个元素不能使用两次。\n\n## 示例\n\n**示例 1**\n\n输入：`numbers = [2,7,11,15], target = 9`\n\n输出：`[1,2]`\n\n解释：`2 + 7 = 9`，对应 1-based 下标 `1` 和 `2`。\n\n**示例 2**\n\n输入：`numbers = [2,3,4], target = 6`\n\n输出：`[1,3]`\n\n## 提示\n\n- `2 <= n <= 3 * 10^4`\n- `-1000 <= numbers[i] <= 1000`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "双指针",
       "referenceAnswer": "数组有序，用左右双指针 `l`、`r` 夹逼：两数之和小于 `target` 时说明左端太小，`l` 右移；大于 `target` 时 `r` 左移；相等即命中，返回 `[l + 1, r + 1]`。时间复杂度 O(n)，空间复杂度 O(1)。",
-      "keyPoints": ["左右指针", "1-based 下标", "有序数组"],
-      "kpNames": ["双指针", "有序数组"],
+      "keyPoints": [
+        "左右指针",
+        "1-based 下标",
+        "有序数组"
+      ],
+      "kpNames": [
+        "双指针",
+        "有序数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/two-sum-ii-input-array-is-sorted/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "twoSum",
-      "paramTypes": ["int[]", "int"],
-      "returnType": "int[]",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n target，第二行 n 个整数\n        // TODO 输出 i j（从 1 开始计数，i < j）\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，第二个数是 target，后面 n 个数是数组\n    # TODO 输出 i j（从 1 开始计数，i < j）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int[] twoSum(int[] numbers, int target) {\n        // TODO\n        return new int[]{0, 0};\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def twoSum(self, numbers: List[int], target: int) -> List[int]:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[2,7,11,15],9]", "expectedOutput": "[1,2]", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[2,3,4],6]", "expectedOutput": "[1,3]", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[5,25,75],100]", "expectedOutput": "[2,3]", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4 9\n2 7 11 15", "expectedOutput": "1 2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3 6\n2 3 4", "expectedOutput": "1 3", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3 100\n5 25 75", "expectedOutput": "2 3", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "移除元素",
-      "content": "## 题目描述\n\n给定整数数组 `nums` 和整数 `val`，请**原地**删除所有等于 `val` 的元素，并返回新长度 `k`。\n\n**顺序规则（必须遵守）**：保留下来的元素需要保持它们在原数组中出现的相对顺序。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4 3\n3 2 2 3\n```\n\n输出：\n\n```\n2\n2 2\n```\n\n**示例 2**\n\n输入：\n\n```\n8 2\n0 1 2 2 3 0 4 2\n```\n\n输出：\n\n```\n5\n0 1 3 0 4\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `val`；\n- 第二行 `n` 个整数；\n- 输出第一行一个整数 `k`，第二行 `k` 个整数（`k = 0` 时第二行不输出）。\n\n## 提示\n\n- `1 <= n <= 100`\n- `0 <= nums[i], val <= 100`\n- 要求只用 O(1) 额外空间，保留元素相对顺序",
+      "content": "## 题目描述\n\n给定整数数组 `nums` 和整数 `val`，请**原地**删除所有等于 `val` 的元素，并返回新长度 `k`。\n\n**顺序规则（必须遵守）**：保留下来的元素需要保持它们在原数组中出现的相对顺序。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4 3\n3 2 2 3\n```\n\n输出：\n\n```\n2\n2 2\n```\n\n**示例 2**\n\n输入：\n\n```\n8 2\n0 1 2 2 3 0 4 2\n```\n\n输出：\n\n```\n5\n0 1 3 0 4\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `0 <= nums[i], val <= 100`\n- 要求只用 O(1) 额外空间，保留元素相对顺序\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "双指针",
       "referenceAnswer": "使用快慢指针：`fast` 逐个遍历数组，遇到不等于 `val` 的元素就把它写到 `slow` 位置并让 `slow` 加一；遍历结束后 `slow` 就是新长度 `k`。时间复杂度 O(n)，空间复杂度 O(1)，且保留下来的元素相对顺序不变。",
-      "keyPoints": ["快慢指针", "原地修改", "保留相对顺序"],
-      "kpNames": ["双指针", "数组"],
+      "keyPoints": [
+        "快慢指针",
+        "原地修改",
+        "保留相对顺序"
+      ],
+      "kpNames": [
+        "双指针",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/remove-element/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n 和 val，第二行 n 个整数\n        // TODO 输出 k，以及保留的 k 个整数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，第二个数是 val，后面 n 个数是数组\n    # TODO 输出 k，以及保留的 k 个整数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "4 3\n3 2 2 3", "expectedOutput": "2\n2 2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "8 2\n0 1 2 2 3 0 4 2", "expectedOutput": "5\n0 1 3 0 4", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1 0\n0", "expectedOutput": "0", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3 4\n1 2 3", "expectedOutput": "3\n1 2 3", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "2 1\n1 1", "expectedOutput": "0", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "删除有序数组中的重复项",
-      "content": "## 题目描述\n\n给定一个**非递减**数组 `nums`，请原地删除重复出现的元素，使每个元素只出现一次，并返回去重后的新长度 `k`。\n\n**顺序规则（必须遵守）**：保留下来的元素保持非递减顺序，即占用数组的前 `k` 个位置。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n1 1 2\n```\n\n输出：\n\n```\n2\n1 2\n```\n\n**示例 2**\n\n输入：\n\n```\n10\n0 0 1 1 1 2 2 3 3 4\n```\n\n输出：\n\n```\n5\n0 1 2 3 4\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 第二行 `n` 个非递减整数；\n- 输出第一行一个整数 `k`，第二行 `k` 个去重后的整数。\n\n## 提示\n\n- `1 <= n <= 3 * 10^4`\n- `-10^4 <= nums[i] <= 10^4`\n- 要求原地修改，使用 O(1) 额外空间",
+      "content": "## 题目描述\n\n给定一个**非递减**数组 `nums`，请原地删除重复出现的元素，使每个元素只出现一次，并返回去重后的新长度 `k`。\n\n**顺序规则（必须遵守）**：保留下来的元素保持非递减顺序，即占用数组的前 `k` 个位置。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n1 1 2\n```\n\n输出：\n\n```\n2\n1 2\n```\n\n**示例 2**\n\n输入：\n\n```\n10\n0 0 1 1 1 2 2 3 3 4\n```\n\n输出：\n\n```\n5\n0 1 2 3 4\n```\n\n## 提示\n\n- `1 <= n <= 3 * 10^4`\n- `-10^4 <= nums[i] <= 10^4`\n- 要求原地修改，使用 O(1) 额外空间\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "双指针",
       "referenceAnswer": "数组已经有序，重复元素必然相邻。用慢指针 `slow` 记录去重后最后一个元素的位置，快指针 `fast` 从 1 开始遍历；只要 `nums[fast] != nums[slow]`，就把该值写到 `slow + 1` 处并让 `slow` 前进。最终唯一元素个数为 `slow + 1`。时间 O(n)，空间 O(1)。",
-      "keyPoints": ["快慢指针", "原地去重", "有序数组"],
-      "kpNames": ["双指针", "有序数组"],
+      "keyPoints": [
+        "快慢指针",
+        "原地去重",
+        "有序数组"
+      ],
+      "kpNames": [
+        "双指针",
+        "有序数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/remove-duplicates-from-sorted-array/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个非递减整数\n        // TODO 输出去重后的个数 k 与前 k 个元素\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是数组\n    # TODO 输出去重后的个数 k 与前 k 个元素\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "3\n1 1 2", "expectedOutput": "2\n1 2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "10\n0 0 1 1 1 2 2 3 3 4", "expectedOutput": "5\n0 1 2 3 4", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n1 1 1", "expectedOutput": "1\n1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1\n1", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "3\n1 2 3", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "删除有序数组中的重复项 II",
-      "content": "## 题目描述\n\n给定一个**非递减**数组 `nums`，请原地删除重复出现的元素，使每个元素**最多出现两次**，并返回新长度 `k`。\n\n**顺序规则（必须遵守）**：保留下来的元素保持非递减顺序，占用数组的前 `k` 个位置。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n6\n1 1 1 2 2 3\n```\n\n输出：\n\n```\n5\n1 1 2 2 3\n```\n\n**示例 2**\n\n输入：\n\n```\n9\n0 0 1 1 1 1 2 3 3\n```\n\n输出：\n\n```\n7\n0 0 1 1 2 3 3\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 第二行 `n` 个非递减整数；\n- 输出第一行一个整数 `k`，第二行 `k` 个处理后的整数。\n\n## 提示\n\n- `1 <= n <= 3 * 10^4`\n- `-10^4 <= nums[i] <= 10^4`\n- 要求原地修改，使用 O(1) 额外空间",
+      "content": "## 题目描述\n\n给定一个**非递减**数组 `nums`，请原地删除重复出现的元素，使每个元素**最多出现两次**，并返回新长度 `k`。\n\n**顺序规则（必须遵守）**：保留下来的元素保持非递减顺序，占用数组的前 `k` 个位置。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n6\n1 1 1 2 2 3\n```\n\n输出：\n\n```\n5\n1 1 2 2 3\n```\n\n**示例 2**\n\n输入：\n\n```\n9\n0 0 1 1 1 1 2 3 3\n```\n\n输出：\n\n```\n7\n0 0 1 1 2 3 3\n```\n\n## 提示\n\n- `1 <= n <= 3 * 10^4`\n- `-10^4 <= nums[i] <= 10^4`\n- 要求原地修改，使用 O(1) 额外空间\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "双指针",
       "referenceAnswer": "快慢指针：`slow` 指向已处理部分的末尾，`fast` 遍历数组。对每个 `nums[fast]`，只要它与 `nums[slow - 2]` 不同（说明不会出现第三次），就把它写到 `slow` 位置并让 `slow` 加一。最后 `slow` 就是新长度。时间 O(n)，空间 O(1)。",
-      "keyPoints": ["快慢指针", "最多保留两次", "原地修改"],
-      "kpNames": ["双指针", "有序数组"],
+      "keyPoints": [
+        "快慢指针",
+        "最多保留两次",
+        "原地修改"
+      ],
+      "kpNames": [
+        "双指针",
+        "有序数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/remove-duplicates-from-sorted-array-ii/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个非递减整数\n        // TODO 输出 k 与前 k 个元素（每个元素最多出现两次）\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是数组\n    # TODO 输出 k 与前 k 个元素（每个元素最多出现两次）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "6\n1 1 1 2 2 3", "expectedOutput": "5\n1 1 2 2 3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "9\n0 0 1 1 1 1 2 3 3", "expectedOutput": "7\n0 0 1 1 2 3 3", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n1 1 1", "expectedOutput": "2\n1 1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "3\n1 2 3", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "7\n1 1 1 1 2 2 3", "expectedOutput": "5\n1 1 2 2 3", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "合并两个有序数组",
-      "content": "## 题目描述\n\n给定两个非递减整数数组 `nums1`（前 `m` 个元素有效）和 `nums2`（`n` 个元素），请把它们合并成一个非递减数组并输出。\n\nACM 模式下只给出 `nums1` 的前 `m` 个有效元素与完整的 `nums2`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n1 2 3\n2 5 6\n```\n\n输出：\n\n```\n1 2 2 3 5 6\n```\n\n**示例 2**\n\n输入：\n\n```\n1 1\n2\n1\n```\n\n输出：\n\n```\n1 2\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `m` 和 `n`；\n- 第二行 `m` 个整数，为 `nums1` 的前 `m` 个元素；\n- 第三行 `n` 个整数，为 `nums2` 的全部元素；\n- 输出一行 `m + n` 个整数，为合并后的非递减数组。\n\n## 提示\n\n- `1 <= m, n <= 200`\n- `-10^9 <= nums1[i], nums2[i] <= 10^9`\n\n## 参考\n\n原题要求把结果写回 `nums1` 并做到 O(m+n)、O(1) 空间：从后往前比较两个数组的末尾元素，把较大者放到 `nums1` 的末尾。",
+      "content": "## 题目描述\n\n给定两个非递减整数数组 `nums1`（前 `m` 个元素有效）和 `nums2`（`n` 个元素），请把它们合并成一个非递减数组并输出。\n\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n1 2 3\n2 5 6\n```\n\n输出：\n\n```\n1 2 2 3 5 6\n```\n\n**示例 2**\n\n输入：\n\n```\n1 1\n2\n1\n```\n\n输出：\n\n```\n1 2\n```\n\n## 提示\n\n- `1 <= m, n <= 200`\n- `-10^9 <= nums1[i], nums2[i] <= 10^9`\n\n## 参考\n\n原题要求把结果写回 `nums1` 并做到 O(m+n)、O(1) 空间：从后往前比较两个数组的末尾元素，把较大者放到 `nums1` 的末尾。\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "双指针",
       "referenceAnswer": "利用 `nums1` 后段是空闲空间的特点，从后往前归并：`i` 指向 `nums1` 有效部分的末尾，`j` 指向 `nums2` 末尾，`k` 指向 `nums1` 的最后一个位置，每次把两者较大值写入 `nums1[k]` 并前移对应指针。时间 O(m+n)，空间 O(1)。",
-      "keyPoints": ["从后往前填", "归并", "双指针"],
-      "kpNames": ["双指针", "有序数组"],
+      "keyPoints": [
+        "从后往前填",
+        "归并",
+        "双指针"
+      ],
+      "kpNames": [
+        "双指针",
+        "有序数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/merge-sorted-array/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m n，第二行 m 个整数，第三行 n 个整数\n        // TODO 输出合并后的 m+n 个非递减整数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    lines = sys.stdin.read().split('\\n')\n    # 第一行 m n，第二行 m 个整数，第三行 n 个整数\n    # TODO 输出合并后的 m+n 个非递减整数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "3 3\n1 2 3\n2 5 6", "expectedOutput": "1 2 2 3 5 6", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1 1\n2\n1", "expectedOutput": "1 2", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3 2\n4 5 6\n1 2", "expectedOutput": "1 2 4 5 6", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4 3\n1 3 5 7\n2 4 6", "expectedOutput": "1 2 3 4 5 6 7", "isSample": 0, "sort": 4}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "和为 s 的两个数字（剑指 Offer 57）",
-      "content": "## 题目描述\n\n输入一个**递增排序**的数组和一个数字 `s`，在数组中查找两个数，使它们的和正好为 `s`。\n\n**输出规则（必须遵守）**：返回的两个数字按升序排列，即 `[较小值, 较大值]`。若存在多组解，输出乘积最小的那一组（数组递增时即最靠外侧的一对）。题目保证至少存在一组解。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,7,11,15], target = 9`\n\n输出：`[2,7]`\n\n**示例 2**\n\n输入：`nums = [10,26,30,31,47,60], target = 40`\n\n输出：`[10,30]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `target`；\n- 第二行 `n` 个递增整数；\n- 输出一行两个整数，按升序排列。\n\n## 提示\n\n- `1 <= n <= 10^5`\n- `1 <= nums[i] <= 10^6`\n- 数组严格递增\n\n> 力扣模式下只需实现 `twoSum` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n输入一个**递增排序**的数组和一个数字 `s`，在数组中查找两个数，使它们的和正好为 `s`。\n\n**输出规则（必须遵守）**：返回的两个数字按升序排列，即 `[较小值, 较大值]`。若存在多组解，输出乘积最小的那一组（数组递增时即最靠外侧的一对）。题目保证至少存在一组解。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,7,11,15], target = 9`\n\n输出：`[2,7]`\n\n**示例 2**\n\n输入：`nums = [10,26,30,31,47,60], target = 40`\n\n输出：`[10,30]`\n\n## 提示\n\n- `1 <= n <= 10^5`\n- `1 <= nums[i] <= 10^6`\n- 数组严格递增\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "双指针",
       "referenceAnswer": "数组递增，用左右双指针夹逼：当前和小于 `target` 时左指针右移使和增大，当前和大于 `target` 时右指针左移使和减小，相等时直接返回这两个数（天然升序）。时间复杂度 O(n)，空间复杂度 O(1)。",
-      "keyPoints": ["左右夹逼", "升序输出", "有序数组"],
-      "kpNames": ["双指针", "有序数组"],
+      "keyPoints": [
+        "左右夹逼",
+        "升序输出",
+        "有序数组"
+      ],
+      "kpNames": [
+        "双指针",
+        "有序数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/he-wei-sde-liang-ge-shu-zi-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "twoSum",
-      "paramTypes": ["int[]", "int"],
-      "returnType": "int[]",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n target，第二行 n 个递增整数\n        // TODO 输出两个升序整数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，第二个数是 target，后面 n 个数是数组\n    # TODO 输出两个升序整数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // TODO\n        return new int[]{0, 0};\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[2,7,11,15],9]", "expectedOutput": "[2,7]", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[10,26,30,31,47,60],40]", "expectedOutput": "[10,30]", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[1,3,5,7],8]", "expectedOutput": "[1,7]", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4 9\n2 7 11 15", "expectedOutput": "2 7", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "6 40\n10 26 30 31 47 60", "expectedOutput": "10 30", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "4 8\n1 3 5 7", "expectedOutput": "1 7", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "调整数组顺序使奇数位于偶数前面（剑指 Offer 21）",
-      "content": "## 题目描述\n\n输入一个整数数组，调整数组中数字的顺序，使得所有奇数位于数组的前半部分，所有偶数位于数组的后半部分。\n\n**顺序规则（必须遵守）**：奇数之间、偶数之间都要保持它们在原数组中出现的相对顺序（即稳定划分）。\n\n例如 `[1,2,3,4]` 调整后为 `[1,3,2,4]`，`[2,1,4,3]` 调整后同样为 `[1,3,2,4]`。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,2,3,4]`\n\n输出：`[1,3,2,4]`\n\n**示例 2**\n\n输入：`nums = [2,1,4,3]`\n\n输出：`[1,3,2,4]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 第二行 `n` 个整数；\n- 输出一行 `n` 个整数：奇数在前、偶数在后，且各自保持原相对顺序。\n\n## 提示\n\n- `1 <= n <= 50000`\n- `0 <= nums[i] <= 10000`\n\n> 力扣模式下只需实现 `exchange` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n输入一个整数数组，调整数组中数字的顺序，使得所有奇数位于数组的前半部分，所有偶数位于数组的后半部分。\n\n**顺序规则（必须遵守）**：奇数之间、偶数之间都要保持它们在原数组中出现的相对顺序（即稳定划分）。\n\n例如 `[1,2,3,4]` 调整后为 `[1,3,2,4]`，`[2,1,4,3]` 调整后同样为 `[1,3,2,4]`。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,2,3,4]`\n\n输出：`[1,3,2,4]`\n\n**示例 2**\n\n输入：`nums = [2,1,4,3]`\n\n输出：`[1,3,2,4]`\n\n## 提示\n\n- `1 <= n <= 50000`\n- `0 <= nums[i] <= 10000`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "双指针",
       "referenceAnswer": "若只要求奇数在前偶数在后，可用左右双指针：左指针遇到奇数右移、右指针遇到偶数左移，否则交换两者，时间 O(n)、空间 O(1)。本题额外要求稳定的相对顺序，因此需要一次扫描分别收集奇数与偶数，再按“奇数 + 偶数”的顺序拼接输出，时间 O(n)、空间 O(n)。",
-      "keyPoints": ["左右指针", "稳定划分", "保持相对顺序"],
-      "kpNames": ["双指针", "数组"],
+      "keyPoints": [
+        "左右指针",
+        "稳定划分",
+        "保持相对顺序"
+      ],
+      "kpNames": [
+        "双指针",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/tiao-zheng-shu-zu-shun-xu-shi-qi-shu-wei-yu-ou-shu-qian-mian-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "exchange",
-      "paramTypes": ["int[]"],
-      "returnType": "int[]",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个整数\n        // TODO 输出奇数在前、偶数在后且各自保持原相对顺序的 n 个整数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是数组\n    # TODO 输出奇数在前、偶数在后且各自保持原相对顺序的 n 个整数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int[] exchange(int[] nums) {\n        // TODO\n        return new int[0];\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def exchange(self, nums: List[int]) -> List[int]:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[1,2,3,4]]", "expectedOutput": "[1,3,2,4]", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[2,1,4,3]]", "expectedOutput": "[1,3,2,4]", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[3,1,2,4,6,5]]", "expectedOutput": "[3,1,5,2,4,6]", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n1 2 3 4", "expectedOutput": "1 3 2 4", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "4\n2 1 4 3", "expectedOutput": "1 3 2 4", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "6\n3 1 2 4 6 5", "expectedOutput": "3 1 5 2 4 6", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "左旋转字符串（剑指 Offer 58 - II）",
-      "content": "## 题目描述\n\n字符串的左旋转操作是把字符串前面的若干字符移到字符串尾部。给定字符串 `s` 和整数 `n`，请返回 `s` 左旋转 `n` 位后的结果。\n\n例如 `s = \"abcdefg\"`、`n = 2` 时返回 `\"cdefgab\"`。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"abcdefg\", n = 2`\n\n输出：`\"cdefgab\"`\n\n**示例 2**\n\n输入：`s = \"lrloseumgh\", n = 6`\n\n输出：`\"umghlrlose\"`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个只含小写字母的字符串 `s`；\n- 第二行一个整数 `n`；\n- 输出左旋转 `n` 位后的字符串。\n\n## 提示\n\n- `1 <= n <= s.length <= 10^4`\n- `s` 只包含小写英文字母\n\n> 力扣模式下只需实现 `reverseLeftWords` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n字符串的左旋转操作是把字符串前面的若干字符移到字符串尾部。给定字符串 `s` 和整数 `n`，请返回 `s` 左旋转 `n` 位后的结果。\n\n例如 `s = \"abcdefg\"`、`n = 2` 时返回 `\"cdefgab\"`。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"abcdefg\", n = 2`\n\n输出：`\"cdefgab\"`\n\n**示例 2**\n\n输入：`s = \"lrloseumgh\", n = 6`\n\n输出：`\"umghlrlose\"`\n\n## 提示\n\n- `1 <= n <= s.length <= 10^4`\n- `s` 只包含小写英文字母\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "双指针",
       "referenceAnswer": "把字符串看成两段：前 `n` 个字符与剩余部分，左旋转 `n` 位的结果就是“剩余部分 + 前 `n` 个字符”。也可以先反转前 `n` 位、再反转后一段、最后整体反转，达到 O(1) 额外空间的原地旋转。时间 O(n)，空间 O(n)（或 O(1) 原地）。",
-      "keyPoints": ["字符串拼接", "三次反转", "n 取模"],
-      "kpNames": ["字符串", "双指针"],
+      "keyPoints": [
+        "字符串拼接",
+        "三次反转",
+        "n 取模"
+      ],
+      "kpNames": [
+        "字符串",
+        "双指针"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/zuo-xuan-zhuan-zi-fu-chuan-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "reverseLeftWords",
-      "paramTypes": ["String", "int"],
-      "returnType": "String",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行字符串 s，第二行整数 n\n        // TODO 输出左旋转 n 位后的字符串\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    lines = sys.stdin.read().split()\n    # lines[0] 是 s，lines[1] 是 n\n    # TODO 输出左旋转 n 位后的字符串\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public String reverseLeftWords(String s, int n) {\n        // TODO\n        return s;\n    }\n}",
-        "PYTHON": "class Solution:\n    def reverseLeftWords(self, s: str, n: int) -> str:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"abcdefg\",2]", "expectedOutput": "\"cdefgab\"", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"lrloseumgh\",6]", "expectedOutput": "\"umghlrlose\"", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"abc\",3]", "expectedOutput": "\"abc\"", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "abcdefg\n2", "expectedOutput": "cdefgab", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "lrloseumgh\n6", "expectedOutput": "umghlrlose", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "abc\n3", "expectedOutput": "abc", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "反转字符串中的单词",
-      "content": "## 题目描述\n\n给定一个字符串 `s`，请反转其中单词的顺序。\n\n**格式规则（必须遵守）**：单词之间可能有多余空格，反转后单词之间只保留一个空格，且结果首尾不能有空格。\n\n例如 `\"the sky is blue\"` 反转后为 `\"blue is sky the\"`。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"the sky is blue\"`\n\n输出：`\"blue is sky the\"`\n\n**示例 2**\n\n输入：`s = \"  hello world  \"`\n\n输出：`\"world hello\"`\n\n**示例 3**\n\n输入：`s = \"a good   example\"`\n\n输出：`\"example good a\"`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行字符串，可能包含前导、尾随或连续空格（读到行末为止）；\n- 输出反转单词顺序后的字符串，单词之间用单个空格分隔，首尾无空格。\n\n## 提示\n\n- `1 <= s.length <= 10^4`\n- `s` 由英文大小写字母、数字和空格组成\n- `s` 中至少包含一个单词\n\n> 力扣模式下只需实现 `reverseWords` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个字符串 `s`，请反转其中单词的顺序。\n\n**格式规则（必须遵守）**：单词之间可能有多余空格，反转后单词之间只保留一个空格，且结果首尾不能有空格。\n\n例如 `\"the sky is blue\"` 反转后为 `\"blue is sky the\"`。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"the sky is blue\"`\n\n输出：`\"blue is sky the\"`\n\n**示例 2**\n\n输入：`s = \"  hello world  \"`\n\n输出：`\"world hello\"`\n\n**示例 3**\n\n输入：`s = \"a good   example\"`\n\n输出：`\"example good a\"`\n\n## 提示\n\n- `1 <= s.length <= 10^4`\n- `s` 由英文大小写字母、数字和空格组成\n- `s` 中至少包含一个单词\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "双指针",
       "referenceAnswer": "先按空格切分字符串，自动丢弃多余的空格，得到单词列表；再反转列表顺序，用单个空格拼接。如果要求原地完成，则先用双指针把每个单词移到前面并压缩空格，最后整体反转。时间 O(n)，空间 O(n)。",
-      "keyPoints": ["按空格切分", "反转顺序", "去除多余空格"],
-      "kpNames": ["字符串", "双指针"],
+      "keyPoints": [
+        "按空格切分",
+        "反转顺序",
+        "去除多余空格"
+      ],
+      "kpNames": [
+        "字符串",
+        "双指针"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/reverse-words-in-a-string/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "reverseWords",
-      "paramTypes": ["String"],
-      "returnType": "String",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 读入一整行字符串（可能含前导/尾随/连续空格）\n        String s = sc.hasNextLine() ? sc.nextLine() : \"\";\n        // TODO 输出反转单词顺序后的字符串\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    s = sys.stdin.read().strip()\n    # TODO 输出反转单词顺序后的字符串\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public String reverseWords(String s) {\n        // TODO\n        return \"\";\n    }\n}",
-        "PYTHON": "class Solution:\n    def reverseWords(self, s: str) -> str:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"the sky is blue\"]", "expectedOutput": "\"blue is sky the\"", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"  hello world  \"]", "expectedOutput": "\"world hello\"", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"a good   example\"]", "expectedOutput": "\"example good a\"", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "the sky is blue", "expectedOutput": "blue is sky the", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "  hello world  ", "expectedOutput": "world hello", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "a good   example", "expectedOutput": "example good a", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     }
   ]
 }

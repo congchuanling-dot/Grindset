@@ -9,6 +9,7 @@ import com.grindset.backend.common.QuestionType;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.Texts;
 import com.grindset.backend.dto.BankEvaluation;
+import com.grindset.backend.dto.CodingReviewView;
 import com.grindset.backend.dto.QuestionAttemptResult;
 import com.grindset.backend.dto.QuestionBankDetail;
 import com.grindset.backend.dto.QuestionBankFacets;
@@ -18,11 +19,9 @@ import com.grindset.backend.dto.QuestionBankView;
 import com.grindset.backend.dto.QuestionNeighbors;
 import com.grindset.backend.entity.QuestionAttempt;
 import com.grindset.backend.entity.QuestionBank;
-import com.grindset.backend.entity.QuestionTestCase;
 import com.grindset.backend.entity.UserQuestionProgress;
 import com.grindset.backend.mapper.QuestionAttemptMapper;
 import com.grindset.backend.mapper.QuestionBankMapper;
-import com.grindset.backend.mapper.QuestionTestCaseMapper;
 import com.grindset.backend.mapper.UserQuestionProgressMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +73,6 @@ public class QuestionBankService {
     private static final Set<String> STATUS_FILTERS = Set.of("TODO", "DONE", "WRONG");
 
     private final QuestionBankMapper bankMapper;
-    private final QuestionTestCaseMapper testCaseMapper;
     private final UserQuestionProgressMapper progressMapper;
     private final QuestionAttemptMapper attemptMapper;
     private final InterviewLlmService llmService;
@@ -85,14 +83,12 @@ public class QuestionBankService {
     private final ConcurrentHashMap<String, ReentrantLock> locks = new ConcurrentHashMap<>();
 
     public QuestionBankService(QuestionBankMapper bankMapper,
-                               QuestionTestCaseMapper testCaseMapper,
                                UserQuestionProgressMapper progressMapper,
                                QuestionAttemptMapper attemptMapper,
                                InterviewLlmService llmService,
                                SnowflakeIdGenerator idGenerator,
                                TransactionTemplate transactionTemplate) {
         this.bankMapper = bankMapper;
-        this.testCaseMapper = testCaseMapper;
         this.progressMapper = progressMapper;
         this.attemptMapper = attemptMapper;
         this.llmService = llmService;
@@ -240,27 +236,6 @@ public class QuestionBankService {
     }
 
     /**
-     * 为面试手撕代码挑一道力扣模式题目。
-     * 优先匹配难度,没有合适的就放宽难度;返回 null 表示当前题库没有可用编程题。
-     */
-    public QuestionBank pickCodingQuestion(int difficulty, Set<Long> excludeIds) {
-        List<QuestionBank> pool = allQuestions().stream()
-                .filter(q -> q.getJudgeMode() == JudgeMode.CODING)
-                .filter(q -> q.getStarterCodeFunction() != null && !q.getStarterCodeFunction().isEmpty())
-                .filter(q -> hasLeetCodeCases(q.getId()))
-                .filter(q -> excludeIds == null || !excludeIds.contains(q.getId()))
-                .toList();
-        if (pool.isEmpty()) {
-            return null;
-        }
-        List<QuestionBank> preferred = pool.stream()
-                .filter(q -> q.getDifficulty() != null && Math.abs(q.getDifficulty() - difficulty) <= 1)
-                .toList();
-        List<QuestionBank> candidates = preferred.isEmpty() ? pool : preferred;
-        return candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
-    }
-
-    /**
      * FREE_RUN 面试选题:只要求是上架编程题且有题面,不需要测试用例和函数签名。
      */
     public QuestionBank pickFreeCodingQuestion(int difficulty, Set<Long> excludeIds) {
@@ -285,12 +260,6 @@ public class QuestionBankService {
                 .toList();
         List<QuestionBank> candidates = preferred.isEmpty() ? pool : preferred;
         return candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
-    }
-
-    private boolean hasLeetCodeCases(Long questionId) {
-        return testCaseMapper.selectCount(new QueryWrapper<QuestionTestCase>()
-                .eq("question_id", questionId)
-                .eq("case_mode", "LEETCODE")) > 0;
     }
 
     /** 某道题的作答历史,最新在前 */
@@ -379,11 +348,69 @@ public class QuestionBankService {
         return statusLabel(findProgress(userId, id));
     }
 
-    /** 判题结束后回写做题进度 */
-    public void recordCodingOutcome(long userId, long id, boolean accepted, String code, String message) {
+    /** 保存一次 AI 代码点评:写作答记录并回写做题进度 */
+    public CodingReviewRecord recordCodingReview(long userId, long id, String code, BankEvaluation evaluation) {
         requireOn(id);
-        int score = accepted ? 5 : 1;
-        transactionTemplate.executeWithoutResult(status -> upsertProgress(userId, id, score, LocalDateTime.now()));
+        LocalDateTime now = LocalDateTime.now();
+
+        QuestionAttempt attempt = new QuestionAttempt();
+        attempt.setId(idGenerator.nextId());
+        attempt.setUserId(userId);
+        attempt.setQuestionId(id);
+        attempt.setAnswer(code);
+        attempt.setScore(evaluation.score());
+        attempt.setHitPoints(names(evaluation.hitPoints()));
+        attempt.setMissedPoints(names(evaluation.missedPoints()));
+        attempt.setComment(evaluation.comment());
+        attempt.setSuggestion(evaluation.suggestion());
+        attempt.setCreatedAt(now);
+
+        UserQuestionProgress progress = transactionTemplate.execute(status -> {
+            attemptMapper.insert(attempt);
+            return upsertProgress(userId, id, evaluation.score(), now);
+        });
+        if (progress == null) {
+            throw new BizException(ErrorCode.INTERNAL_ERROR, "保存代码点评失败");
+        }
+        return new CodingReviewRecord(
+                evaluation.score(),
+                names(evaluation.hitPoints()),
+                names(evaluation.missedPoints()),
+                evaluation.comment(),
+                evaluation.suggestion(),
+                statusLabel(progress),
+                intValue(progress.getAttemptCount()),
+                progress.getBestScore(),
+                format(now));
+    }
+
+    /** 某道编程题的点评历史,最新在前 */
+    public List<CodingReviewView> codingReviews(long userId, long id) {
+        requireOn(id);
+        return attemptMapper.selectList(new QueryWrapper<QuestionAttempt>()
+                        .eq("user_id", userId)
+                        .eq("question_id", id)
+                        .orderByDesc("created_at")
+                        .last("LIMIT " + ATTEMPT_HISTORY_LIMIT))
+                .stream().map(this::toCodingReviewView).toList();
+    }
+
+    private CodingReviewView toCodingReviewView(QuestionAttempt attempt) {
+        return new CodingReviewView(
+                String.valueOf(attempt.getId()),
+                attempt.getAnswer(),
+                intValue(attempt.getScore()),
+                names(attempt.getHitPoints()),
+                names(attempt.getMissedPoints()),
+                attempt.getComment(),
+                attempt.getSuggestion(),
+                format(attempt.getCreatedAt()));
+    }
+
+    /** 一次代码点评落库后的结果 */
+    public record CodingReviewRecord(int score, List<String> hitPoints, List<String> missedPoints,
+                                     String comment, String suggestion, String progressStatus,
+                                     int attemptCount, Integer bestScore, String createdAt) {
     }
 
     private UserQuestionProgress upsertProgress(long userId, long id, int score, LocalDateTime now) {
@@ -443,13 +470,6 @@ public class QuestionBankService {
             }
 
             boolean coding = JudgeMode.CODING.name().equalsIgnoreCase(item.judgeMode());
-            List<QuestionBankImportRequest.TestCaseItem> cases = coding
-                    ? validCases(item.testCases()) : List.of();
-            // 编程题没有用例就无法运行/判题,直接跳过,避免导入后是坏数据
-            if (coding && cases.isEmpty()) {
-                skipped++;
-                continue;
-            }
 
             QuestionBank question = new QuestionBank();
             question.setId(idGenerator.nextId());
@@ -468,7 +488,7 @@ public class QuestionBankService {
             question.setContentHash(hash);
             question.setStatus(ONLINE);
             if (coding) {
-                fillCoding(question, item, cases);
+                fillCoding(question, item);
             } else {
                 question.setType(QuestionType.from(item.type()));
                 question.setJudgeMode(JudgeMode.TEXT);
@@ -485,12 +505,7 @@ public class QuestionBankService {
             }
 
             try {
-                transactionTemplate.executeWithoutResult(status -> {
-                    bankMapper.insert(question);
-                    for (QuestionBankImportRequest.TestCaseItem testCase : cases) {
-                        testCaseMapper.insert(toEntity(question.getId(), testCase));
-                    }
-                });
+                transactionTemplate.executeWithoutResult(status -> bankMapper.insert(question));
                 imported++;
             } catch (DuplicateKeyException e) {
                 skipped++;
@@ -499,63 +514,13 @@ public class QuestionBankService {
         return new QuestionBankImportResult(imported, skipped);
     }
 
-    /** 编程题的判题配置:题型、模式、函数签名、初始代码、时限 */
-    private static void fillCoding(QuestionBank question, QuestionBankImportRequest.Item item,
-                                   List<QuestionBankImportRequest.TestCaseItem> cases) {
+    /** 编程题配置:题型、main 骨架与时限 */
+    private static void fillCoding(QuestionBank question, QuestionBankImportRequest.Item item) {
         question.setType(QuestionType.CODE);
         question.setJudgeMode(JudgeMode.CODING);
-        String codeMode = Texts.blankToNull(item.codeMode());
-        if (codeMode == null) {
-            codeMode = cases.stream()
-                    .anyMatch(testCase -> "LEETCODE".equalsIgnoreCase(testCase.caseMode()))
-                    ? "LEETCODE" : "ACM";
-        }
-        question.setCodeMode(codeMode.strip().toUpperCase(Locale.ROOT));
-        question.setFunctionName(Texts.blankToNull(item.functionName()));
-        question.setParamTypes(limited(item.paramTypes(), 8, 32));
-        question.setReturnType(Texts.blankToNull(item.returnType()));
         question.setStarterCode(item.starterCode() == null ? Map.of() : item.starterCode());
-        question.setStarterCodeFunction(item.starterCodeFunction() == null
-                ? Map.of() : item.starterCodeFunction());
         question.setTimeLimitMs(item.timeLimitMs() == null ? null : clamp(item.timeLimitMs(), 200, 20_000));
         question.setMemoryLimitMb(item.memoryLimitMb() == null ? null : clamp(item.memoryLimitMb(), 64, 1024));
-    }
-
-    /** 过滤掉没有期望输出的用例,并规范化模式、例题标记与排序 */
-    private static List<QuestionBankImportRequest.TestCaseItem> validCases(
-            List<QuestionBankImportRequest.TestCaseItem> cases) {
-        List<QuestionBankImportRequest.TestCaseItem> result = new ArrayList<>();
-        if (cases == null) {
-            return result;
-        }
-        int index = 0;
-        for (QuestionBankImportRequest.TestCaseItem testCase : cases) {
-            index++;
-            if (testCase == null || Texts.blankToNull(testCase.expectedOutput()) == null) {
-                continue;
-            }
-            String caseMode = "LEETCODE".equalsIgnoreCase(testCase.caseMode()) ? "LEETCODE" : "ACM";
-            int isSample = testCase.isSample() != null && testCase.isSample() == 1 ? 1 : 0;
-            int sort = testCase.sort() == null ? index : testCase.sort();
-            result.add(new QuestionBankImportRequest.TestCaseItem(caseMode, testCase.input(),
-                    testCase.expectedOutput(), isSample, sort));
-            if (result.size() >= 40) {
-                break;
-            }
-        }
-        return result;
-    }
-
-    private QuestionTestCase toEntity(long questionId, QuestionBankImportRequest.TestCaseItem item) {
-        QuestionTestCase testCase = new QuestionTestCase();
-        testCase.setId(idGenerator.nextId());
-        testCase.setQuestionId(questionId);
-        testCase.setCaseMode(item.caseMode());
-        testCase.setInput(item.input());
-        testCase.setExpectedOutput(item.expectedOutput());
-        testCase.setIsSample(item.isSample());
-        testCase.setSort(item.sort());
-        return testCase;
     }
 
     // ---------- 规则与工具 ----------
@@ -621,7 +586,6 @@ public class QuestionBankService {
                 preview(question.getContent(), MAX_PREVIEW_CHARS),
                 enumName(question.getType()),
                 question.getJudgeMode() == null ? JudgeMode.TEXT.name() : question.getJudgeMode().name(),
-                question.getCodeMode(),
                 intValue(question.getDifficulty()),
                 question.getDomain(),
                 names(question.getKpNames()),

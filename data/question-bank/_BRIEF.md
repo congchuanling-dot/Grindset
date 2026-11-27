@@ -11,21 +11,11 @@
 
 ## 判题器约束（必须遵守）
 
-判题器实现见 `backend/src/main/java/com/grindset/backend/service/JudgeService.java`。
+题库编程题统一为 **main 自由运行 + AI 点评**，不再区分 ACM / 力扣模式，也不提供任何测试用例。
 
-- 力扣模式：只写 `class Solution`（Java）或 `class Solution`（Python），由驱动读 JSON 参数、调用方法、按 JSON 打印返回值。
-- 力扣模式参数类型只支持：
-  `int` `long` `double` `boolean` `char` `String`、对应一维数组、`int[][]` `char[][]` `String[][]`、
-  `List<Integer>` `List<String>` `List<List<Integer>>`。
-- 返回值统一按 JSON 比较：`true/false`、数字、字符串带双引号、数组 `[1,2]`、嵌套数组 `[[1],[2]]`。
-- 以下题型**不能用力扣模式**，只能 ACM：
-  - 参数/返回是 `ListNode` / `TreeNode` / 图节点；
-  - `void` 原地修改（排序、旋转、置零等）；
-  - 设计类（LRU、Trie、最小栈、数据流中位数等）；
-  - 返回浮点数且需要控制精度的题。
-- ACM 模式：Java 固定 `public class Main`，Python 固定 `main.py`，从标准输入读、向标准输出写。
-- 输出顺序不唯一的题（子集、全排列、组合总和、三数之和、字母异位词分组等），必须在题面写明唯一排序规则
-  （例如“结果按字典序升序输出”），否则判题会误判。
+- Java 固定 `public class Main`，Python 固定 `main.py`，都在 `main` 里自己构造输入、调用解法、打印输出。
+- 题面只描述题目本身，给出输入输出示例与提示；**不要写「输入输出格式（ACM 模式）」这类段落**，也不要提力扣函数签名。
+- 平台不比对答案。用户点「AI 点评」后，由大模型检查逻辑、边界情况和潜在 bug。
 
 ## 单题字段
 
@@ -42,41 +32,43 @@
   "kpNames": ["哈希表", "数组"],
   "source": "CRAWL",
   "sourceUrl": "https://leetcode.cn/problems/two-sum/",
-  "codeMode": "LEETCODE",
-  "timeLimitMs": 2000,
+  "timeLimitMs": 5000,
   "memoryLimitMb": 256,
-  "functionName": "twoSum",
-  "paramTypes": ["int[]", "int"],
-  "returnType": "int[]",
-  "starterCode": { "JAVA": "...", "PYTHON": "..." },
-  "starterCodeFunction": { "JAVA": "...", "PYTHON": "..." },
-  "testCases": [
-    { "caseMode": "LEETCODE", "input": "[[2,7,11,15],9]", "expectedOutput": "[0,1]", "isSample": 1, "sort": 1 },
-    { "caseMode": "ACM", "input": "4 9\n2 7 11 15", "expectedOutput": "0 1", "isSample": 1, "sort": 1 }
-  ]
+  "starterCode": { "JAVA": "...", "PYTHON": "..." }
 }
 ```
 
 ## 写作要求
 
 1. 题面用**自己的话重写**，不要整段照抄力扣；结构：
-   `## 题目描述` → `## 示例` → `## 输入输出格式（ACM 模式）` → `## 提示`。
-   力扣模式可用的题，在题面末尾加一句“力扣模式下只需实现 xxx 函数，不用读写标准输入输出”。
-2. 力扣模式初始代码：
-   - Java：`class Solution { ... }`，方法签名与 `functionName`/`paramTypes`/`returnType` 一致；
-   - Python：需要时 `from typing import List`，`class Solution` 方法签名一致。
-3. ACM 初始代码：只写读写框架与 TODO 注释，注释里写清输入输出格式；不需要给出解题代码。
-4. `modes=acm` 的题：
-   - 不要填 `functionName` / `paramTypes` / `returnType` / `starterCodeFunction`；
-   - 必须自定义简单明确的输入输出协议并写进题面；
-   - 树用层序数组（`null` 表示空节点），链表用节点值数组，设计类用逐行操作序列。
-5. `testCases`：每题 4-6 条，至少 2 条 `isSample=1`、至少 1 条 `isSample=0`，`sort` 从 1 递增。
-   - 力扣用例 `input` 是参数按签名顺序组成的 JSON 数组，`expectedOutput` 是合法 JSON；
-   - ACM 用例 `input` 是标准输入文本，`expectedOutput` 是标准输出文本；
-   - **只写你能确定、规模很小的用例，期望输出必须自己核算**，不要编造。
-6. `difficulty`：简单 1、中等 2、困难 3。`source` 固定 `CRAWL`，`sourceUrl` 用
+   `## 题目描述` → `## 示例` → `## 提示`。
+   末尾保留一句：`> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。`
+2. 初始代码只写通用骨架与 TODO 注释，不给出解题代码：
+
+   ```java
+   import java.util.*;
+
+   public class Main {
+       public static void main(String[] args) {
+           // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果
+       }
+   }
+   ```
+
+   ```python
+   import sys
+
+   def main():
+       # 在这里构造输入、调用你的解法，并用 print 输出结果
+       pass
+
+   if __name__ == "__main__":
+       main()
+   ```
+3. 示例里写清输入长什么样、期望输出是什么，用户据此自己构造输入；输出顺序不唯一的题必须写明排序规则。
+4. `difficulty`：简单 1、中等 2、困难 3。`source` 固定 `CRAWL`，`sourceUrl` 用
    `https://leetcode.cn/problems/<slug>/`。`kpNames` 1-3 个知识点。
-7. 只创建/修改分配给你的那一个 JSON 文件，不要改代码、不要写 README、不要动别的批次。
+5. 只创建/修改分配给你的那一个 JSON 文件，不要改代码、不要写 README、不要动别的批次。
 
 ## 完成标准
 

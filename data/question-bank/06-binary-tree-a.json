@@ -2,462 +2,445 @@
   "questions": [
     {
       "title": "二叉树的中序遍历",
-      "content": "## 题目描述\n\n给定一棵二叉树，返回它的中序遍历结果：先遍历左子树，再访问根节点，最后遍历右子树。\n\n二叉树用层序数组表示：从根节点开始按层从左到右依次列出节点，`null` 表示该位置没有节点。例如 `3 9 20 null null 15 7` 表示根为 3，左孩子 9，右孩子 20；9 没有子节点；20 的左孩子是 15、右孩子是 7。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n3 9 20 null null 15 7\n```\n\n输出：\n\n```\n9 3 15 20 7\n```\n\n**示例 2**\n\n输入：\n\n```\n3\n1 null 2\n```\n\n输出：\n\n```\n1 2\n```\n\n解释：根节点 1 没有左子树，右孩子为 2，所以中序先输出 1 再输出 2。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组中 token 的个数；\n- 第二行 `n` 个 token，描述二叉树：从根开始，每个非空节点按队列顺序依次占用两个 token 作为左、右子节点，`null` 表示该位置为空，`null` 不产生新的子节点位置，序列末尾多余的 `null` 可以省略；\n- 输出一行：按中序遍历顺序输出节点值，节点值之间用单个空格分隔。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证 `n >= 1` 且至少存在一个真实节点",
+      "content": "## 题目描述\n\n给定一棵二叉树，返回它的中序遍历结果：先遍历左子树，再访问根节点，最后遍历右子树。\n\n二叉树用层序数组表示：从根节点开始按层从左到右依次列出节点，`null` 表示该位置没有节点。例如 `3 9 20 null null 15 7` 表示根为 3，左孩子 9，右孩子 20；9 没有子节点；20 的左孩子是 15、右孩子是 7。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n3 9 20 null null 15 7\n```\n\n输出：\n\n```\n9 3 15 20 7\n```\n\n**示例 2**\n\n输入：\n\n```\n3\n1 null 2\n```\n\n输出：\n\n```\n1 2\n```\n\n解释：根节点 1 没有左子树，右孩子为 2，所以中序先输出 1 再输出 2。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证 `n >= 1` 且至少存在一个真实节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "二叉树",
       "referenceAnswer": "递归写法：先递归遍历左子树并收集结果，再访问当前节点，最后递归遍历右子树。也可以显式维护一个栈：沿左链不断压栈直到空，弹出节点输出后转向其右子树，直到栈空且当前节点为空。时间复杂度 O(n)，空间复杂度 O(h)，h 为树高。",
-      "keyPoints": ["递归", "栈模拟", "左-根-右"],
-      "kpNames": ["二叉树", "中序遍历"],
+      "keyPoints": [
+        "递归",
+        "栈模拟",
+        "左-根-右"
+      ],
+      "kpNames": [
+        "二叉树",
+        "中序遍历"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/binary-tree-inorder-traversal/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出中序遍历的节点值，空格分隔\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出中序遍历的节点值，空格分隔\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\n3 9 20 null null 15 7", "expectedOutput": "9 3 15 20 7", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3\n1 null 2", "expectedOutput": "1 2", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3\n2 1 3", "expectedOutput": "1 2 3", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "5\n1 2 3 4 5", "expectedOutput": "4 2 5 1 3", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二叉树的最大深度",
-      "content": "## 题目描述\n\n给定一棵二叉树，求它的最大深度。最大深度指从根节点到最远叶子节点路径上的节点个数（根节点深度记为 1）。\n\n二叉树用层序数组表示，`null` 表示空节点。例如 `3 9 20 null null 15 7` 表示根 3，左孩子 9，右孩子 20，20 的孩子是 15 和 7，最大深度为 3。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n3 9 20 null null 15 7\n```\n\n输出：\n\n```\n3\n```\n\n**示例 2**\n\n输入：\n\n```\n3\n1 null 2\n```\n\n输出：\n\n```\n2\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行一个整数，表示最大深度。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点",
+      "content": "## 题目描述\n\n给定一棵二叉树，求它的最大深度。最大深度指从根节点到最远叶子节点路径上的节点个数（根节点深度记为 1）。\n\n二叉树用层序数组表示，`null` 表示空节点。例如 `3 9 20 null null 15 7` 表示根 3，左孩子 9，右孩子 20，20 的孩子是 15 和 7，最大深度为 3。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n3 9 20 null null 15 7\n```\n\n输出：\n\n```\n3\n```\n\n**示例 2**\n\n输入：\n\n```\n3\n1 null 2\n```\n\n输出：\n\n```\n2\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "二叉树",
       "referenceAnswer": "递归求解：空节点深度为 0，否则当前节点深度等于左右子树最大深度加一。也可以在层序遍历时统计层数得到同样结果。时间复杂度 O(n)，递归空间复杂度 O(h)，h 为树高。",
-      "keyPoints": ["递归", "左右子树取最大", "层序计数"],
-      "kpNames": ["二叉树", "深度优先搜索"],
+      "keyPoints": [
+        "递归",
+        "左右子树取最大",
+        "层序计数"
+      ],
+      "kpNames": [
+        "二叉树",
+        "深度优先搜索"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/maximum-depth-of-binary-tree/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出最大深度\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出最大深度\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\n3 9 20 null null 15 7", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3\n1 null 2", "expectedOutput": "2", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "5\n1 2 3 4 5", "expectedOutput": "3", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "4\n1 2 null 3", "expectedOutput": "3", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "翻转二叉树",
-      "content": "## 题目描述\n\n给定一棵二叉树，把每个节点的左右子树互换，返回翻转后的二叉树。\n\n二叉树用层序数组表示，`null` 表示空节点。输出同样使用层序数组，末尾多余的 `null` 去掉，但中间的 `null` 必须保留。例如原树 `1 2 null 3` 表示根 1、左孩子 2、2 的左孩子 3；翻转后根 1 只有右孩子 2，2 只有右孩子 3，层序数组输出为 `1 null 2 null 3`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n4 2 7 1 3 6 9\n```\n\n输出：\n\n```\n4 7 2 9 6 3 1\n```\n\n**示例 2**\n\n输入：\n\n```\n4\n1 2 null 3\n```\n\n输出：\n\n```\n1 null 2 null 3\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述原二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行：翻转后二叉树的层序数组，token 之间用单个空格分隔，`null` 表示空节点，末尾多余的 `null` 必须去掉，中间的 `null` 必须保留。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点",
+      "content": "## 题目描述\n\n给定一棵二叉树，把每个节点的左右子树互换，返回翻转后的二叉树。\n\n二叉树用层序数组表示，`null` 表示空节点。输出同样使用层序数组，末尾多余的 `null` 去掉，但中间的 `null` 必须保留。例如原树 `1 2 null 3` 表示根 1、左孩子 2、2 的左孩子 3；翻转后根 1 只有右孩子 2，2 只有右孩子 3，层序数组输出为 `1 null 2 null 3`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n4 2 7 1 3 6 9\n```\n\n输出：\n\n```\n4 7 2 9 6 3 1\n```\n\n**示例 2**\n\n输入：\n\n```\n4\n1 2 null 3\n```\n\n输出：\n\n```\n1 null 2 null 3\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "二叉树",
       "referenceAnswer": "对每个节点递归处理：先交换自己的左右孩子，再分别递归翻转左右子树；也可以层序遍历，访问每个节点时交换其左右孩子。两种写法都能保证整棵树镜像。时间复杂度 O(n)，空间复杂度 O(h) 或 O(宽度)。",
-      "keyPoints": ["递归", "交换左右孩子", "层序输出"],
-      "kpNames": ["二叉树", "递归"],
+      "keyPoints": [
+        "递归",
+        "交换左右孩子",
+        "层序输出"
+      ],
+      "kpNames": [
+        "二叉树",
+        "递归"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/invert-binary-tree/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出翻转后的层序数组，null 表示空节点，去掉末尾多余 null\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出翻转后的层序数组，null 表示空节点，去掉末尾多余 null\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\n4 2 7 1 3 6 9", "expectedOutput": "4 7 2 9 6 3 1", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "4\n1 2 null 3", "expectedOutput": "1 null 2 null 3", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "2\n1 2", "expectedOutput": "1 null 2", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "1 3 2", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "对称二叉树",
-      "content": "## 题目描述\n\n给定一棵二叉树，判断它是否轴对称，即把树沿根节点的竖轴翻折后，左右两侧能够完全重合。\n\n二叉树用层序数组表示，`null` 表示空节点。例如 `1 2 2 3 4 4 3` 是对称的；`1 2 2 null 3 null 3` 不对称。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n1 2 2 3 4 4 3\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n7\n1 2 2 null 3 null 3\n```\n\n输出：\n\n```\nfalse\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行：对称输出 `true`，否则输出 `false`。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点",
+      "content": "## 题目描述\n\n给定一棵二叉树，判断它是否轴对称，即把树沿根节点的竖轴翻折后，左右两侧能够完全重合。\n\n二叉树用层序数组表示，`null` 表示空节点。例如 `1 2 2 3 4 4 3` 是对称的；`1 2 2 null 3 null 3` 不对称。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n1 2 2 3 4 4 3\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n7\n1 2 2 null 3 null 3\n```\n\n输出：\n\n```\nfalse\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "二叉树",
       "referenceAnswer": "定义辅助函数判断两棵子树是否互为镜像：都为空返回真；只有一个为空返回假；值不等返回假；否则比较左子树的左孩子与右子树的右孩子、左子树的右孩子与右子树的左孩子。时间复杂度 O(n)，空间复杂度 O(h)。",
-      "keyPoints": ["镜像比较", "递归", "成对入队"],
-      "kpNames": ["二叉树", "递归"],
+      "keyPoints": [
+        "镜像比较",
+        "递归",
+        "成对入队"
+      ],
+      "kpNames": [
+        "二叉树",
+        "递归"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/symmetric-tree/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出 true 或 false\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\n1 2 2 3 4 4 3", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "7\n1 2 2 null 3 null 3", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "true", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "false", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "7\n1 2 2 3 null null 3", "expectedOutput": "true", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二叉树的直径",
-      "content": "## 题目描述\n\n给定一棵二叉树，求它的直径。直径指任意两个节点之间最长路径的边数，这条路径不一定要经过根节点。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n1 2 3 4 5\n```\n\n输出：\n\n```\n3\n```\n\n解释：路径 `4 → 2 → 1 → 3` 或 `5 → 2 → 1 → 3` 经过 3 条边。\n\n**示例 2**\n\n输入：\n\n```\n2\n1 2\n```\n\n输出：\n\n```\n1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行一个整数，表示直径（边数）。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 节点数为 1 时直径为 0",
+      "content": "## 题目描述\n\n给定一棵二叉树，求它的直径。直径指任意两个节点之间最长路径的边数，这条路径不一定要经过根节点。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n1 2 3 4 5\n```\n\n输出：\n\n```\n3\n```\n\n解释：路径 `4 → 2 → 1 → 3` 或 `5 → 2 → 1 → 3` 经过 3 条边。\n\n**示例 2**\n\n输入：\n\n```\n2\n1 2\n```\n\n输出：\n\n```\n1\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 节点数为 1 时直径为 0\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "二叉树",
       "referenceAnswer": "在后序递归中顺带求深度：对每个节点计算左右子树深度 `l` 和 `r`，用 `l + r` 更新全局最大直径，然后返回 `max(l, r) + 1` 作为该节点的深度。注意直径是边数，所以取左右深度之和。时间复杂度 O(n)，空间复杂度 O(h)。",
-      "keyPoints": ["后序递归", "左右深度之和", "全局最大值"],
-      "kpNames": ["二叉树", "深度优先搜索"],
+      "keyPoints": [
+        "后序递归",
+        "左右深度之和",
+        "全局最大值"
+      ],
+      "kpNames": [
+        "二叉树",
+        "深度优先搜索"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/diameter-of-binary-tree/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出直径（最长路径的边数）\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出直径（最长路径的边数）\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "5\n1 2 3 4 5", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "2\n1 2", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "0", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n1 2 null 3", "expectedOutput": "2", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "6\n1 2 3 null 4 5 null", "expectedOutput": "4", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二叉树的层序遍历",
-      "content": "## 题目描述\n\n给定一棵二叉树，按层从上到下、每层从左到右输出节点值。\n\n二叉树用层序数组表示，`null` 表示空节点。本题的输出不是一行，而是先输出层数，再逐层输出每层的节点值。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n3 9 20 null null 15 7\n```\n\n输出：\n\n```\n3\n3\n9 20\n15 7\n```\n\n解释：第一行 `3` 表示共有 3 层，之后三行分别是每一层的节点值。\n\n**示例 2**\n\n输入：\n\n```\n1\n1\n```\n\n输出：\n\n```\n1\n1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出共 `h + 1` 行，`h` 为树的层数：第一行输出 `h`，随后第 `i` 行输出第 `i` 层的节点值，层内用单个空格分隔。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点",
+      "content": "## 题目描述\n\n给定一棵二叉树，按层从上到下、每层从左到右输出节点值。\n\n二叉树用层序数组表示，`null` 表示空节点。本题的输出不是一行，而是先输出层数，再逐层输出每层的节点值。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n3 9 20 null null 15 7\n```\n\n输出：\n\n```\n3\n3\n9 20\n15 7\n```\n\n解释：第一行 `3` 表示共有 3 层，之后三行分别是每一层的节点值。\n\n**示例 2**\n\n输入：\n\n```\n1\n1\n```\n\n输出：\n\n```\n1\n1\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "二叉树",
       "referenceAnswer": "用队列做广度优先遍历：每轮先记录当前队列长度 `size`，只弹出这 `size` 个节点作为一层，同时把它们的非空孩子入队，形成下一层。循环直到队列为空。时间复杂度 O(n)，空间复杂度 O(最大层宽度)。",
-      "keyPoints": ["广度优先搜索", "队列", "按层分组"],
-      "kpNames": ["二叉树", "层序遍历"],
+      "keyPoints": [
+        "广度优先搜索",
+        "队列",
+        "按层分组"
+      ],
+      "kpNames": [
+        "二叉树",
+        "层序遍历"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/binary-tree-level-order-traversal/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 第一行输出层数 h，随后逐层输出每层节点值，层内空格分隔\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 第一行输出层数 h，随后逐层输出每层节点值，层内空格分隔\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\n3 9 20 null null 15 7", "expectedOutput": "3\n3\n9 20\n15 7", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1\n1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "2\n1\n2 3", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n1 2 null 3", "expectedOutput": "3\n1\n2\n3", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "5\n1 2 3 4 5", "expectedOutput": "3\n1\n2 3\n4 5", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "将有序数组转换为二叉搜索树",
-      "content": "## 题目描述\n\n给定一个按升序排列的整数数组，请把它转换成一棵高度平衡的二叉搜索树（BST）。\n\n为了让答案唯一，构造规则固定为：对当前区间 `[l, r]`，取中点 `mid = (l + r) / 2`（向下取整，即区间长度为偶数时取中间偏左的位置）作为根节点，再用 `[l, mid-1]` 递归构造左子树、`[mid+1, r]` 递归构造右子树。\n\n输出这棵树时使用层序数组，`null` 表示空节点，末尾多余的 `null` 去掉。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n-10 -3 0 5 9\n```\n\n输出：\n\n```\n0 -10 5 null -3 null 9\n```\n\n解释：`mid = (0+4)/2 = 2`，根为 0；左区间 `[-10,-3]` 取中点下标 0，即 -10，其右孩子为 -3；右区间 `[5,9]` 取中点 5，5 的右孩子为 9。\n\n**示例 2**\n\n输入：\n\n```\n2\n1 3\n```\n\n输出：\n\n```\n1 null 3\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个互不相同的整数，严格升序，用单个空格分隔；\n- 输出一行：按上述规则构造出的 BST 的层序数组，`null` 表示空节点，末尾多余的 `null` 去掉，token 之间用单个空格分隔。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-10^4 <= 元素值 <= 10^4`\n- 数组元素互不相同",
+      "content": "## 题目描述\n\n给定一个按升序排列的整数数组，请把它转换成一棵高度平衡的二叉搜索树（BST）。\n\n为了让答案唯一，构造规则固定为：对当前区间 `[l, r]`，取中点 `mid = (l + r) / 2`（向下取整，即区间长度为偶数时取中间偏左的位置）作为根节点，再用 `[l, mid-1]` 递归构造左子树、`[mid+1, r]` 递归构造右子树。\n\n输出这棵树时使用层序数组，`null` 表示空节点，末尾多余的 `null` 去掉。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n-10 -3 0 5 9\n```\n\n输出：\n\n```\n0 -10 5 null -3 null 9\n```\n\n解释：`mid = (0+4)/2 = 2`，根为 0；左区间 `[-10,-3]` 取中点下标 0，即 -10，其右孩子为 -3；右区间 `[5,9]` 取中点 5，5 的右孩子为 9。\n\n**示例 2**\n\n输入：\n\n```\n2\n1 3\n```\n\n输出：\n\n```\n1 null 3\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-10^4 <= 元素值 <= 10^4`\n- 数组元素互不相同\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "二叉树",
       "referenceAnswer": "每次取区间中点作为根节点，保证左右子树节点数之差不大于 1，从而高度平衡；再递归处理左右两个子区间。由于中点是固定取法，输出唯一。时间复杂度 O(n)，空间复杂度 O(log n)。",
-      "keyPoints": ["分治", "取中点", "高度平衡"],
-      "kpNames": ["二叉搜索树", "分治"],
+      "keyPoints": [
+        "分治",
+        "取中点",
+        "高度平衡"
+      ],
+      "kpNames": [
+        "二叉搜索树",
+        "分治"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个升序整数\n        // TODO 按中点（偶数取偏左）构造 BST，输出层序数组，null 表示空节点，去掉末尾多余 null\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个升序整数\n    # TODO 按中点（偶数取偏左）构造 BST，输出层序数组，null 表示空节点，去掉末尾多余 null\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "5\n-10 -3 0 5 9", "expectedOutput": "0 -10 5 null -3 null 9", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "2\n1 3", "expectedOutput": "1 null 3", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "2 1 3", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "4\n1 2 3 4", "expectedOutput": "2 1 3 null null null 4", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "验证二叉搜索树",
-      "content": "## 题目描述\n\n给定一棵二叉树，判断它是否是一棵合法的二叉搜索树（BST）。\n\nBST 要求：任意节点的左子树中所有节点值都严格小于该节点，右子树中所有节点值都严格大于该节点。注意约束是对整棵子树成立，而不只是父子之间。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n2 1 3\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n7\n5 1 4 null null 3 6\n```\n\n输出：\n\n```\nfalse\n```\n\n解释：根为 5，右孩子是 4，不满足右子树全部大于 5。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行：合法输出 `true`，否则输出 `false`。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-2^31 <= 节点值 <= 2^31 - 1`\n- 数据保证至少有一个节点",
+      "content": "## 题目描述\n\n给定一棵二叉树，判断它是否是一棵合法的二叉搜索树（BST）。\n\nBST 要求：任意节点的左子树中所有节点值都严格小于该节点，右子树中所有节点值都严格大于该节点。注意约束是对整棵子树成立，而不只是父子之间。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n2 1 3\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n7\n5 1 4 null null 3 6\n```\n\n输出：\n\n```\nfalse\n```\n\n解释：根为 5，右孩子是 4，不满足右子树全部大于 5。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-2^31 <= 节点值 <= 2^31 - 1`\n- 数据保证至少有一个节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "二叉树",
       "referenceAnswer": "递归时向下传递允许的开区间上下界：左子树的上界收紧为当前节点值，右子树的下界收紧为当前节点值；空节点返回真。也可以做中序遍历，检查序列是否严格递增。时间复杂度 O(n)，空间复杂度 O(h)。",
-      "keyPoints": ["上下界传递", "中序严格递增", "递归"],
-      "kpNames": ["二叉搜索树", "中序遍历"],
+      "keyPoints": [
+        "上下界传递",
+        "中序严格递增",
+        "递归"
+      ],
+      "kpNames": [
+        "二叉搜索树",
+        "中序遍历"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/validate-binary-search-tree/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出 true 或 false\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "3\n2 1 3", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "7\n5 1 4 null null 3 6", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "true", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "false", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "7\n5 3 7 1 4 6 8", "expectedOutput": "true", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二叉搜索树中第 K 小的元素",
-      "content": "## 题目描述\n\n给定一棵二叉搜索树和整数 `k`，返回其中第 `k` 小的节点值（`k` 从 1 开始计数）。\n\n二叉树用层序数组表示，`null` 表示空节点，输入保证是一棵合法 BST。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5 2\n3 1 4 null 2\n```\n\n输出：\n\n```\n2\n```\n\n解释：中序遍历结果为 `1 2 3 4`，第 2 小的值是 2。\n\n**示例 2**\n\n输入：\n\n```\n8 3\n5 3 6 2 4 null null 1\n```\n\n输出：\n\n```\n3\n```\n\n解释：中序遍历结果为 `1 2 3 4 5 6`，第 3 小的值是 3。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `k`，`n` 为层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉搜索树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行一个整数，表示第 `k` 小的节点值。\n\n## 提示\n\n- `1 <= k <= 节点数 <= 100`\n- `-10^4 <= 节点值 <= 10^4`\n- 输入保证是合法 BST，节点值互不相同",
+      "content": "## 题目描述\n\n给定一棵二叉搜索树和整数 `k`，返回其中第 `k` 小的节点值（`k` 从 1 开始计数）。\n\n二叉树用层序数组表示，`null` 表示空节点，输入保证是一棵合法 BST。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5 2\n3 1 4 null 2\n```\n\n输出：\n\n```\n2\n```\n\n解释：中序遍历结果为 `1 2 3 4`，第 2 小的值是 2。\n\n**示例 2**\n\n输入：\n\n```\n8 3\n5 3 6 2 4 null null 1\n```\n\n输出：\n\n```\n3\n```\n\n解释：中序遍历结果为 `1 2 3 4 5 6`，第 3 小的值是 3。\n\n## 提示\n\n- `1 <= k <= 节点数 <= 100`\n- `-10^4 <= 节点值 <= 10^4`\n- 输入保证是合法 BST，节点值互不相同\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "二叉树",
       "referenceAnswer": "利用 BST 中序遍历有序的性质：中序递归访问，每访问一个节点就把计数加一，计数等于 `k` 时记录答案并提前返回。时间复杂度 O(h + k)，最坏 O(n)，空间复杂度 O(h)。",
-      "keyPoints": ["中序有序", "计数剪枝", "BST 性质"],
-      "kpNames": ["二叉搜索树", "中序遍历"],
+      "keyPoints": [
+        "中序有序",
+        "计数剪枝",
+        "BST 性质"
+      ],
+      "kpNames": [
+        "二叉搜索树",
+        "中序遍历"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/kth-smallest-element-in-a-bst/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n k，第二行 n 个 token（节点值或 null），层序描述二叉搜索树\n        // TODO 输出第 k 小的节点值\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n k，第二行 n 个 token（节点值或 null），层序描述二叉搜索树\n    # TODO 输出第 k 小的节点值\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "5 2\n3 1 4 null 2", "expectedOutput": "2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "8 3\n5 3 6 2 4 null null 1", "expectedOutput": "3", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1 1\n1", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3 3\n2 1 3", "expectedOutput": "3", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "5 1\n5 3 7 2 4", "expectedOutput": "2", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二叉树的右视图",
-      "content": "## 题目描述\n\n站在二叉树的右侧观察，返回从上到下能看到的节点值。等价于按层遍历时取每一层最右边的节点。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n1 2 3 null 5 null 4\n```\n\n输出：\n\n```\n1 3 4\n```\n\n解释：三层分别是 `[1]`、`[2,3]`、`[5,4]`，每层最右侧是 1、3、4。\n\n**示例 2**\n\n输入：\n\n```\n3\n1 2 3\n```\n\n输出：\n\n```\n1 3\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行：从上到下每层最右侧节点的值，用单个空格分隔。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点",
+      "content": "## 题目描述\n\n站在二叉树的右侧观察，返回从上到下能看到的节点值。等价于按层遍历时取每一层最右边的节点。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n1 2 3 null 5 null 4\n```\n\n输出：\n\n```\n1 3 4\n```\n\n解释：三层分别是 `[1]`、`[2,3]`、`[5,4]`，每层最右侧是 1、3、4。\n\n**示例 2**\n\n输入：\n\n```\n3\n1 2 3\n```\n\n输出：\n\n```\n1 3\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "二叉树",
       "referenceAnswer": "按层广度优先遍历，每层遍历时记录该层最后一个节点的值加入结果；也可以做深度优先遍历，用深度作为下标，每层第一次到达（先访问右孩子）时写入结果。时间复杂度 O(n)，空间复杂度 O(最大层宽度)。",
-      "keyPoints": ["层序遍历", "每层最后一个节点", "深度优先替代"],
-      "kpNames": ["二叉树", "层序遍历"],
+      "keyPoints": [
+        "层序遍历",
+        "每层最后一个节点",
+        "深度优先替代"
+      ],
+      "kpNames": [
+        "二叉树",
+        "层序遍历"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/binary-tree-right-side-view/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出右视图，从上到下，空格分隔\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出右视图，从上到下，空格分隔\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\n1 2 3 null 5 null 4", "expectedOutput": "1 3 4", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "1 3", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n1 2 null 3", "expectedOutput": "1 2 3", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "5\n1 2 3 4 5", "expectedOutput": "1 3 5", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二叉树展开为链表",
-      "content": "## 题目描述\n\n给定一棵二叉树，把它原地展开成一个只使用右指针的单链表，链表中的节点顺序与二叉树的前序遍历一致，左指针全部置空。\n\n本题不检查指针结构，只要求输出展开后链表的节点值序列，也就是原树的前序遍历序列，以此作为判定结果。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n1 2 5 3 4 null 6\n```\n\n输出：\n\n```\n1 2 3 4 5 6\n```\n\n**示例 2**\n\n输入：\n\n```\n1\n1\n```\n\n输出：\n\n```\n1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行：展开后链表的节点值序列（即前序遍历序列），用单个空格分隔。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点",
+      "content": "## 题目描述\n\n给定一棵二叉树，把它原地展开成一个只使用右指针的单链表，链表中的节点顺序与二叉树的前序遍历一致，左指针全部置空。\n\n本题不检查指针结构，只要求输出展开后链表的节点值序列，也就是原树的前序遍历序列，以此作为判定结果。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\n1 2 5 3 4 null 6\n```\n\n输出：\n\n```\n1 2 3 4 5 6\n```\n\n**示例 2**\n\n输入：\n\n```\n1\n1\n```\n\n输出：\n\n```\n1\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证至少有一个节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "二叉树",
       "referenceAnswer": "可以边前序遍历边重连：对当前节点，若存在左子树，找到左子树的最右节点，把它接到当前节点的右子树上，再把左子树整体移到右侧，然后继续处理下一个右节点。整个过程原地完成，时间复杂度 O(n)，空间复杂度 O(1)。",
-      "keyPoints": ["前序遍历", "原地重连", "找左子树最右节点"],
-      "kpNames": ["二叉树", "前序遍历"],
+      "keyPoints": [
+        "前序遍历",
+        "原地重连",
+        "找左子树最右节点"
+      ],
+      "kpNames": [
+        "二叉树",
+        "前序遍历"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/flatten-binary-tree-to-linked-list/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出展开后链表的节点值（前序遍历序列），空格分隔\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出展开后链表的节点值（前序遍历序列），空格分隔\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\n1 2 5 3 4 null 6", "expectedOutput": "1 2 3 4 5 6", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "1 2 3", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n1 2 null 3", "expectedOutput": "1 2 3", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "3\n2 1 3", "expectedOutput": "2 1 3", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "从前序与中序遍历序列构造二叉树",
-      "content": "## 题目描述\n\n给定同一棵二叉树的前序遍历序列和中序遍历序列（节点值互不相同），请还原这棵二叉树，并输出它的层序数组。\n\n前序遍历顺序是「根 → 左 → 右」，中序遍历顺序是「左 → 根 → 右」。前序序列的第一个值一定是根，利用它在**中序序列中的位置**可以切分出左右子树的范围，再递归构造。\n\n输出为层序数组，`null` 表示空节点，末尾多余的 `null` 去掉。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n3 9 20 15 7\n9 3 15 20 7\n```\n\n输出：\n\n```\n3 9 20 null null 15 7\n```\n\n**示例 2**\n\n输入：\n\n```\n1\n-1\n-1\n```\n\n输出：\n\n```\n-1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数；\n- 第二行 `n` 个整数，为前序遍历序列；\n- 第三行 `n` 个整数，为中序遍历序列；\n- 输出一行：还原出的二叉树的层序数组，`null` 表示空节点，末尾多余的 `null` 去掉，token 之间用单个空格分隔。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-10^4 <= 节点值 <= 10^4`\n- 节点值互不相同，输入保证能还原出唯一一棵二叉树",
+      "content": "## 题目描述\n\n给定同一棵二叉树的前序遍历序列和中序遍历序列（节点值互不相同），请还原这棵二叉树，并输出它的层序数组。\n\n前序遍历顺序是「根 → 左 → 右」，中序遍历顺序是「左 → 根 → 右」。前序序列的第一个值一定是根，利用它在**中序序列中的位置**可以切分出左右子树的范围，再递归构造。\n\n输出为层序数组，`null` 表示空节点，末尾多余的 `null` 去掉。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n3 9 20 15 7\n9 3 15 20 7\n```\n\n输出：\n\n```\n3 9 20 null null 15 7\n```\n\n**示例 2**\n\n输入：\n\n```\n1\n-1\n-1\n```\n\n输出：\n\n```\n-1\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-10^4 <= 节点值 <= 10^4`\n- 节点值互不相同，输入保证能还原出唯一一棵二叉树\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "二叉树",
       "referenceAnswer": "用哈希表记录每个值在中序序列中的下标。递归函数接收前序区间左端点与中序区间 `[l, r]`：前序当前值即为根，查表得到根在中序中的位置 `mid`，则左子树大小为 `mid - l`，据此切分两个区间递归构造左右子树。时间复杂度 O(n)，空间复杂度 O(n)。",
-      "keyPoints": ["前序定根", "中序切分", "哈希下标"],
-      "kpNames": ["二叉树", "分治"],
+      "keyPoints": [
+        "前序定根",
+        "中序切分",
+        "哈希下标"
+      ],
+      "kpNames": [
+        "二叉树",
+        "分治"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-inorder-traversal/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行前序序列，第三行中序序列\n        // TODO 构造二叉树并输出层序数组，null 表示空节点，去掉末尾多余 null\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行前序序列，第三行中序序列\n    # TODO 构造二叉树并输出层序数组，null 表示空节点，去掉末尾多余 null\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "5\n3 9 20 15 7\n9 3 15 20 7", "expectedOutput": "3 9 20 null null 15 7", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1\n-1\n-1", "expectedOutput": "-1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n1 2 3\n2 1 3", "expectedOutput": "1 2 3", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "5\n1 2 4 5 3\n4 2 5 1 3", "expectedOutput": "1 2 3 4 5", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "4\n1 2 3 4\n1 2 3 4", "expectedOutput": "1 null 2 null 3 null 4", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "路径总和 III",
-      "content": "## 题目描述\n\n给定一棵二叉树和一个整数 `targetSum`，统计节点值之和等于 `targetSum` 的**向下路径**数量。\n\n向下路径指从某个节点出发、沿父子方向一直向下走形成的路径；路径不需要从根节点开始，也不需要在叶子节点结束，但方向必须自上而下，且至少包含一个节点。\n\n二叉树用层序数组表示，`null` 表示空节点，节点值可能为负数。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n11 8\n10 5 -3 3 2 null 11 3 -2 null 1\n```\n\n输出：\n\n```\n3\n```\n\n解释：三条路径分别是 `5 → 3`、`5 → 2 → 1` 和 `-3 → 11`。\n\n**示例 2**\n\n输入：\n\n```\n3 3\n1 2 3\n```\n\n输出：\n\n```\n2\n```\n\n解释：路径 `3` 与路径 `1 → 2` 的和都是 3。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `targetSum`，`n` 为层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行一个整数，表示满足条件的路径条数。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-10^9 <= targetSum, 节点值 <= 10^9`\n- 路径和与统计数量可能超出 32 位整数范围，请使用 64 位整数",
+      "content": "## 题目描述\n\n给定一棵二叉树和一个整数 `targetSum`，统计节点值之和等于 `targetSum` 的**向下路径**数量。\n\n向下路径指从某个节点出发、沿父子方向一直向下走形成的路径；路径不需要从根节点开始，也不需要在叶子节点结束，但方向必须自上而下，且至少包含一个节点。\n\n二叉树用层序数组表示，`null` 表示空节点，节点值可能为负数。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n11 8\n10 5 -3 3 2 null 11 3 -2 null 1\n```\n\n输出：\n\n```\n3\n```\n\n解释：三条路径分别是 `5 → 3`、`5 → 2 → 1` 和 `-3 → 11`。\n\n**示例 2**\n\n输入：\n\n```\n3 3\n1 2 3\n```\n\n输出：\n\n```\n2\n```\n\n解释：路径 `3` 与路径 `1 → 2` 的和都是 3。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-10^9 <= targetSum, 节点值 <= 10^9`\n- 路径和与统计数量可能超出 32 位整数范围，请使用 64 位整数\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "二叉树",
       "referenceAnswer": "在深度优先遍历中维护「根到当前节点的前缀和」，并用哈希表统计每个前缀和出现次数。设当前前缀和为 `cur`，则以当前节点结尾、和为 `targetSum` 的路径数等于前缀和 `cur - targetSum` 的出现次数。回溯时要把当前前缀和从表中减掉。时间复杂度 O(n)，空间复杂度 O(n)。",
-      "keyPoints": ["前缀和", "哈希计数", "回溯"],
-      "kpNames": ["二叉树", "前缀和"],
+      "keyPoints": [
+        "前缀和",
+        "哈希计数",
+        "回溯"
+      ],
+      "kpNames": [
+        "二叉树",
+        "前缀和"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/path-sum-iii/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n targetSum，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出和等于 targetSum 的向下路径条数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n targetSum，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出和等于 targetSum 的向下路径条数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "11 8\n10 5 -3 3 2 null 11 3 -2 null 1", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3 3\n1 2 3", "expectedOutput": "2", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1 5\n5", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3 -1\n1 -2 -3", "expectedOutput": "1", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "5 1\n4 -2 1 1 1", "expectedOutput": "3", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二叉树的最近公共祖先",
-      "content": "## 题目描述\n\n给定一棵二叉树和其中的两个节点值 `p`、`q`，求它们的最近公共祖先（LCA）。\n\n最近公共祖先指同时是 `p` 和 `q` 的祖先、且深度最大的那个节点；一个节点也可以是自己的祖先。输入保证节点值互不相同，`p`、`q` 都存在于树中且不相等。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n11\n3 5 1 6 2 0 8 null null 7 4\n5 1\n```\n\n输出：\n\n```\n3\n```\n\n**示例 2**\n\n输入：\n\n```\n11\n3 5 1 6 2 0 8 null null 7 4\n5 4\n```\n\n输出：\n\n```\n5\n```\n\n解释：节点 4 在节点 5 的右子树中，5 自己是 5 的祖先，所以最近公共祖先是 5。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 第三行两个整数 `p` 和 `q`；\n- 输出一行一个整数，表示最近公共祖先的节点值。\n\n## 提示\n\n- `2 <= n <= 100`\n- `-10^4 <= 节点值 <= 10^4`\n- 节点值互不相同，`p != q`，且二者都在树中",
+      "content": "## 题目描述\n\n给定一棵二叉树和其中的两个节点值 `p`、`q`，求它们的最近公共祖先（LCA）。\n\n最近公共祖先指同时是 `p` 和 `q` 的祖先、且深度最大的那个节点；一个节点也可以是自己的祖先。输入保证节点值互不相同，`p`、`q` 都存在于树中且不相等。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n11\n3 5 1 6 2 0 8 null null 7 4\n5 1\n```\n\n输出：\n\n```\n3\n```\n\n**示例 2**\n\n输入：\n\n```\n11\n3 5 1 6 2 0 8 null null 7 4\n5 4\n```\n\n输出：\n\n```\n5\n```\n\n解释：节点 4 在节点 5 的右子树中，5 自己是 5 的祖先，所以最近公共祖先是 5。\n\n## 提示\n\n- `2 <= n <= 100`\n- `-10^4 <= 节点值 <= 10^4`\n- 节点值互不相同，`p != q`，且二者都在树中\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "二叉树",
       "referenceAnswer": "递归查找：若当前节点为空、等于 `p` 或等于 `q`，直接返回当前节点；否则分别递归左右子树。若左右子树返回都不为空，说明 `p`、`q` 分居两侧，当前节点即 LCA；否则返回非空的那一侧结果。时间复杂度 O(n)，空间复杂度 O(h)。",
-      "keyPoints": ["递归后序", "分居两侧判定", "祖先定义"],
-      "kpNames": ["二叉树", "最近公共祖先"],
+      "keyPoints": [
+        "递归后序",
+        "分居两侧判定",
+        "祖先定义"
+      ],
+      "kpNames": [
+        "二叉树",
+        "最近公共祖先"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），第三行 p q\n        // TODO 输出 p 与 q 的最近公共祖先节点值\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），第三行 p q\n    # TODO 输出 p 与 q 的最近公共祖先节点值\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "11\n3 5 1 6 2 0 8 null null 7 4\n5 1", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "11\n3 5 1 6 2 0 8 null null 7 4\n5 4", "expectedOutput": "5", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n1 2 3\n2 3", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3\n1 2 3\n1 2", "expectedOutput": "1", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "7\n1 2 3 4 5 6 7\n4 5", "expectedOutput": "2", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二叉树中的最大路径和",
-      "content": "## 题目描述\n\n给定一棵二叉树，求任意一条路径的最大节点值之和。\n\n路径指树中任意一段节点序列，序列中相邻两个节点之间都有一条边，且同一个节点在路径中最多出现一次。路径至少包含一个节点，因此答案可能是负数。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n1 2 3\n```\n\n输出：\n\n```\n6\n```\n\n解释：路径 `2 → 1 → 3` 的和为 6。\n\n**示例 2**\n\n输入：\n\n```\n7\n-10 9 20 null null 15 7\n```\n\n输出：\n\n```\n42\n```\n\n解释：路径 `15 → 20 → 7` 的和为 42。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述二叉树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 输出一行一个整数，表示最大路径和。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-1000 <= 节点值 <= 1000`\n- 路径至少包含一个节点，答案可能为负数",
+      "content": "## 题目描述\n\n给定一棵二叉树，求任意一条路径的最大节点值之和。\n\n路径指树中任意一段节点序列，序列中相邻两个节点之间都有一条边，且同一个节点在路径中最多出现一次。路径至少包含一个节点，因此答案可能是负数。\n\n二叉树用层序数组表示，`null` 表示空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n1 2 3\n```\n\n输出：\n\n```\n6\n```\n\n解释：路径 `2 → 1 → 3` 的和为 6。\n\n**示例 2**\n\n输入：\n\n```\n7\n-10 9 20 null null 15 7\n```\n\n输出：\n\n```\n42\n```\n\n解释：路径 `15 → 20 → 7` 的和为 42。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-1000 <= 节点值 <= 1000`\n- 路径至少包含一个节点，答案可能为负数\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 3,
       "domain": "二叉树",
       "referenceAnswer": "后序递归返回「以当前节点为端点的最大单边路径和」：左右子树返回值只取正贡献，即 `max(0, left)`、`max(0, right)`。用 `节点值 + 左贡献 + 右贡献` 更新全局最大路径和，返回 `节点值 + max(左贡献, 右贡献)`。时间复杂度 O(n)，空间复杂度 O(h)。",
-      "keyPoints": ["后序递归", "负贡献置零", "全局最大"],
-      "kpNames": ["二叉树", "动态规划"],
+      "keyPoints": [
+        "后序递归",
+        "负贡献置零",
+        "全局最大"
+      ],
+      "kpNames": [
+        "二叉树",
+        "动态规划"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/binary-tree-maximum-path-sum/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n        // TODO 输出最大路径和\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行 n 个 token（节点值或 null），层序描述二叉树\n    # TODO 输出最大路径和\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "3\n1 2 3", "expectedOutput": "6", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "7\n-10 9 20 null null 15 7", "expectedOutput": "42", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n-3", "expectedOutput": "-3", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3\n2 -1 3", "expectedOutput": "5", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "5\n1 2 3 4 5", "expectedOutput": "11", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "相同的树",
-      "content": "## 题目描述\n\n给定两棵二叉树，判断它们结构是否完全相同、且对应位置的节点值是否相等。\n\n两棵树都用层序数组表示，`null` 表示空节点。要求结构一致：某个位置在一棵树中是空节点，在另一棵树中也必须是空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n1 2 3\n1 2 3\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n3 3\n1 2 1\n1 1 2\n```\n\n输出：\n\n```\nfalse\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `m`，分别是两棵树层序数组的 token 个数；\n- 第二行 `n` 个 token，层序描述第一棵树，`null` 表示空节点，末尾多余的 `null` 可省略；\n- 第三行 `m` 个 token，层序描述第二棵树，格式同上；\n- 输出一行：相同输出 `true`，否则输出 `false`。\n\n## 提示\n\n- `1 <= n, m <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证每棵树至少有一个节点",
+      "content": "## 题目描述\n\n给定两棵二叉树，判断它们结构是否完全相同、且对应位置的节点值是否相等。\n\n两棵树都用层序数组表示，`null` 表示空节点。要求结构一致：某个位置在一棵树中是空节点，在另一棵树中也必须是空节点。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n1 2 3\n1 2 3\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n3 3\n1 2 1\n1 1 2\n```\n\n输出：\n\n```\nfalse\n```\n\n## 提示\n\n- `1 <= n, m <= 100`\n- `-100 <= 节点值 <= 100`\n- 数据保证每棵树至少有一个节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "二叉树",
       "referenceAnswer": "同时递归两棵树的对应位置：都为空返回真；只有一个为空返回假；值不相等返回假；否则继续比较左孩子对与右孩子对。也可以把两棵树同时入队做广度优先比较。时间复杂度 O(min(n, m))，空间复杂度 O(h)。",
-      "keyPoints": ["同步递归", "结构一致", "同时为空"],
-      "kpNames": ["二叉树", "递归"],
+      "keyPoints": [
+        "同步递归",
+        "结构一致",
+        "同时为空"
+      ],
+      "kpNames": [
+        "二叉树",
+        "递归"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/same-tree/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n m，第二行第一棵树 n 个 token，第三行第二棵树 m 个 token\n        // TODO 输出 true 或 false\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n m，第二行第一棵树 n 个 token，第三行第二棵树 m 个 token\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "3 3\n1 2 3\n1 2 3", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3 3\n1 2 1\n1 1 2", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1 1\n1\n1", "expectedOutput": "true", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3 2\n1 2 3\n1 2", "expectedOutput": "false", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "4 4\n1 2 null 3\n1 2 null 3", "expectedOutput": "true", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "从中序与后序遍历序列构造二叉树",
-      "content": "## 题目描述\n\n给定同一棵二叉树的中序遍历序列和后序遍历序列（节点值互不相同），请还原这棵二叉树，并输出它的层序数组。\n\n中序遍历顺序是「左 → 根 → 右」，后序遍历顺序是「左 → 右 → 根」。后序序列的最后一个值一定是根，利用它在**中序序列中的位置**可以切分左右子树的范围，再递归构造。\n\n输出为层序数组，`null` 表示空节点，末尾多余的 `null` 去掉。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n9 3 15 20 7\n9 15 7 20 3\n```\n\n输出：\n\n```\n3 9 20 null null 15 7\n```\n\n**示例 2**\n\n输入：\n\n```\n1\n-1\n-1\n```\n\n输出：\n\n```\n-1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示节点个数；\n- 第二行 `n` 个整数，为中序遍历序列；\n- 第三行 `n` 个整数，为后序遍历序列；\n- 输出一行：还原出的二叉树的层序数组，`null` 表示空节点，末尾多余的 `null` 去掉，token 之间用单个空格分隔。\n\n## 提示\n\n- `1 <= n <= 100`\n- `-10^4 <= 节点值 <= 10^4`\n- 节点值互不相同，输入保证能还原出唯一一棵二叉树",
+      "content": "## 题目描述\n\n给定同一棵二叉树的中序遍历序列和后序遍历序列（节点值互不相同），请还原这棵二叉树，并输出它的层序数组。\n\n中序遍历顺序是「左 → 根 → 右」，后序遍历顺序是「左 → 右 → 根」。后序序列的最后一个值一定是根，利用它在**中序序列中的位置**可以切分左右子树的范围，再递归构造。\n\n输出为层序数组，`null` 表示空节点，末尾多余的 `null` 去掉。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\n9 3 15 20 7\n9 15 7 20 3\n```\n\n输出：\n\n```\n3 9 20 null null 15 7\n```\n\n**示例 2**\n\n输入：\n\n```\n1\n-1\n-1\n```\n\n输出：\n\n```\n-1\n```\n\n## 提示\n\n- `1 <= n <= 100`\n- `-10^4 <= 节点值 <= 10^4`\n- 节点值互不相同，输入保证能还原出唯一一棵二叉树\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "二叉树",
       "referenceAnswer": "用哈希表记录每个值在中序序列中的下标。递归函数接收后序区间右端点与中序区间 `[l, r]`：后序当前最后一个值即根，查表得到它在中的位置 `mid`，右子树大小为 `r - mid`，据此切分左右子树的后序区间递归构造。时间复杂度 O(n)，空间复杂度 O(n)。",
-      "keyPoints": ["后序定根", "中序切分", "哈希下标"],
-      "kpNames": ["二叉树", "分治"],
+      "keyPoints": [
+        "后序定根",
+        "中序切分",
+        "哈希下标"
+      ],
+      "kpNames": [
+        "二叉树",
+        "分治"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/construct-binary-tree-from-inorder-and-postorder-traversal/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，第二行中序序列，第三行后序序列\n        // TODO 构造二叉树并输出层序数组，null 表示空节点，去掉末尾多余 null\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，第二行中序序列，第三行后序序列\n    # TODO 构造二叉树并输出层序数组，null 表示空节点，去掉末尾多余 null\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "5\n9 3 15 20 7\n9 15 7 20 3", "expectedOutput": "3 9 20 null null 15 7", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1\n-1\n-1", "expectedOutput": "-1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n2 1 3\n2 3 1", "expectedOutput": "1 2 3", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "5\n4 2 5 1 3\n4 5 2 3 1", "expectedOutput": "1 2 3 4 5", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "4\n1 2 3 4\n4 3 2 1", "expectedOutput": "1 null 2 null 3 null 4", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     }
   ]
 }

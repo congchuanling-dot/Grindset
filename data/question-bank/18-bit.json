@@ -2,353 +2,263 @@
   "questions": [
     {
       "title": "只出现一次的数字",
-      "content": "## 题目描述\n\n给定一个非空整数数组 `nums`，除某个元素只出现一次外，其余每个元素都恰好出现两次。请找出并返回这个只出现一次的元素。\n\n要求线性时间完成，且只使用常量额外空间。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,2,1]`\n\n输出：`1`\n\n**示例 2**\n\n输入：`nums = [4,1,2,1,2]`\n\n输出：`4`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个整数，表示数组 `nums`，用空格分隔；\n- 输出一个整数，表示只出现一次的元素。\n\n## 提示\n\n- `1 <= n <= 3 * 10^4`\n- `-3 * 10^4 <= nums[i] <= 3 * 10^4`\n- 除某个元素外，其余元素都恰好出现两次\n\n> 力扣模式下只需实现 `singleNumber` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个非空整数数组 `nums`，除某个元素只出现一次外，其余每个元素都恰好出现两次。请找出并返回这个只出现一次的元素。\n\n要求线性时间完成，且只使用常量额外空间。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,2,1]`\n\n输出：`1`\n\n**示例 2**\n\n输入：`nums = [4,1,2,1,2]`\n\n输出：`4`\n\n## 提示\n\n- `1 <= n <= 3 * 10^4`\n- `-3 * 10^4 <= nums[i] <= 3 * 10^4`\n- 除某个元素外，其余元素都恰好出现两次\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "位运算",
       "referenceAnswer": "利用异或运算的自反性：任何数与自身异或结果为 0，与 0 异或结果不变，且异或满足交换律和结合律。把数组中所有元素依次异或，成对出现的元素会互相抵消，最终留下的就是只出现一次的元素。全程只用一个变量。时间复杂度 O(n)，空间复杂度 O(1)。",
-      "keyPoints": ["异或自反性", "交换律", "一次遍历"],
-      "kpNames": ["位运算", "数组"],
+      "keyPoints": [
+        "异或自反性",
+        "交换律",
+        "一次遍历"
+      ],
+      "kpNames": [
+        "位运算",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/single-number/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "singleNumber",
-      "paramTypes": ["int[]"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行整数 n，第二行 n 个整数（空格分隔）\n        // TODO 输出只出现一次的元素\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是数组\n    # TODO 输出只出现一次的元素\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int singleNumber(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def singleNumber(self, nums: List[int]) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[2,2,1]]", "expectedOutput": "1", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[4,1,2,1,2]]", "expectedOutput": "4", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[7,3,3,9,9,7,5]]", "expectedOutput": "5", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3\n2 2 1", "expectedOutput": "1", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "5\n4 1 2 1 2", "expectedOutput": "4", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "7\n7 3 3 9 9 7 5", "expectedOutput": "5", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "只出现一次的数字 II",
-      "content": "## 题目描述\n\n给定一个整数数组 `nums`，除某个元素只出现一次外，其余每个元素都恰好出现**三次**。请找出并返回这个只出现一次的元素。\n\n要求线性时间完成，且只使用常量额外空间。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,2,3,2]`\n\n输出：`3`\n\n**示例 2**\n\n输入：`nums = [0,1,0,1,0,1,99]`\n\n输出：`99`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个整数，表示数组 `nums`，用空格分隔；\n- 输出一个整数，表示只出现一次的元素。\n\n## 提示\n\n- `1 <= n <= 3 * 10^4`\n- `-2^31 <= nums[i] <= 2^31 - 1`\n- 除某个元素外，其余元素都恰好出现三次\n\n> 力扣模式下只需实现 `singleNumber` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个整数数组 `nums`，除某个元素只出现一次外，其余每个元素都恰好出现**三次**。请找出并返回这个只出现一次的元素。\n\n要求线性时间完成，且只使用常量额外空间。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,2,3,2]`\n\n输出：`3`\n\n**示例 2**\n\n输入：`nums = [0,1,0,1,0,1,99]`\n\n输出：`99`\n\n## 提示\n\n- `1 <= n <= 3 * 10^4`\n- `-2^31 <= nums[i] <= 2^31 - 1`\n- 除某个元素外，其余元素都恰好出现三次\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "位运算",
       "referenceAnswer": "按二进制位统计：对 32 个二进制位分别统计所有数字在该位上 1 的个数，若某位的 1 的个数不能被 3 整除，说明只出现一次的元素在该位为 1。最后把这些位重新组合即可得到答案。另一种写法是用两个状态变量模拟三进制计数，遇到新数时按位更新状态。时间复杂度 O(32n)，空间复杂度 O(1)。",
-      "keyPoints": ["按位统计", "模 3 计数", "位掩码"],
-      "kpNames": ["位运算", "数组"],
+      "keyPoints": [
+        "按位统计",
+        "模 3 计数",
+        "位掩码"
+      ],
+      "kpNames": [
+        "位运算",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/single-number-ii/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "singleNumber",
-      "paramTypes": ["int[]"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行整数 n，第二行 n 个整数（空格分隔）\n        // TODO 输出只出现一次的元素\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是数组\n    # TODO 输出只出现一次的元素\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int singleNumber(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def singleNumber(self, nums: List[int]) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[2,2,3,2]]", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[0,1,0,1,0,1,99]]", "expectedOutput": "99", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[5,5,5,3]]", "expectedOutput": "3", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n2 2 3 2", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "7\n0 1 0 1 0 1 99", "expectedOutput": "99", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "4\n5 5 5 3", "expectedOutput": "3", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "位 1 的个数",
-      "content": "## 题目描述\n\n给定一个正整数 `n`，返回它二进制表示中数字 `1` 的个数（也叫汉明重量）。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 11`（二进制 `1011`）\n\n输出：`3`\n\n**示例 2**\n\n输入：`n = 128`（二进制 `10000000`）\n\n输出：`1`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 输出一个整数，表示 `n` 的二进制表示中 `1` 的个数。\n\n## 提示\n\n- `1 <= n <= 2^31 - 1`\n- 可以用 `n & (n - 1)` 每次消掉最低位的 1\n\n> 力扣模式下只需实现 `hammingWeight` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个正整数 `n`，返回它二进制表示中数字 `1` 的个数（也叫汉明重量）。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 11`（二进制 `1011`）\n\n输出：`3`\n\n**示例 2**\n\n输入：`n = 128`（二进制 `10000000`）\n\n输出：`1`\n\n## 提示\n\n- `1 <= n <= 2^31 - 1`\n- 可以用 `n & (n - 1)` 每次消掉最低位的 1\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "位运算",
       "referenceAnswer": "核心技巧是 `n & (n - 1)`：它会把 `n` 最低位的 1 变成 0，其余位不变。因此反复执行该操作并计数，直到 `n` 变成 0，执行次数就是 1 的个数。也可以逐位检查 `n & 1` 后右移。前者循环次数等于 1 的个数，时间复杂度 O(k)，空间复杂度 O(1)。",
-      "keyPoints": ["n & (n-1)", "消去最低位 1", "位运算计数"],
-      "kpNames": ["位运算", "进制"],
+      "keyPoints": [
+        "n & (n-1)",
+        "消去最低位 1",
+        "位运算计数"
+      ],
+      "kpNames": [
+        "位运算",
+        "进制"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/number-of-1-bits/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "hammingWeight",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行一个整数 n\n        // TODO 输出 n 的二进制表示中 1 的个数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n\n    # TODO 输出 n 的二进制表示中 1 的个数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int hammingWeight(int n) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def hammingWeight(self, n: int) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[11]", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[128]", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[5]", "expectedOutput": "2", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "11", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "128", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "5", "expectedOutput": "2", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "颠倒二进制位",
-      "content": "## 题目描述\n\n给定一个**无符号 32 位整数** `n`，请把它 32 位二进制表示中的每一位**首尾颠倒**，返回颠倒后的无符号整数。\n\n例如二进制串 `b31 b30 ... b1 b0`，颠倒后得到 `b0 b1 ... b30 b31`。输入按无符号数解释，右移时应使用逻辑右移。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 43261596`（二进制 `00000010100101000001111010011100`）\n\n输出：`964176192`（二进制 `00111001011110000010100101000000`）\n\n**示例 2**\n\n输入：`n = 2`\n\n输出：`1073741824`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个**无符号十进制整数** `n`；\n- 输出一个**无符号十进制整数**，表示颠倒后的结果。\n\n本题测试数据只使用较小且明确的值，颠倒结果仍落在 `0 ~ 2^31 - 1` 内，用普通 32 位有符号 `int` 或 `long` 都能正确表示。\n\n## 提示\n\n- `0 <= n <= 2^32 - 1`，按无符号数处理\n- 注意使用逻辑右移（`>>>`），或把数据放进 `long` 做位运算\n- 测试数据只用颠倒后不超过 `2^31 - 1` 的偶数取值，避免符号歧义\n\n> 力扣模式下只需实现 `reverseBits` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个**无符号 32 位整数** `n`，请把它 32 位二进制表示中的每一位**首尾颠倒**，返回颠倒后的无符号整数。\n\n例如二进制串 `b31 b30 ... b1 b0`，颠倒后得到 `b0 b1 ... b30 b31`。输入按无符号数解释，右移时应使用逻辑右移。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 43261596`（二进制 `00000010100101000001111010011100`）\n\n输出：`964176192`（二进制 `00111001011110000010100101000000`）\n\n**示例 2**\n\n输入：`n = 2`\n\n输出：`1073741824`\n\n## 提示\n\n- `0 <= n <= 2^32 - 1`，按无符号数处理\n- 注意使用逻辑右移（`>>>`），或把数据放进 `long` 做位运算\n- 测试数据只用颠倒后不超过 `2^31 - 1` 的偶数取值，避免符号歧义\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "位运算",
       "referenceAnswer": "从最低位开始依次取出 `n` 的每一位，把它放到结果的对应高位上：每轮先 `res = (res << 1) | (n & 1)`，再对 `n` 做逻辑右移。循环固定执行 32 次，正好把 32 位全部颠倒。注意必须使用逻辑右移，否则高位补 1 会出错。时间复杂度 O(32)，空间复杂度 O(1)。",
-      "keyPoints": ["逻辑右移", "位拼接", "固定 32 轮"],
-      "kpNames": ["位运算", "进制"],
+      "keyPoints": [
+        "逻辑右移",
+        "位拼接",
+        "固定 32 轮"
+      ],
+      "kpNames": [
+        "位运算",
+        "进制"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/reverse-bits/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "reverseBits",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行一个无符号十进制整数 n\n        // TODO 输出颠倒 32 位二进制后的无符号十进制整数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])  # 按无符号 32 位整数处理\n    # TODO 输出颠倒 32 位二进制后的无符号十进制整数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int reverseBits(int n) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def reverseBits(self, n: int) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[43261596]", "expectedOutput": "964176192", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[2]", "expectedOutput": "1073741824", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[6]", "expectedOutput": "1610612736", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "43261596", "expectedOutput": "964176192", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "2", "expectedOutput": "1073741824", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "6", "expectedOutput": "1610612736", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二进制求和",
-      "content": "## 题目描述\n\n给定两个只由字符 `'0'` 和 `'1'` 组成的字符串 `a` 和 `b`，请计算它们的二进制和，并以二进制字符串返回结果。\n\n## 示例\n\n**示例 1**\n\n输入：`a = \"11\", b = \"1\"`\n\n输出：`\"100\"`\n\n**示例 2**\n\n输入：`a = \"1010\", b = \"1011\"`\n\n输出：`\"10101\"`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个二进制字符串 `a`；\n- 第二行一个二进制字符串 `b`；\n- 输出一行，表示 `a + b` 的二进制字符串，不含前导 0（结果为 0 时输出 `0`）。\n\n## 提示\n\n- `1 <= a.length, b.length <= 10^4`\n- `a`、`b` 只包含 `'0'` 和 `'1'`，除 `\"0\"` 外不含前导 0\n\n> 力扣模式下只需实现 `addBinary` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定两个只由字符 `'0'` 和 `'1'` 组成的字符串 `a` 和 `b`，请计算它们的二进制和，并以二进制字符串返回结果。\n\n## 示例\n\n**示例 1**\n\n输入：`a = \"11\", b = \"1\"`\n\n输出：`\"100\"`\n\n**示例 2**\n\n输入：`a = \"1010\", b = \"1011\"`\n\n输出：`\"10101\"`\n\n## 提示\n\n- `1 <= a.length, b.length <= 10^4`\n- `a`、`b` 只包含 `'0'` 和 `'1'`，除 `\"0\"` 外不含前导 0\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "位运算",
       "referenceAnswer": "从两个字符串末尾开始逐位相加，维护进位 `carry`，每一位的和为两个字符对应的数字加进位，把 `sum % 2` 追加到结果，`sum / 2` 作为新进位。某个串先遍历完后按 0 处理，最后若进位仍为 1 再补一位。将结果反转即为答案。时间复杂度 O(max(m,n))，空间复杂度 O(max(m,n))。",
-      "keyPoints": ["双指针从后往前", "进位处理", "结果反转"],
-      "kpNames": ["字符串", "位运算"],
+      "keyPoints": [
+        "双指针从后往前",
+        "进位处理",
+        "结果反转"
+      ],
+      "kpNames": [
+        "字符串",
+        "位运算"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/add-binary/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "addBinary",
-      "paramTypes": ["String", "String"],
-      "returnType": "String",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行二进制字符串 a，第二行二进制字符串 b\n        // TODO 输出 a + b 的二进制字符串\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个是 a，第二个是 b\n    # TODO 输出 a + b 的二进制字符串\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public String addBinary(String a, String b) {\n        // TODO\n        return \"\";\n    }\n}",
-        "PYTHON": "class Solution:\n    def addBinary(self, a: str, b: str) -> str:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"11\",\"1\"]", "expectedOutput": "\"100\"", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"1010\",\"1011\"]", "expectedOutput": "\"10101\"", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"1\",\"1\"]", "expectedOutput": "\"10\"", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "11\n1", "expectedOutput": "100", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1010\n1011", "expectedOutput": "10101", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1\n1", "expectedOutput": "10", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "数字范围按位与",
-      "content": "## 题目描述\n\n给定两个整数 `left` 和 `right`，表示闭区间 `[left, right]`。请返回该区间内所有整数按位与（AND）的结果。\n\n## 示例\n\n**示例 1**\n\n输入：`left = 5, right = 7`\n\n输出：`4`\n\n解释：`5 & 6 & 7 = 4`。\n\n**示例 2**\n\n输入：`left = 0, right = 0`\n\n输出：`0`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `left` 和 `right`，用空格分隔；\n- 输出一个整数，表示区间内所有整数的按位与结果。\n\n## 提示\n\n- `0 <= left <= right <= 2^31 - 1`\n- 区间可能很大，直接遍历会超时，考虑二进制公共前缀\n\n> 力扣模式下只需实现 `rangeBitwiseAnd` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定两个整数 `left` 和 `right`，表示闭区间 `[left, right]`。请返回该区间内所有整数按位与（AND）的结果。\n\n## 示例\n\n**示例 1**\n\n输入：`left = 5, right = 7`\n\n输出：`4`\n\n解释：`5 & 6 & 7 = 4`。\n\n**示例 2**\n\n输入：`left = 0, right = 0`\n\n输出：`0`\n\n## 提示\n\n- `0 <= left <= right <= 2^31 - 1`\n- 区间可能很大，直接遍历会超时，考虑二进制公共前缀\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "位运算",
       "referenceAnswer": "区间内所有数字按位与的结果，等于 `left` 和 `right` 二进制表示的**公共前缀**后面补零。原因是从 `left` 递增到 `right` 时，只要某个二进制位发生过变化，该位在按位与中就会变成 0。可以不断把两个数一起右移直到相等，同时记录右移次数，最后再左移回去；也可以消掉 `right` 最低位的 1 直到不大于 `left`。时间复杂度 O(32)，空间复杂度 O(1)。",
-      "keyPoints": ["公共前缀", "同时右移", "补零"],
-      "kpNames": ["位运算", "数学"],
+      "keyPoints": [
+        "公共前缀",
+        "同时右移",
+        "补零"
+      ],
+      "kpNames": [
+        "位运算",
+        "数学"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/bitwise-and-of-numbers-range/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "rangeBitwiseAnd",
-      "paramTypes": ["int", "int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行两个整数 left 和 right（空格分隔）\n        // TODO 输出区间 [left, right] 内所有整数的按位与结果\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 left，第二个数是 right\n    # TODO 输出区间 [left, right] 内所有整数的按位与结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int rangeBitwiseAnd(int left, int right) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def rangeBitwiseAnd(self, left: int, right: int) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[5,7]", "expectedOutput": "4", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[0,0]", "expectedOutput": "0", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[6,7]", "expectedOutput": "6", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "5 7", "expectedOutput": "4", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "0 0", "expectedOutput": "0", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "6 7", "expectedOutput": "6", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二进制中 1 的个数（剑指 Offer 15）",
-      "content": "## 题目描述\n\n请实现一个函数，输入一个整数 `n`，输出该数二进制表示中数字 `1` 的个数。\n\n例如把 9 写成二进制是 `1001`，其中有 2 个 1，因此输出 2。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 9`\n\n输出：`2`\n\n**示例 2**\n\n输入：`n = 15`\n\n输出：`4`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 输出一个整数，表示 `n` 的二进制表示中 `1` 的个数。\n\n## 提示\n\n- `0 <= n <= 2^31 - 1`\n- 注意 `n` 可能为 0\n- 可用 `n & (n - 1)` 每次消去最低位的 1\n\n> 力扣模式下只需实现 `hammingWeight` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n请实现一个函数，输入一个整数 `n`，输出该数二进制表示中数字 `1` 的个数。\n\n例如把 9 写成二进制是 `1001`，其中有 2 个 1，因此输出 2。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 9`\n\n输出：`2`\n\n**示例 2**\n\n输入：`n = 15`\n\n输出：`4`\n\n## 提示\n\n- `0 <= n <= 2^31 - 1`\n- 注意 `n` 可能为 0\n- 可用 `n & (n - 1)` 每次消去最低位的 1\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "位运算",
       "referenceAnswer": "利用 `n & (n - 1)` 会把最低位的 1 置 0 的性质：循环执行该操作并累计次数，直到 `n` 为 0，累计次数就是 1 的个数。循环次数等于 1 的个数而非固定 32 次，效率更高。注意输入可能为 0，此时直接返回 0。时间复杂度 O(k)（k 为 1 的个数），空间复杂度 O(1)。",
-      "keyPoints": ["n & (n-1)", "消去最低位 1", "循环计数"],
-      "kpNames": ["位运算", "进制"],
+      "keyPoints": [
+        "n & (n-1)",
+        "消去最低位 1",
+        "循环计数"
+      ],
+      "kpNames": [
+        "位运算",
+        "进制"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/er-jin-zhi-zhong-1de-ge-shu-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "hammingWeight",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行一个整数 n\n        // TODO 输出 n 的二进制表示中 1 的个数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n\n    # TODO 输出 n 的二进制表示中 1 的个数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int hammingWeight(int n) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def hammingWeight(self, n: int) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[9]", "expectedOutput": "2", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[15]", "expectedOutput": "4", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[1]", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "9", "expectedOutput": "2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "15", "expectedOutput": "4", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1", "expectedOutput": "1", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "数组中数字出现的次数（剑指 Offer 56 - I）",
-      "content": "## 题目描述\n\n一个整数数组 `nums` 中，除两个数字只出现一次外，其余数字都恰好出现两次。请找出这两个只出现一次的数字，并以**升序**返回。\n\n要求时间复杂度 O(n)，空间复杂度 O(1)。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [4,1,4,6]`\n\n输出：`[1,6]`\n\n**示例 2**\n\n输入：`nums = [1,2,10,4,1,4,3,3]`\n\n输出：`[2,10]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个整数，表示数组 `nums`，用空格分隔；\n- 输出一行两个整数，按**升序**排列，用空格分隔。\n\n## 提示\n\n- `2 <= n <= 10^4`\n- 除两个数字外，其余数字均恰好出现两次\n- 结果必须升序，答案唯一\n\n> 力扣模式下只需实现 `singleNumbers` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n一个整数数组 `nums` 中，除两个数字只出现一次外，其余数字都恰好出现两次。请找出这两个只出现一次的数字，并以**升序**返回。\n\n要求时间复杂度 O(n)，空间复杂度 O(1)。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [4,1,4,6]`\n\n输出：`[1,6]`\n\n**示例 2**\n\n输入：`nums = [1,2,10,4,1,4,3,3]`\n\n输出：`[2,10]`\n\n## 提示\n\n- `2 <= n <= 10^4`\n- 除两个数字外，其余数字均恰好出现两次\n- 结果必须升序，答案唯一\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "位运算",
       "referenceAnswer": "先把所有数字异或起来，成对出现的数字互相抵消，结果是两个只出现一次数字的异或值 `x`。取 `x` 中任意一个为 1 的位（常用 `x & -x` 取最低位），按该位是否为 1 把数组分成两组：两个目标数字必然分到不同组。再分别对两组整体异或，就得到两个答案。最后按升序输出。时间复杂度 O(n)，空间复杂度 O(1)。",
-      "keyPoints": ["全体异或", "分组异或", "取最低位 1"],
-      "kpNames": ["位运算", "数组"],
+      "keyPoints": [
+        "全体异或",
+        "分组异或",
+        "取最低位 1"
+      ],
+      "kpNames": [
+        "位运算",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/shu-zu-zhong-shu-zi-chu-xian-de-ci-shu-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "singleNumbers",
-      "paramTypes": ["int[]"],
-      "returnType": "int[]",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行整数 n，第二行 n 个整数（空格分隔）\n        // TODO 输出两个只出现一次的数字，按升序，用空格分隔\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是数组\n    # TODO 输出两个只出现一次的数字，按升序，用空格分隔\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int[] singleNumbers(int[] nums) {\n        // TODO\n        return new int[]{0, 0};\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def singleNumbers(self, nums: List[int]) -> List[int]:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[4,1,4,6]]", "expectedOutput": "[1,6]", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[1,2,10,4,1,4,3,3]]", "expectedOutput": "[2,10]", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[1,2]]", "expectedOutput": "[1,2]", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n4 1 4 6", "expectedOutput": "1 6", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "8\n1 2 10 4 1 4 3 3", "expectedOutput": "2 10", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "2\n1 2", "expectedOutput": "1 2", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "数组中数字出现的次数 II（剑指 Offer 56 - II）",
-      "content": "## 题目描述\n\n一个整数数组 `nums` 中，除一个数字只出现一次外，其余数字都恰好出现**三次**。请找出这个只出现一次的数字。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [3,4,3,3]`\n\n输出：`4`\n\n**示例 2**\n\n输入：`nums = [9,1,7,9,7,9,7]`\n\n输出：`1`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个整数，表示数组 `nums`，用空格分隔；\n- 输出一个整数，表示只出现一次的数字。\n\n## 提示\n\n- `1 <= n <= 10^5`\n- `1 <= nums[i] < 2^31`\n- 除一个数字外，其余数字均恰好出现三次\n\n> 力扣模式下只需实现 `singleNumber` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n一个整数数组 `nums` 中，除一个数字只出现一次外，其余数字都恰好出现**三次**。请找出这个只出现一次的数字。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [3,4,3,3]`\n\n输出：`4`\n\n**示例 2**\n\n输入：`nums = [9,1,7,9,7,9,7]`\n\n输出：`1`\n\n## 提示\n\n- `1 <= n <= 10^5`\n- `1 <= nums[i] < 2^31`\n- 除一个数字外，其余数字均恰好出现三次\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "位运算",
       "referenceAnswer": "对 32 个二进制位分别统计所有数字在该位上 1 的个数，由于其余数字都出现三次，它们的贡献都能被 3 整除。若某位 1 的个数模 3 为 1，说明只出现一次的数字在该位为 1。把所有这些位组合起来就是答案。时间复杂度 O(32n)，空间复杂度 O(1)。",
-      "keyPoints": ["按位统计", "模 3 余数", "位组合"],
-      "kpNames": ["位运算", "数组"],
+      "keyPoints": [
+        "按位统计",
+        "模 3 余数",
+        "位组合"
+      ],
+      "kpNames": [
+        "位运算",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/shu-zu-zhong-shu-zi-chu-xian-de-ci-shu-ii-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "singleNumber",
-      "paramTypes": ["int[]"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行整数 n，第二行 n 个整数（空格分隔）\n        // TODO 输出只出现一次的数字\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 n，后面 n 个数是数组\n    # TODO 输出只出现一次的数字\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int singleNumber(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def singleNumber(self, nums: List[int]) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[3,4,3,3]]", "expectedOutput": "4", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[9,1,7,9,7,9,7]]", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[2,2,2,5]]", "expectedOutput": "5", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n3 4 3 3", "expectedOutput": "4", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "7\n9 1 7 9 7 9 7", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "4\n2 2 2 5", "expectedOutput": "5", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "不用加减乘除做加法（剑指 Offer 65）",
-      "content": "## 题目描述\n\n给定两个整数 `a` 和 `b`，要求**不使用** `+`、`-`、`*`、`/` 四则运算符，计算它们的和并返回。\n\n提示：可以用异或得到不进位的结果，用与运算加左移得到进位，循环直到进位为 0。\n\n## 示例\n\n**示例 1**\n\n输入：`a = 1, b = 1`\n\n输出：`2`\n\n**示例 2**\n\n输入：`a = 5, b = 3`\n\n输出：`8`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `a` 和 `b`，用空格分隔；\n- 输出一个整数，表示 `a + b`。\n\n## 提示\n\n- `-1000 <= a, b <= 1000`\n- 结果保证在 32 位有符号整数范围内\n- 允许使用位运算符 `&`、`|`、`^`、`<<`、`>>`\n\n> 力扣模式下只需实现 `add` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定两个整数 `a` 和 `b`，要求**不使用** `+`、`-`、`*`、`/` 四则运算符，计算它们的和并返回。\n\n提示：可以用异或得到不进位的结果，用与运算加左移得到进位，循环直到进位为 0。\n\n## 示例\n\n**示例 1**\n\n输入：`a = 1, b = 1`\n\n输出：`2`\n\n**示例 2**\n\n输入：`a = 5, b = 3`\n\n输出：`8`\n\n## 提示\n\n- `-1000 <= a, b <= 1000`\n- 结果保证在 32 位有符号整数范围内\n- 允许使用位运算符 `&`、`|`、`^`、`<<`、`>>`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "位运算",
       "referenceAnswer": "把加法拆成「不进位加」和「进位」两部分：`a ^ b` 得到不考虑进位的和，`(a & b) << 1` 得到进位。然后把这两部分当作新的 `a` 和 `b` 继续迭代，直到进位为 0，此时 `a ^ b` 就是最终结果。Java 中左移溢出自然截断，Python 需要额外处理负数与 32 位掩码。时间复杂度 O(32)，空间复杂度 O(1)。",
-      "keyPoints": ["异或求不进位和", "与运算求进位", "循环到进位为 0"],
-      "kpNames": ["位运算", "数学"],
+      "keyPoints": [
+        "异或求不进位和",
+        "与运算求进位",
+        "循环到进位为 0"
+      ],
+      "kpNames": [
+        "位运算",
+        "数学"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/bu-yong-jia-jian-cheng-chu-zuo-jia-fa-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "add",
-      "paramTypes": ["int", "int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行两个整数 a 和 b（空格分隔）\n        // TODO 不使用 + - * / 计算并输出 a + b\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是 a，第二个数是 b\n    # TODO 不使用 + - * / 计算并输出 a + b\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int add(int a, int b) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def add(self, a: int, b: int) -> int:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[1,1]", "expectedOutput": "2", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[5,3]", "expectedOutput": "8", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[-1,1]", "expectedOutput": "0", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "1 1", "expectedOutput": "2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "5 3", "expectedOutput": "8", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "-1 1", "expectedOutput": "0", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     }
   ]
 }

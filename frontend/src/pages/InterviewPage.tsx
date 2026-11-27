@@ -1,12 +1,8 @@
 import { errMessage } from '../utils/error'
-import { AlertCircle, Briefcase, Clock3, FileText, Loader2, Sparkles } from 'lucide-react'
+import { AlertCircle, Briefcase, FileText, Loader2, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  createInterview,
-  listInterviews,
-  type InterviewSummary,
-} from '../api/interview'
+import { createInterview } from '../api/interview'
 import {
   getResume,
   listResumes,
@@ -14,7 +10,6 @@ import {
   type ResumeSummary,
 } from '../api/resume'
 import ResumeViewer from '../components/resume/ResumeViewer'
-import { SessionStatus } from '../constants/status'
 
 const TYPE_LABELS: Record<string, string> = {
   FRESH_GRADUATE: '应届生',
@@ -53,7 +48,6 @@ interface StartSettings {
 
 /**
  * AI 面试入口:选择简历(带预览)、配置岗位/风格/轮次/题数,创建会话后进入对话页。
- * 下方展示历史面试记录。
  */
 function InterviewPage() {
   const navigate = useNavigate()
@@ -67,9 +61,6 @@ function InterviewPage() {
 
   const [questionCount, setQuestionCount] = useState(5)
   const [starting, setStarting] = useState(false)
-
-  const [history, setHistory] = useState<InterviewSummary[]>([])
-  const [historyLoading, setHistoryLoading] = useState(true)
 
   // 进页面拉简历列表,默认选中最新一份
   useEffect(() => {
@@ -85,23 +76,6 @@ function InterviewPage() {
       })
       .finally(() => {
         if (!cancelled) setLoadingList(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    listInterviews()
-      .then((list) => {
-        if (!cancelled) setHistory(list)
-      })
-      .catch(() => {
-        // 历史记录失败不打扰主流程
-      })
-      .finally(() => {
-        if (!cancelled) setHistoryLoading(false)
       })
     return () => {
       cancelled = true
@@ -245,8 +219,6 @@ function InterviewPage() {
             />
           </div>
         )}
-
-        <HistorySection items={history} loading={historyLoading} />
       </div>
     </div>
   )
@@ -400,7 +372,7 @@ function InterviewSettings({
             <span>
               <span className="block text-xs font-medium text-slate-700">最后一题手撕代码</span>
               <span className="mt-0.5 block text-[11px] leading-5 text-slate-400">
-                从题库随机选一道力扣题，可以在面试间里写代码并和面试官讨论
+                从题库随机选一道编程题，可以在面试间里写代码并和面试官讨论
               </span>
             </span>
           </label>
@@ -463,59 +435,5 @@ function InterviewSettings({
     </aside>
   )
 }
-
-function HistorySection({ items, loading }: { items: InterviewSummary[]; loading: boolean }) {
-  const navigate = useNavigate()
-
-  if (loading) {
-    return (
-      <div className="mt-6 flex items-center gap-2 text-xs text-slate-400">
-        <Loader2 size={13} className="animate-spin" />
-        加载面试记录…
-      </div>
-    )
-  }
-  if (items.length === 0) return null
-
-  return (
-    <section className="mt-8">
-      <h2 className="text-sm font-semibold text-slate-800">面试记录</h2>
-      <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => navigate(`/interview/${item.id}`)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-brand-300"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <span className="line-clamp-1 text-sm font-medium text-slate-800">{item.position}</span>
-              {item.status === SessionStatus.FINISHED ? (
-                <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
-                  {item.overallScore != null ? `${item.overallScore} 分` : '已结束'}
-                </span>
-              ) : (
-                <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
-                  进行中
-                </span>
-              )}
-            </div>
-            <p className="mt-1 line-clamp-1 text-xs text-slate-400">{item.resumeFileName}</p>
-            <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-400">
-              <span>
-                已完成 {item.completedQuestions}/{item.questionCount} 题
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock3 size={11} />
-                {item.createdAt}
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 
 export default InterviewPage

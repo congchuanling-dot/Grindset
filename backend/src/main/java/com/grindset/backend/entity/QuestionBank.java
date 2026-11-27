@@ -37,19 +37,6 @@ public class QuestionBank {
     /** TEXT 问答 / CODING 编程 */
     private JudgeMode judgeMode;
 
-    /** ACM 标准输入输出 / LEETCODE 函数签名,仅 CODING 有意义 */
-    private String codeMode;
-
-    /** LEETCODE 模式下待实现的函数名 */
-    private String functionName;
-
-    /** LEETCODE 模式下函数参数类型,按顺序 */
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<String> paramTypes;
-
-    /** LEETCODE 模式下返回值类型 */
-    private String returnType;
-
     /** 难度 1~3 */
     private Integer difficulty;
 
@@ -66,10 +53,6 @@ public class QuestionBank {
     /** 各语言初始代码 {"JAVA":"...","PYTHON":"..."} */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Map<String, String> starterCode;
-
-    /** 力扣模式的各语言初始代码,结构与 starterCode 一致 */
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private Map<String, String> starterCodeFunction;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> keyPoints;
@@ -142,38 +125,6 @@ public class QuestionBank {
         this.judgeMode = judgeMode;
     }
 
-    public String getCodeMode() {
-        return codeMode;
-    }
-
-    public void setCodeMode(String codeMode) {
-        this.codeMode = codeMode;
-    }
-
-    public String getFunctionName() {
-        return functionName;
-    }
-
-    public void setFunctionName(String functionName) {
-        this.functionName = functionName;
-    }
-
-    public List<String> getParamTypes() {
-        return paramTypes;
-    }
-
-    public void setParamTypes(List<String> paramTypes) {
-        this.paramTypes = paramTypes;
-    }
-
-    public String getReturnType() {
-        return returnType;
-    }
-
-    public void setReturnType(String returnType) {
-        this.returnType = returnType;
-    }
-
     public Integer getTimeLimitMs() {
         return timeLimitMs;
     }
@@ -196,14 +147,6 @@ public class QuestionBank {
 
     public void setStarterCode(Map<String, String> starterCode) {
         this.starterCode = starterCode;
-    }
-
-    public Map<String, String> getStarterCodeFunction() {
-        return starterCodeFunction;
-    }
-
-    public void setStarterCodeFunction(Map<String, String> starterCodeFunction) {
-        this.starterCodeFunction = starterCodeFunction;
     }
 
     public Integer getDifficulty() {

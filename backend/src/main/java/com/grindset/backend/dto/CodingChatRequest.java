@@ -7,6 +7,5 @@ package com.grindset.backend.dto;
 public record CodingChatRequest(
         String message,
         String code,
-        String language,
-        String codeMode) {
+        String language) {
 }

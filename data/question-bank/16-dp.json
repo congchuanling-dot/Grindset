@@ -2,458 +2,341 @@
   "questions": [
     {
       "title": "爬楼梯",
-      "content": "## 题目描述\n\n你正在爬一个有 `n` 级台阶的楼梯。每次你可以向上爬 1 级或 2 级，问一共有多少种不同的方式可以爬到楼顶（即到达第 `n` 级）。\n\n题目保证答案在 32 位有符号整数范围内。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 2`\n\n输出：`2`\n\n解释：有两种方式，分别是 1 + 1 和 2。\n\n**示例 2**\n\n输入：`n = 3`\n\n输出：`3`\n\n解释：三种方式分别是 1 + 1 + 1、1 + 2、2 + 1。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示爬到楼顶的方式数。\n\n## 提示\n\n- `1 <= n <= 45`\n- 结果不超过 `2^31 - 1`\n\n> 力扣模式下只需实现 `climbStairs` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n你正在爬一个有 `n` 级台阶的楼梯。每次你可以向上爬 1 级或 2 级，问一共有多少种不同的方式可以爬到楼顶（即到达第 `n` 级）。\n\n题目保证答案在 32 位有符号整数范围内。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 2`\n\n输出：`2`\n\n解释：有两种方式，分别是 1 + 1 和 2。\n\n**示例 2**\n\n输入：`n = 3`\n\n输出：`3`\n\n解释：三种方式分别是 1 + 1 + 1、1 + 2、2 + 1。\n\n## 提示\n\n- `1 <= n <= 45`\n- 结果不超过 `2^31 - 1`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "动态规划",
       "referenceAnswer": "设 `f(n)` 为爬到第 `n` 级台阶的方式数。走到最后一步时，要么从第 `n-1` 级跨 1 级上来，要么从第 `n-2` 级跨 2 级上来，因此 `f(n) = f(n-1) + f(n-2)`，边界为 `f(1) = 1`、`f(2) = 2`。只保留前两项做滚动递推即可，时间 O(n)，空间 O(1)。",
-      "keyPoints": ["递推关系", "滚动变量", "边界处理"],
-      "kpNames": ["动态规划", "递推"],
+      "keyPoints": [
+        "递推关系",
+        "滚动变量",
+        "边界处理"
+      ],
+      "kpNames": [
+        "动态规划",
+        "递推"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/climbing-stairs/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "climbStairs",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一个整数 n\n        // TODO 输出爬到楼顶的方式数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 输入一个整数 n\n    # TODO 输出爬到楼顶的方式数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int climbStairs(int n) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def climbStairs(self, n: int) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[2]", "expectedOutput": "2", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[3]", "expectedOutput": "3", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[1]", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "2", "expectedOutput": "2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3", "expectedOutput": "3", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1", "expectedOutput": "1", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "打家劫舍",
-      "content": "## 题目描述\n\n你是一个专业小偷，计划偷窃沿街的房屋。每间房内都藏着一定数量的现金，数组 `nums` 中的 `nums[i]` 表示第 `i` 间房内的现金。\n\n相邻的房屋装有相互连通的防盗系统，如果同一晚上**连续偷窃两间相邻的房屋**，系统会自动报警。给定一个非负整数数组 `nums`，求在不触动警报的前提下，一晚能偷窃到的最高金额。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,2,3,1]`\n\n输出：`4`\n\n解释：偷第 1 间（金额 1）和第 3 间（金额 3），合计 4。\n\n**示例 2**\n\n输入：`nums = [2,7,9,3,1]`\n\n输出：`12`\n\n解释：偷第 1、3、5 间，金额 `2 + 9 + 1 = 12`。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示房屋数量；\n- 第二行 `n` 个非负整数，表示每间房的现金；\n- 输出一个整数，表示能偷到的最高金额。\n\n## 提示\n\n- `1 <= nums.length <= 100`\n- `0 <= nums[i] <= 400`\n\n> 力扣模式下只需实现 `rob` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n你是一个专业小偷，计划偷窃沿街的房屋。每间房内都藏着一定数量的现金，数组 `nums` 中的 `nums[i]` 表示第 `i` 间房内的现金。\n\n相邻的房屋装有相互连通的防盗系统，如果同一晚上**连续偷窃两间相邻的房屋**，系统会自动报警。给定一个非负整数数组 `nums`，求在不触动警报的前提下，一晚能偷窃到的最高金额。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,2,3,1]`\n\n输出：`4`\n\n解释：偷第 1 间（金额 1）和第 3 间（金额 3），合计 4。\n\n**示例 2**\n\n输入：`nums = [2,7,9,3,1]`\n\n输出：`12`\n\n解释：偷第 1、3、5 间，金额 `2 + 9 + 1 = 12`。\n\n## 提示\n\n- `1 <= nums.length <= 100`\n- `0 <= nums[i] <= 400`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "设 `dp[i]` 为偷前 `i` 间房能得到的最大金额。对第 `i` 间房要么不偷（继承 `dp[i-1]`），要么偷（`dp[i-2] + nums[i]`），取两者较大值。由于只依赖前两项，可用两个滚动变量保存 `dp[i-2]` 与 `dp[i-1]`。时间 O(n)，空间 O(1)。",
-      "keyPoints": ["相邻互斥", "状态转移", "滚动变量"],
-      "kpNames": ["动态规划", "数组"],
+      "keyPoints": [
+        "相邻互斥",
+        "状态转移",
+        "滚动变量"
+      ],
+      "kpNames": [
+        "动态规划",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/house-robber/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "rob",
-      "paramTypes": ["int[]"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行：房屋数量 n\n        // 第二行：n 个非负整数\n        // TODO 输出能偷到的最高金额\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是房屋数量 n，后面是 n 个金额\n    # TODO 输出能偷到的最高金额\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int rob(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def rob(self, nums: List[int]) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[1,2,3,1]]", "expectedOutput": "4", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[2,7,9,3,1]]", "expectedOutput": "12", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[2,1,1,2]]", "expectedOutput": "4", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n1 2 3 1", "expectedOutput": "4", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "5\n2 7 9 3 1", "expectedOutput": "12", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "4\n2 1 1 2", "expectedOutput": "4", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "单词拆分",
-      "content": "## 题目描述\n\n给定一个字符串 `s` 和一个字符串列表 `wordDict` 作为字典（字典中的单词互不相同），判断 `s` 能否被空格拆分成一个或多个字典中出现过的单词。拆分时字典中的单词**可以重复使用**。\n\n能拆分返回 `true`，否则返回 `false`。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"leetcode\", wordDict = [\"leet\",\"code\"]`\n\n输出：`true`\n\n解释：返回 `true`，因为 `leetcode` 可以拆成 `leet code`。\n\n**示例 2**\n\n输入：`s = \"catsandog\", wordDict = [\"cats\",\"dog\",\"sand\",\"and\",\"cat\"]`\n\n输出：`false`\n\n解释：无法把 `catsandog` 完整拆成字典中的单词。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个不含空格的字符串 `s`；\n- 第二行一个整数 `k`，表示字典单词个数；\n- 第三行 `k` 个单词，用空格分隔；\n- 输出 `true` 或 `false`（小写）。\n\n## 提示\n\n- `1 <= s.length <= 300`\n- `1 <= wordDict.length <= 1000`\n- `1 <= wordDict[i].length <= 20`\n- 字典中单词互不相同，只含小写字母\n\n> 力扣模式下只需实现 `wordBreak` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个字符串 `s` 和一个字符串列表 `wordDict` 作为字典（字典中的单词互不相同），判断 `s` 能否被空格拆分成一个或多个字典中出现过的单词。拆分时字典中的单词**可以重复使用**。\n\n能拆分返回 `true`，否则返回 `false`。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"leetcode\", wordDict = [\"leet\",\"code\"]`\n\n输出：`true`\n\n解释：返回 `true`，因为 `leetcode` 可以拆成 `leet code`。\n\n**示例 2**\n\n输入：`s = \"catsandog\", wordDict = [\"cats\",\"dog\",\"sand\",\"and\",\"cat\"]`\n\n输出：`false`\n\n解释：无法把 `catsandog` 完整拆成字典中的单词。\n\n## 提示\n\n- `1 <= s.length <= 300`\n- `1 <= wordDict.length <= 1000`\n- `1 <= wordDict[i].length <= 20`\n- 字典中单词互不相同，只含小写字母\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "用 `dp[i]` 表示 `s` 的前 `i` 个字符能否拆成字典单词。枚举切分点 `j`（`0 <= j < i`），若 `dp[j]` 为真且子串 `s[j..i)` 在字典中，则 `dp[i]` 为真。先用哈希集合存字典以 O(1) 判断单词是否存在，最终答案为 `dp[n]`。时间 O(n^2 · L)，空间 O(n)。",
-      "keyPoints": ["完全背包式切分", "子串判定", "哈希集合查词"],
-      "kpNames": ["动态规划", "字符串"],
+      "keyPoints": [
+        "完全背包式切分",
+        "子串判定",
+        "哈希集合查词"
+      ],
+      "kpNames": [
+        "动态规划",
+        "字符串"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/word-break/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "wordBreak",
-      "paramTypes": ["String", "List<String>"],
-      "returnType": "boolean",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行：字符串 s\n        // 第二行：字典单词个数 k\n        // 第三行：k 个单词（空格分隔）\n        // TODO 输出 true 或 false\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    lines = sys.stdin.read().split()\n    # lines[0] 是 s，lines[1] 是单词个数 k，之后是 k 个单词\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public boolean wordBreak(String s, List<String> wordDict) {\n        // TODO\n        return false;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def wordBreak(self, s: str, wordDict: List[str]) -> bool:\n        # TODO\n        return False"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"leetcode\",[\"leet\",\"code\"]]", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"catsandog\",[\"cats\",\"dog\",\"sand\",\"and\",\"cat\"]]", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"applepenapple\",[\"apple\",\"pen\"]]", "expectedOutput": "true", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "leetcode\n2\nleet code", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "catsandog\n5\ncats dog sand and cat", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "applepenapple\n2\napple pen", "expectedOutput": "true", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "零钱兑换",
-      "content": "## 题目描述\n\n给定不同面额的硬币数组 `coins` 和一个总金额 `amount`。每种硬币的数量是无限的，请计算凑成总金额 `amount` 所需的**最少硬币个数**。如果无论如何都凑不出这个金额，返回 `-1`。\n\n## 示例\n\n**示例 1**\n\n输入：`coins = [1,2,5], amount = 11`\n\n输出：`3`\n\n解释：`11 = 5 + 5 + 1`，共 3 枚硬币。\n\n**示例 2**\n\n输入：`coins = [2], amount = 3`\n\n输出：`-1`\n\n解释：只用面额 2 无法凑出 3。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `amount`，`n` 表示硬币种类数；\n- 第二行 `n` 个整数，表示每种硬币的面额；\n- 输出一个整数，表示最少硬币数；凑不出时输出 `-1`。\n\n## 提示\n\n- `1 <= coins.length <= 12`\n- `1 <= coins[i] <= 2^31 - 1`\n- `0 <= amount <= 10^4`\n\n> 力扣模式下只需实现 `coinChange` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定不同面额的硬币数组 `coins` 和一个总金额 `amount`。每种硬币的数量是无限的，请计算凑成总金额 `amount` 所需的**最少硬币个数**。如果无论如何都凑不出这个金额，返回 `-1`。\n\n## 示例\n\n**示例 1**\n\n输入：`coins = [1,2,5], amount = 11`\n\n输出：`3`\n\n解释：`11 = 5 + 5 + 1`，共 3 枚硬币。\n\n**示例 2**\n\n输入：`coins = [2], amount = 3`\n\n输出：`-1`\n\n解释：只用面额 2 无法凑出 3。\n\n## 提示\n\n- `1 <= coins.length <= 12`\n- `1 <= coins[i] <= 2^31 - 1`\n- `0 <= amount <= 10^4`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "这是完全背包求最小值。设 `dp[x]` 为凑出金额 `x` 的最少硬币数，初始 `dp[0] = 0`，其余为正无穷。对每个金额 `x` 枚举硬币面额 `c`，用 `dp[x - c] + 1` 更新 `dp[x]`。最终 `dp[amount]` 若仍为正无穷则返回 -1。时间 O(amount · n)，空间 O(amount)。",
-      "keyPoints": ["完全背包", "最少硬币数", "不可达状态处理"],
-      "kpNames": ["动态规划", "背包问题"],
+      "keyPoints": [
+        "完全背包",
+        "最少硬币数",
+        "不可达状态处理"
+      ],
+      "kpNames": [
+        "动态规划",
+        "背包问题"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/coin-change/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "coinChange",
-      "paramTypes": ["int[]", "int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行：硬币种类数 n 和目标金额 amount\n        // 第二行：n 个硬币面额\n        // TODO 输出最少硬币数，凑不出输出 -1\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 前两个数是 n 和 amount，之后是 n 个面额\n    # TODO 输出最少硬币数，凑不出输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int coinChange(int[] coins, int amount) {\n        // TODO\n        return -1;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def coinChange(self, coins: List[int], amount: int) -> int:\n        # TODO\n        return -1"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[1,2,5],11]", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[2],3]", "expectedOutput": "-1", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[1],0]", "expectedOutput": "0", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3 11\n1 2 5", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1 3\n2", "expectedOutput": "-1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "1 0\n1", "expectedOutput": "0", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "最长递增子序列",
-      "content": "## 题目描述\n\n给定一个整数数组 `nums`，找出其中**严格递增子序列**的最大长度。子序列由原数组删除若干（可以为 0 个）元素后得到，不要求元素在原数组中连续。\n\n严格递增意味着对序列中任意相邻两项都满足前一项小于后一项。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [10,9,2,5,3,7,101,18]`\n\n输出：`4`\n\n解释：最长递增子序列之一是 `[2,3,7,101]`，长度为 4。\n\n**示例 2**\n\n输入：`nums = [7,7,7,7]`\n\n输出：`1`\n\n解释：所有元素相同，严格递增子序列最长只能取一个元素。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个整数，表示数组 `nums`；\n- 输出一个整数，表示最长严格递增子序列的长度。\n\n## 提示\n\n- `1 <= nums.length <= 2500`\n- `-10^4 <= nums[i] <= 10^4`\n\n> 力扣模式下只需实现 `lengthOfLIS` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个整数数组 `nums`，找出其中**严格递增子序列**的最大长度。子序列由原数组删除若干（可以为 0 个）元素后得到，不要求元素在原数组中连续。\n\n严格递增意味着对序列中任意相邻两项都满足前一项小于后一项。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [10,9,2,5,3,7,101,18]`\n\n输出：`4`\n\n解释：最长递增子序列之一是 `[2,3,7,101]`，长度为 4。\n\n**示例 2**\n\n输入：`nums = [7,7,7,7]`\n\n输出：`1`\n\n解释：所有元素相同，严格递增子序列最长只能取一个元素。\n\n## 提示\n\n- `1 <= nums.length <= 2500`\n- `-10^4 <= nums[i] <= 10^4`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "设 `dp[i]` 表示以 `nums[i]` 结尾的最长递增子序列长度。枚举所有 `j < i`，若 `nums[j] < nums[i]`，则 `dp[i] = max(dp[i], dp[j] + 1)`，最终答案是所有 `dp[i]` 的最大值。时间 O(n^2)，空间 O(n)。进阶做法是维护一个递增的「最小结尾」数组并二分查找，可优化到 O(n log n)。",
-      "keyPoints": ["以 i 结尾的状态定义", "双层枚举转移", "严格递增判定"],
-      "kpNames": ["动态规划", "子序列"],
+      "keyPoints": [
+        "以 i 结尾的状态定义",
+        "双层枚举转移",
+        "严格递增判定"
+      ],
+      "kpNames": [
+        "动态规划",
+        "子序列"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/longest-increasing-subsequence/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "lengthOfLIS",
-      "paramTypes": ["int[]"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行：数组长度 n\n        // 第二行：n 个整数\n        // TODO 输出最长严格递增子序列的长度\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是长度 n，后面是 n 个整数\n    # TODO 输出最长严格递增子序列的长度\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int lengthOfLIS(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def lengthOfLIS(self, nums: List[int]) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[10,9,2,5,3,7,101,18]]", "expectedOutput": "4", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[7,7,7,7]]", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[0,1,0,3,2,3]]", "expectedOutput": "4", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "8\n10 9 2 5 3 7 101 18", "expectedOutput": "4", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "4\n7 7 7 7", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "6\n0 1 0 3 2 3", "expectedOutput": "4", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "完全平方数",
-      "content": "## 题目描述\n\n给定一个正整数 `n`，求最少需要多少个**完全平方数**（如 1、4、9、16、…）相加才能得到 `n`。完全平方数可以重复使用。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 12`\n\n输出：`3`\n\n解释：`12 = 4 + 4 + 4`。\n\n**示例 2**\n\n输入：`n = 13`\n\n输出：`2`\n\n解释：`13 = 4 + 9`。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示和为 `n` 的完全平方数的最少个数。\n\n## 提示\n\n- `1 <= n <= 10^4`\n\n> 力扣模式下只需实现 `numSquares` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个正整数 `n`，求最少需要多少个**完全平方数**（如 1、4、9、16、…）相加才能得到 `n`。完全平方数可以重复使用。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 12`\n\n输出：`3`\n\n解释：`12 = 4 + 4 + 4`。\n\n**示例 2**\n\n输入：`n = 13`\n\n输出：`2`\n\n解释：`13 = 4 + 9`。\n\n## 提示\n\n- `1 <= n <= 10^4`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "完全背包求最小值。设 `dp[x]` 为组成 `x` 所需的最少平方数个数，`dp[0] = 0`，其余初始为无穷大。对每个 `x`，枚举所有满足 `k*k <= x` 的平方数，用 `dp[x - k*k] + 1` 更新 `dp[x]`。时间 O(n√n)，空间 O(n)。",
-      "keyPoints": ["完全背包", "最少个数", "平方数枚举"],
-      "kpNames": ["动态规划", "数学"],
+      "keyPoints": [
+        "完全背包",
+        "最少个数",
+        "平方数枚举"
+      ],
+      "kpNames": [
+        "动态规划",
+        "数学"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/perfect-squares/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "numSquares",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一个整数 n\n        // TODO 输出最少需要几个完全平方数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 输入一个整数 n\n    # TODO 输出最少需要几个完全平方数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int numSquares(int n) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def numSquares(self, n: int) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[12]", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[13]", "expectedOutput": "2", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[7]", "expectedOutput": "4", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "12", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "13", "expectedOutput": "2", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "7", "expectedOutput": "4", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "乘积最大子数组",
-      "content": "## 题目描述\n\n给定一个整数数组 `nums`，请找出其中乘积最大的**连续子数组**（至少包含一个元素），并返回该子数组的乘积。\n\n数组中可能含有负数，负数乘负数会变成正数，这正是本题的关键。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,3,-2,4]`\n\n输出：`6`\n\n解释：子数组 `[2,3]` 的乘积为 6，是最大的。\n\n**示例 2**\n\n输入：`nums = [-2,0,-1]`\n\n输出：`0`\n\n解释：单独的 `-1` 乘积为 -1，不如包含 0 的子数组乘积 0。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个整数，表示数组 `nums`；\n- 输出一个整数，表示乘积最大的连续子数组的乘积。\n\n## 提示\n\n- `1 <= nums.length <= 2 * 10^4`\n- `-10 <= nums[i] <= 10`\n- 保证答案在 32 位有符号整数范围内\n\n> 力扣模式下只需实现 `maxProduct` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个整数数组 `nums`，请找出其中乘积最大的**连续子数组**（至少包含一个元素），并返回该子数组的乘积。\n\n数组中可能含有负数，负数乘负数会变成正数，这正是本题的关键。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [2,3,-2,4]`\n\n输出：`6`\n\n解释：子数组 `[2,3]` 的乘积为 6，是最大的。\n\n**示例 2**\n\n输入：`nums = [-2,0,-1]`\n\n输出：`0`\n\n解释：单独的 `-1` 乘积为 -1，不如包含 0 的子数组乘积 0。\n\n## 提示\n\n- `1 <= nums.length <= 2 * 10^4`\n- `-10 <= nums[i] <= 10`\n- 保证答案在 32 位有符号整数范围内\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "因为负数会让最大乘积变最小、最小乘积变最大，所以要同时维护以当前元素结尾的最大乘积 `maxEnd` 和最小乘积 `minEnd`。若当前数为负，先交换两者再乘；转移为 `maxEnd = max(x, maxEnd*x, minEnd*x)`，`minEnd = min(x, maxEnd*x, minEnd*x)`，过程中记录全局最大值。时间 O(n)，空间 O(1)。",
-      "keyPoints": ["同时维护最大最小", "负数翻转", "连续子数组"],
-      "kpNames": ["动态规划", "数组"],
+      "keyPoints": [
+        "同时维护最大最小",
+        "负数翻转",
+        "连续子数组"
+      ],
+      "kpNames": [
+        "动态规划",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/maximum-product-subarray/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "maxProduct",
-      "paramTypes": ["int[]"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行：数组长度 n\n        // 第二行：n 个整数\n        // TODO 输出乘积最大的连续子数组的乘积\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是长度 n，后面是 n 个整数\n    # TODO 输出乘积最大的连续子数组的乘积\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int maxProduct(int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def maxProduct(self, nums: List[int]) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[2,3,-2,4]]", "expectedOutput": "6", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[-2,0,-1]]", "expectedOutput": "0", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[-2,3,-4]]", "expectedOutput": "24", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n2 3 -2 4", "expectedOutput": "6", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3\n-2 0 -1", "expectedOutput": "0", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n-2 3 -4", "expectedOutput": "24", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "分割等和子集",
-      "content": "## 题目描述\n\n给定一个只包含正整数的数组 `nums`，判断是否可以将这个数组分割成两个子集，使得两个子集的元素和相等。\n\n每个元素只能属于其中一个子集。能分割返回 `true`，否则返回 `false`。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,5,11,5]`\n\n输出：`true`\n\n解释：可以分割成 `[1,5,5]` 和 `[11]`，两边和都是 11。\n\n**示例 2**\n\n输入：`nums = [1,2,3,5]`\n\n输出：`false`\n\n解释：总和为 11 是奇数，无法平分成两个整数和。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示数组长度；\n- 第二行 `n` 个正整数，表示数组 `nums`；\n- 输出 `true` 或 `false`（小写）。\n\n## 提示\n\n- `1 <= nums.length <= 200`\n- `1 <= nums[i] <= 100`\n\n> 力扣模式下只需实现 `canPartition` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个只包含正整数的数组 `nums`，判断是否可以将这个数组分割成两个子集，使得两个子集的元素和相等。\n\n每个元素只能属于其中一个子集。能分割返回 `true`，否则返回 `false`。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,5,11,5]`\n\n输出：`true`\n\n解释：可以分割成 `[1,5,5]` 和 `[11]`，两边和都是 11。\n\n**示例 2**\n\n输入：`nums = [1,2,3,5]`\n\n输出：`false`\n\n解释：总和为 11 是奇数，无法平分成两个整数和。\n\n## 提示\n\n- `1 <= nums.length <= 200`\n- `1 <= nums[i] <= 100`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "问题等价于能否从数组中选出若干元素使其和为总和的一半 `target`。总和为奇数时直接返回 false。用一维 0-1 背包：`dp[j]` 表示能否凑出和 `j`，初始 `dp[0] = true`；对每个元素倒序遍历容量 `j`，执行 `dp[j] |= dp[j - x]`。时间 O(n · target)，空间 O(target)。",
-      "keyPoints": ["转化为 0-1 背包", "总和奇偶判断", "一维滚动倒序"],
-      "kpNames": ["动态规划", "背包问题"],
+      "keyPoints": [
+        "转化为 0-1 背包",
+        "总和奇偶判断",
+        "一维滚动倒序"
+      ],
+      "kpNames": [
+        "动态规划",
+        "背包问题"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/partition-equal-subset-sum/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "canPartition",
-      "paramTypes": ["int[]"],
-      "returnType": "boolean",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行：数组长度 n\n        // 第二行：n 个正整数\n        // TODO 输出 true 或 false\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 第一个数是长度 n，后面是 n 个正整数\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public boolean canPartition(int[] nums) {\n        // TODO\n        return false;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def canPartition(self, nums: List[int]) -> bool:\n        # TODO\n        return False"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[1,5,11,5]]", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[1,2,3,5]]", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[1,1]]", "expectedOutput": "true", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\n1 5 11 5", "expectedOutput": "true", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "4\n1 2 3 5", "expectedOutput": "false", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "2\n1 1", "expectedOutput": "true", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "斐波那契数列（剑指 Offer 10 - I）",
-      "content": "## 题目描述\n\n写一个函数，输入 `n`，求斐波那契数列的第 `n` 项。斐波那契数列的定义是：\n\n- `F(0) = 0`\n- `F(1) = 1`\n- `F(n) = F(n-1) + F(n-2)`（`n > 1`）\n\n**结果必须对 1000000007（即 1e9+7）取模**，也就是说输出的是 `F(n) mod 1000000007`。当 `n` 较大时，真实值会超过 32 位整数，不能等算完再取模，需要边算边取模。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 2`\n\n输出：`1`\n\n解释：`F(2) = F(1) + F(0) = 1`。\n\n**示例 2**\n\n输入：`n = 5`\n\n输出：`5`\n\n解释：数列前几项为 0、1、1、2、3、5。\n\n**示例 3**\n\n输入：`n = 45`\n\n输出：`134903163`\n\n解释：`F(45) = 1134903170`，对 1000000007 取模后为 `134903163`。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示 `F(n)` 对 `1000000007` 取模后的结果。\n\n## 提示\n\n- `0 <= n <= 100`\n- 结果对 `1000000007` 取模\n- 取模要在每一步相加后执行，不能只在最后做\n\n> 力扣模式下只需实现 `fib` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n写一个函数，输入 `n`，求斐波那契数列的第 `n` 项。斐波那契数列的定义是：\n\n- `F(0) = 0`\n- `F(1) = 1`\n- `F(n) = F(n-1) + F(n-2)`（`n > 1`）\n\n**结果必须对 1000000007（即 1e9+7）取模**，也就是说输出的是 `F(n) mod 1000000007`。当 `n` 较大时，真实值会超过 32 位整数，不能等算完再取模，需要边算边取模。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 2`\n\n输出：`1`\n\n解释：`F(2) = F(1) + F(0) = 1`。\n\n**示例 2**\n\n输入：`n = 5`\n\n输出：`5`\n\n解释：数列前几项为 0、1、1、2、3、5。\n\n**示例 3**\n\n输入：`n = 45`\n\n输出：`134903163`\n\n解释：`F(45) = 1134903170`，对 1000000007 取模后为 `134903163`。\n\n## 提示\n\n- `0 <= n <= 100`\n- 结果对 `1000000007` 取模\n- 取模要在每一步相加后执行，不能只在最后做\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 1,
       "domain": "动态规划",
       "referenceAnswer": "用两个变量 `a`、`b` 分别表示 `F(i-2)` 与 `F(i-1)`，从 `F(0)=0`、`F(1)=1` 开始迭代。每轮计算 `(a + b) % 1000000007` 得到新项，再滚动更新 `a`、`b`。由于每步都取模，累加值始终小于 2e9+14，用 int 或 long 都不会溢出。时间 O(n)，空间 O(1)。",
-      "keyPoints": ["递推", "每步取模", "滚动变量"],
-      "kpNames": ["动态规划", "取模运算"],
+      "keyPoints": [
+        "递推",
+        "每步取模",
+        "滚动变量"
+      ],
+      "kpNames": [
+        "动态规划",
+        "取模运算"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/fei-bo-na-qi-shu-lie-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "fib",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一个整数 n\n        // TODO 输出 F(n) 对 1000000007 取模的结果\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 输入一个整数 n\n    # TODO 输出 F(n) 对 1000000007 取模的结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int fib(int n) {\n        // TODO 结果对 1000000007 取模\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def fib(self, n: int) -> int:\n        # TODO 结果对 1000000007 取模\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[2]", "expectedOutput": "1", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[5]", "expectedOutput": "5", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[45]", "expectedOutput": "134903163", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "2", "expectedOutput": "1", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "5", "expectedOutput": "5", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "45", "expectedOutput": "134903163", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "剪绳子（剑指 Offer 14 - I）",
-      "content": "## 题目描述\n\n给你一根长度为 `n` 的绳子，请把绳子剪成 `m` 段（`m`、`n` 都是整数，`n >= 2` 且 `m > 1`），每段绳子的长度记为 `k[0], k[1], ..., k[m-1]`。请问各段长度的**最大乘积**是多少？\n\n本题中 `n` 的范围较小（`2 <= n <= 58`），乘积不会超过 32 位有符号整数的范围，**直接返回整数结果，不需要取模**。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 2`\n\n输出：`1`\n\n解释：只能剪成 `1 + 1`，乘积为 1。\n\n**示例 2**\n\n输入：`n = 10`\n\n输出：`36`\n\n解释：剪成 `3 + 3 + 4`，乘积为 `3 × 3 × 4 = 36`。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示各段长度的最大乘积（不需要取模）。\n\n## 提示\n\n- `2 <= n <= 58`\n- 结果在 32 位有符号整数范围内\n\n> 力扣模式下只需实现 `cuttingRope` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给你一根长度为 `n` 的绳子，请把绳子剪成 `m` 段（`m`、`n` 都是整数，`n >= 2` 且 `m > 1`），每段绳子的长度记为 `k[0], k[1], ..., k[m-1]`。请问各段长度的**最大乘积**是多少？\n\n本题中 `n` 的范围较小（`2 <= n <= 58`），乘积不会超过 32 位有符号整数的范围，**直接返回整数结果，不需要取模**。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 2`\n\n输出：`1`\n\n解释：只能剪成 `1 + 1`，乘积为 1。\n\n**示例 2**\n\n输入：`n = 10`\n\n输出：`36`\n\n解释：剪成 `3 + 3 + 4`，乘积为 `3 × 3 × 4 = 36`。\n\n## 提示\n\n- `2 <= n <= 58`\n- 结果在 32 位有符号整数范围内\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "结论是尽量多剪长度为 3 的段：`n % 3 == 0` 时全部剪成 3；`n % 3 == 1` 时取出一个 3 与余下的 1 组成 2+2；`n % 3 == 2` 时保留一个 2。`n <= 3` 需要特判（2 返回 1，3 返回 2）。也可以用 `dp[i] = max(j * (i-j), j * dp[i-j])` 做动态规划。时间 O(n)，空间 O(1)。",
-      "keyPoints": ["贪心拆 3", "余数分类", "小数据特判"],
-      "kpNames": ["动态规划", "贪心"],
+      "keyPoints": [
+        "贪心拆 3",
+        "余数分类",
+        "小数据特判"
+      ],
+      "kpNames": [
+        "动态规划",
+        "贪心"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/jian-sheng-zi-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "cuttingRope",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一个整数 n\n        // TODO 输出各段长度的最大乘积\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 输入一个整数 n\n    # TODO 输出各段长度的最大乘积\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int cuttingRope(int n) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def cuttingRope(self, n: int) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[2]", "expectedOutput": "1", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[10]", "expectedOutput": "36", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[8]", "expectedOutput": "18", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "2", "expectedOutput": "1", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "10", "expectedOutput": "36", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "8", "expectedOutput": "18", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "剪绳子 II（剑指 Offer 14 - II）",
-      "content": "## 题目描述\n\n给你一根长度为 `n` 的绳子，请把绳子剪成 `m` 段（`m`、`n` 都是整数，`n >= 2` 且 `m > 1`），求各段长度乘积的最大值。\n\n本题 `n` 的范围扩大到 `2 <= n <= 1000`，最大乘积会远超 32 位甚至 64 位整数，因此**答案需要对 1000000007（即 1e9+7）取模**。\n\n注意：力扣模式下的函数签名返回 `int`，但中间计算必须用 `long` 保存乘积并逐步取模，不能用 `int` 直接累乘，否则会溢出得到错误结果。\n\n## 示例\n\n**示例 1**\n\n输入：`n = 2`\n\n输出：`1`\n\n解释：只能剪成 `1 + 1`，乘积为 1。\n\n**示例 2**\n\n输入：`n = 10`\n\n输出：`36`\n\n解释：剪成 `3 + 3 + 4`，乘积为 36。\n\n**示例 3**\n\n输入：`n = 120`\n\n输出：`953271190`\n\n解释：真实最大乘积为 `3^40`，对 1000000007 取模后为 `953271190`。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示最大乘积对 `1000000007` 取模的结果。\n\n## 提示\n\n- `2 <= n <= 1000`\n- 结果对 `1000000007` 取模\n- 用 `long` 保存累乘结果，每一步都取模\n\n> 力扣模式下只需实现 `cuttingRope` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给你一根长度为 `n` 的绳子，请把绳子剪成 `m` 段（`m`、`n` 都是整数，`n >= 2` 且 `m > 1`），求各段长度乘积的最大值。\n\n本题 `n` 的范围扩大到 `2 <= n <= 1000`，最大乘积会远超 32 位甚至 64 位整数，因此**答案需要对 1000000007（即 1e9+7）取模**。\n\n\n## 示例\n\n**示例 1**\n\n输入：`n = 2`\n\n输出：`1`\n\n解释：只能剪成 `1 + 1`，乘积为 1。\n\n**示例 2**\n\n输入：`n = 10`\n\n输出：`36`\n\n解释：剪成 `3 + 3 + 4`，乘积为 36。\n\n**示例 3**\n\n输入：`n = 120`\n\n输出：`953271190`\n\n解释：真实最大乘积为 `3^40`，对 1000000007 取模后为 `953271190`。\n\n## 提示\n\n- `2 <= n <= 1000`\n- 结果对 `1000000007` 取模\n- 用 `long` 保存累乘结果，每一步都取模\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "思路与剪绳子 I 相同，仍然尽量拆出长度为 3 的段：`n % 3 == 0` 时答案为 `3^(n/3)`；`n % 3 == 1` 时答案为 `4 × 3^((n-4)/3)`；`n % 3 == 2` 时答案为 `2 × 3^((n-2)/3)`，`n <= 3` 单独返回。由于结果要对 1e9+7 取模，循环中用 `long` 累乘并在每步取模。时间 O(n)，空间 O(1)。",
-      "keyPoints": ["贪心拆 3", "long 累乘", "每步取模"],
-      "kpNames": ["动态规划", "取模运算"],
+      "keyPoints": [
+        "贪心拆 3",
+        "long 累乘",
+        "每步取模"
+      ],
+      "kpNames": [
+        "动态规划",
+        "取模运算"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/jian-sheng-zi-ii-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "cuttingRope",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一个整数 n\n        // TODO 输出最大乘积对 1000000007 取模的结果\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 输入一个整数 n\n    # TODO 输出最大乘积对 1000000007 取模的结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int cuttingRope(int n) {\n        // TODO 用 long 累乘，每步对 1000000007 取模\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def cuttingRope(self, n: int) -> int:\n        # TODO 结果对 1000000007 取模\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[2]", "expectedOutput": "1", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[120]", "expectedOutput": "953271190", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[58]", "expectedOutput": "549681949", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "2", "expectedOutput": "1", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "120", "expectedOutput": "953271190", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "58", "expectedOutput": "549681949", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "把数字翻译成字符串（剑指 Offer 46）",
-      "content": "## 题目描述\n\n给定一个非负整数 `num`，按照如下规则把它翻译成字符串：`0` 对应 `a`，`1` 对应 `b`，…，`25` 对应 `z`。\n\n一个数字可以有多种翻译方式。例如 `12258` 可以翻译成 `bccfi`、`bwfi`、`bczi`、`mcfi` 和 `mzi`，共 5 种。请计算一个数字共有多少种不同的翻译方法。\n\n注意两位数字只有在 `10` 到 `25` 之间（无前导 0）时才能合并翻译，像 `06` 这样的组合不合法。\n\n## 示例\n\n**示例 1**\n\n输入：`num = 12258`\n\n输出：`5`\n\n**示例 2**\n\n输入：`num = 25`\n\n输出：`2`\n\n解释：可以翻译成 `cf`（2、5）或 `z`（25）。\n\n**示例 3**\n\n输入：`num = 506`\n\n输出：`1`\n\n解释：`5`、`0`、`6` 只能逐位翻译，`50` 不是合法的两位组合。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个非负整数 `num`；\n- 输出一个整数，表示不同翻译方法的数量。\n\n## 提示\n\n- `0 <= num <= 2^31 - 1`\n- 结果在 32 位有符号整数范围内\n\n> 力扣模式下只需实现 `translateNum` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个非负整数 `num`，按照如下规则把它翻译成字符串：`0` 对应 `a`，`1` 对应 `b`，…，`25` 对应 `z`。\n\n一个数字可以有多种翻译方式。例如 `12258` 可以翻译成 `bccfi`、`bwfi`、`bczi`、`mcfi` 和 `mzi`，共 5 种。请计算一个数字共有多少种不同的翻译方法。\n\n注意两位数字只有在 `10` 到 `25` 之间（无前导 0）时才能合并翻译，像 `06` 这样的组合不合法。\n\n## 示例\n\n**示例 1**\n\n输入：`num = 12258`\n\n输出：`5`\n\n**示例 2**\n\n输入：`num = 25`\n\n输出：`2`\n\n解释：可以翻译成 `cf`（2、5）或 `z`（25）。\n\n**示例 3**\n\n输入：`num = 506`\n\n输出：`1`\n\n解释：`5`、`0`、`6` 只能逐位翻译，`50` 不是合法的两位组合。\n\n## 提示\n\n- `0 <= num <= 2^31 - 1`\n- 结果在 32 位有符号整数范围内\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "把 `num` 转成数字字符串，设 `dp[i]` 为前 `i` 位数字的翻译方案数。单独翻译第 `i` 位时贡献 `dp[i-1]`；若第 `i-1` 与第 `i` 位组成的两位数在 10 到 25 之间，则还能合并翻译，额外贡献 `dp[i-2]`。用两个滚动变量替代数组即可。时间 O(位数)，空间 O(1)。",
-      "keyPoints": ["按位分段", "两位组合合法性", "滚动递推"],
-      "kpNames": ["动态规划", "字符串"],
+      "keyPoints": [
+        "按位分段",
+        "两位组合合法性",
+        "滚动递推"
+      ],
+      "kpNames": [
+        "动态规划",
+        "字符串"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/ba-shu-zi-fan-yi-cheng-zi-fu-chuan-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "translateNum",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一个非负整数 num\n        // TODO 输出不同翻译方法的数量\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 输入一个非负整数 num\n    # TODO 输出不同翻译方法的数量\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int translateNum(int num) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def translateNum(self, num: int) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[12258]", "expectedOutput": "5", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[25]", "expectedOutput": "2", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[506]", "expectedOutput": "1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "12258", "expectedOutput": "5", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "25", "expectedOutput": "2", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "506", "expectedOutput": "1", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "丑数（剑指 Offer 49）",
-      "content": "## 题目描述\n\n我们把只包含质因子 2、3、5 的正整数称为**丑数**（Ugly Number）。约定第 1 个丑数是 1。给定整数 `n`，求按从小到大排列的第 `n` 个丑数。\n\n前几个丑数依次为：1、2、3、4、5、6、8、9、10、12、…\n\n## 示例\n\n**示例 1**\n\n输入：`n = 10`\n\n输出：`12`\n\n解释：第 10 个丑数是 12。\n\n**示例 2**\n\n输入：`n = 1`\n\n输出：`1`\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行一个整数 `n`；\n- 输出一个整数，表示第 `n` 个丑数。\n\n## 提示\n\n- `1 <= n <= 1690`\n- 第 `n` 个丑数在 32 位有符号整数范围内\n\n> 力扣模式下只需实现 `nthUglyNumber` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n我们把只包含质因子 2、3、5 的正整数称为**丑数**（Ugly Number）。约定第 1 个丑数是 1。给定整数 `n`，求按从小到大排列的第 `n` 个丑数。\n\n前几个丑数依次为：1、2、3、4、5、6、8、9、10、12、…\n\n## 示例\n\n**示例 1**\n\n输入：`n = 10`\n\n输出：`12`\n\n解释：第 10 个丑数是 12。\n\n**示例 2**\n\n输入：`n = 1`\n\n输出：`1`\n\n## 提示\n\n- `1 <= n <= 1690`\n- 第 `n` 个丑数在 32 位有符号整数范围内\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "动态规划",
       "referenceAnswer": "用三指针法生成丑数序列：`dp[1] = 1`，指针 `p2`、`p3`、`p5` 分别指向尚未乘过 2、3、5 的位置。第 `i` 个丑数取 `min(dp[p2]*2, dp[p3]*3, dp[p5]*5)`，取到最小值的对应指针后移一位（相等时要同时后移，避免重复）。时间 O(n)，空间 O(n)。",
-      "keyPoints": ["三指针", "按序生成", "去重"],
-      "kpNames": ["动态规划", "多指针"],
+      "keyPoints": [
+        "三指针",
+        "按序生成",
+        "去重"
+      ],
+      "kpNames": [
+        "动态规划",
+        "多指针"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/chou-shu-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "nthUglyNumber",
-      "paramTypes": ["int"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一个整数 n\n        // TODO 输出第 n 个丑数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # 输入一个整数 n\n    # TODO 输出第 n 个丑数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int nthUglyNumber(int n) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def nthUglyNumber(self, n: int) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[10]", "expectedOutput": "12", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[1]", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[11]", "expectedOutput": "15", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "10", "expectedOutput": "12", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "11", "expectedOutput": "15", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     }
   ]
 }

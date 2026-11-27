@@ -2,213 +2,164 @@
   "questions": [
     {
       "title": "无重复字符的最长子串",
-      "content": "## 题目描述\n\n给定一个字符串 `s`，请找出其中不含重复字符的**最长连续子串**的长度。\n\n子串指字符串中连续的一段字符，要求该段内每个字符最多只出现一次。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"abcabcbb\"`\n\n输出：`3`\n\n解释：最长无重复子串为 `\"abc\"`，长度为 3。\n\n**示例 2**\n\n输入：`s = \"bbbbb\"`\n\n输出：`1`\n\n解释：最长无重复子串为 `\"b\"`，长度为 1。\n\n**示例 3**\n\n输入：`s = \"pwwkew\"`\n\n输出：`3`\n\n解释：最长无重复子串为 `\"wke\"`；注意 `\"pwke\"` 是子序列而不是子串。\n\n## 输入输出格式（ACM 模式）\n\n- 输入一行字符串 `s`（本题 ACM 模式下字符串不含空格与换行）；\n- 输出一个整数，表示最长无重复字符子串的长度。\n\n## 提示\n\n- `0 <= s.length <= 5 * 10^4`\n- `s` 由英文字母、数字、符号和空格组成\n\n> 力扣模式下只需实现 `lengthOfLongestSubstring` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个字符串 `s`，请找出其中不含重复字符的**最长连续子串**的长度。\n\n子串指字符串中连续的一段字符，要求该段内每个字符最多只出现一次。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"abcabcbb\"`\n\n输出：`3`\n\n解释：最长无重复子串为 `\"abc\"`，长度为 3。\n\n**示例 2**\n\n输入：`s = \"bbbbb\"`\n\n输出：`1`\n\n解释：最长无重复子串为 `\"b\"`，长度为 1。\n\n**示例 3**\n\n输入：`s = \"pwwkew\"`\n\n输出：`3`\n\n解释：最长无重复子串为 `\"wke\"`；注意 `\"pwke\"` 是子序列而不是子串。\n\n## 提示\n\n- `0 <= s.length <= 5 * 10^4`\n- `s` 由英文字母、数字、符号和空格组成\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "滑动窗口",
       "referenceAnswer": "维护左右两个指针构成的窗口，用哈希表或数组记录窗口内每个字符最近一次出现的下标。右指针逐位扩张窗口，若当前字符已出现过且位置不小于左指针，则把左指针移到该位置的下一位，保证窗口内无重复字符。每次移动后用右指针减左指针加一更新最大长度。时间复杂度 O(n)，空间复杂度 O(字符集大小)。",
-      "keyPoints": ["左右指针维护窗口", "记录字符最近下标", "左指针跳跃而不是逐位收缩"],
-      "kpNames": ["滑动窗口", "哈希表", "字符串"],
+      "keyPoints": [
+        "左右指针维护窗口",
+        "记录字符最近下标",
+        "左指针跳跃而不是逐位收缩"
+      ],
+      "kpNames": [
+        "滑动窗口",
+        "哈希表",
+        "字符串"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/longest-substring-without-repeating-characters/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "lengthOfLongestSubstring",
-      "paramTypes": ["String"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 输入一行字符串 s（不含空格与换行）\n        // TODO 输出最长无重复字符子串的长度\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 输入一行字符串 s（不含空格与换行）\n    # TODO 输出最长无重复字符子串的长度\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"abcabcbb\"]", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"bbbbb\"]", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"dvdf\"]", "expectedOutput": "3", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "abcabcbb", "expectedOutput": "3", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "bbbbb", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "abba", "expectedOutput": "2", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "找到字符串中所有字母异位词",
-      "content": "## 题目描述\n\n给定两个字符串 `s` 与 `p`，找出 `s` 中所有是 `p` 的**字母异位词**的子串，返回这些子串的起始下标。\n\n字母异位词指字母种类与出现次数完全相同、排列顺序可以不同的字符串。子串长度必须与 `p` 相等，返回的下标按**升序**排列。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"cbaebabacd\", p = \"abc\"`\n\n输出：`[0,6]`\n\n解释：下标 0 开始的 `\"cba\"` 与下标 6 开始的 `\"bac\"` 都是 `\"abc\"` 的字母异位词。\n\n**示例 2**\n\n输入：`s = \"abab\", p = \"ab\"`\n\n输出：`[0,1,2]`\n\n解释：`\"ab\"`、`\"ba\"`、`\"ab\"` 都是 `\"ab\"` 的字母异位词。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行字符串 `s`，第二行字符串 `p`（均为小写字母且不含空格）；\n- 输出一行，为所有满足条件的起始下标，按升序用单个空格分隔；\n- 若不存在任何匹配，输出 `-1`。\n\n## 提示\n\n- `1 <= s.length, p.length <= 3 * 10^4`\n- `s` 与 `p` 仅包含小写英文字母\n\n> 力扣模式下只需实现 `findAnagrams` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定两个字符串 `s` 与 `p`，找出 `s` 中所有是 `p` 的**字母异位词**的子串，返回这些子串的起始下标。\n\n字母异位词指字母种类与出现次数完全相同、排列顺序可以不同的字符串。子串长度必须与 `p` 相等，返回的下标按**升序**排列。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"cbaebabacd\", p = \"abc\"`\n\n输出：`[0,6]`\n\n解释：下标 0 开始的 `\"cba\"` 与下标 6 开始的 `\"bac\"` 都是 `\"abc\"` 的字母异位词。\n\n**示例 2**\n\n输入：`s = \"abab\", p = \"ab\"`\n\n输出：`[0,1,2]`\n\n解释：`\"ab\"`、`\"ba\"`、`\"ab\"` 都是 `\"ab\"` 的字母异位词。\n\n## 提示\n\n- `1 <= s.length, p.length <= 3 * 10^4`\n- `s` 与 `p` 仅包含小写英文字母\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "滑动窗口",
       "referenceAnswer": "先用长度为 26 的计数数组统计 `p` 的字符频次，再用同样长度的窗口扫描 `s`。窗口每次右移一位，同时更新移入与移出字符的计数，并维护一个变量记录当前窗口内频次已与 `p` 完全匹配的字符种类数；当匹配种类达到 26（或等于 `p` 中出现的种类数）时记录窗口起点。时间复杂度 O(n + m)，空间复杂度 O(1)。",
-      "keyPoints": ["固定长度窗口", "字符频次数组", "匹配种类计数"],
-      "kpNames": ["滑动窗口", "哈希表", "字符串"],
+      "keyPoints": [
+        "固定长度窗口",
+        "字符频次数组",
+        "匹配种类计数"
+      ],
+      "kpNames": [
+        "滑动窗口",
+        "哈希表",
+        "字符串"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/find-all-anagrams-in-a-string/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "findAnagrams",
-      "paramTypes": ["String", "String"],
-      "returnType": "List<Integer>",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 s，第二行 p（均为小写字母，不含空格）\n        // TODO 输出所有起始下标（升序、空格分隔）；不存在则输出 -1\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 s，第二行 p（均为小写字母，不含空格）\n    # TODO 输出所有起始下标（升序、空格分隔）；不存在则输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public List<Integer> findAnagrams(String s, String p) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def findAnagrams(self, s: str, p: str) -> List[int]:\n        # TODO\n        return []"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"cbaebabacd\",\"abc\"]", "expectedOutput": "[0,6]", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"abab\",\"ab\"]", "expectedOutput": "[0,1,2]", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"baa\",\"aa\"]", "expectedOutput": "[1]", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "cbaebabacd\nabc", "expectedOutput": "0 6", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "abab\nab", "expectedOutput": "0 1 2", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "baa\naa", "expectedOutput": "1", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "最小覆盖子串",
-      "content": "## 题目描述\n\n给定字符串 `s` 与 `t`，请在 `s` 中找出一个最短的连续子串，使该子串包含 `t` 中的**全部字符**（含重复次数）。若不存在这样的子串，返回空字符串。\n\n题目保证答案唯一。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"ADOBECODEBANC\", t = \"ABC\"`\n\n输出：`\"BANC\"`\n\n解释：`\"BANC\"` 覆盖了 `A`、`B`、`C` 各一次，且是满足条件的最短子串。\n\n**示例 2**\n\n输入：`s = \"a\", t = \"a\"`\n\n输出：`\"a\"`\n\n**示例 3**\n\n输入：`s = \"a\", t = \"aa\"`\n\n输出：`\"\"`\n\n解释：`s` 中只有一个 `a`，无法满足 `t` 中两个 `a` 的要求。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行字符串 `s`，第二行字符串 `t`（不含空格）；\n- 输出一行答案子串；\n- 若不存在满足条件的子串，输出 `-1`。\n\n## 提示\n\n- `1 <= s.length, t.length <= 10^5`\n- `s` 与 `t` 由英文字母组成\n- 答案唯一\n\n> 力扣模式下只需实现 `minWindow` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定字符串 `s` 与 `t`，请在 `s` 中找出一个最短的连续子串，使该子串包含 `t` 中的**全部字符**（含重复次数）。若不存在这样的子串，返回空字符串。\n\n题目保证答案唯一。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"ADOBECODEBANC\", t = \"ABC\"`\n\n输出：`\"BANC\"`\n\n解释：`\"BANC\"` 覆盖了 `A`、`B`、`C` 各一次，且是满足条件的最短子串。\n\n**示例 2**\n\n输入：`s = \"a\", t = \"a\"`\n\n输出：`\"a\"`\n\n**示例 3**\n\n输入：`s = \"a\", t = \"aa\"`\n\n输出：`\"\"`\n\n解释：`s` 中只有一个 `a`，无法满足 `t` 中两个 `a` 的要求。\n\n## 提示\n\n- `1 <= s.length, t.length <= 10^5`\n- `s` 与 `t` 由英文字母组成\n- 答案唯一\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 3,
       "domain": "滑动窗口",
       "referenceAnswer": "用计数数组统计 `t` 中每个字符的需求量，再用可变长度窗口扫描 `s`。右指针不断右移扩大窗口并扣减计数，当某字符计数降为 0 时说明该字符已满足需求，用变量记录已满足的字符种类数；当全部种类都满足时尝试收缩左指针，并在每次收缩前更新最短答案区间。总时间复杂度 O(n + m)，空间复杂度 O(字符集大小)。",
-      "keyPoints": ["可变长度窗口", "需求计数与已满足种类", "收缩时更新最优解"],
-      "kpNames": ["滑动窗口", "哈希表"],
+      "keyPoints": [
+        "可变长度窗口",
+        "需求计数与已满足种类",
+        "收缩时更新最优解"
+      ],
+      "kpNames": [
+        "滑动窗口",
+        "哈希表"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/minimum-window-substring/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "minWindow",
-      "paramTypes": ["String", "String"],
-      "returnType": "String",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 s，第二行 t（不含空格）\n        // TODO 输出最短覆盖子串；不存在则输出 -1\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 s，第二行 t（不含空格）\n    # TODO 输出最短覆盖子串；不存在则输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public String minWindow(String s, String t) {\n        // TODO\n        return \"\";\n    }\n}",
-        "PYTHON": "class Solution:\n    def minWindow(self, s: str, t: str) -> str:\n        # TODO\n        return \"\""
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"ADOBECODEBANC\",\"ABC\"]", "expectedOutput": "\"BANC\"", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"a\",\"a\"]", "expectedOutput": "\"a\"", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"a\",\"aa\"]", "expectedOutput": "\"\"", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "ADOBECODEBANC\nABC", "expectedOutput": "BANC", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "a\na", "expectedOutput": "a", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "a\naa", "expectedOutput": "-1", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "长度最小的子数组",
-      "content": "## 题目描述\n\n给定一个正整数数组 `nums` 和一个正整数 `target`，请找出数组中**和大于等于** `target` 的长度最小的连续子数组，返回其长度。若不存在这样的子数组，返回 `0`。\n\n## 示例\n\n**示例 1**\n\n输入：`target = 7, nums = [2,3,1,2,4,3]`\n\n输出：`2`\n\n解释：子数组 `[4,3]` 的和为 7，是满足条件的最短子数组。\n\n**示例 2**\n\n输入：`target = 4, nums = [1,4,4]`\n\n输出：`1`\n\n**示例 3**\n\n输入：`target = 11, nums = [1,1,1,1,1,1,1,1]`\n\n输出：`0`\n\n解释：数组总和为 8，小于 11，不存在满足条件的子数组。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `target`，`n` 为数组长度；\n- 第二行 `n` 个正整数；\n- 输出一个整数，表示最短子数组长度；不存在则输出 `0`。\n\n## 提示\n\n- `1 <= target <= 10^9`\n- `1 <= nums.length <= 10^5`\n- `1 <= nums[i] <= 10^4`\n\n> 力扣模式下只需实现 `minSubArrayLen` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个正整数数组 `nums` 和一个正整数 `target`，请找出数组中**和大于等于** `target` 的长度最小的连续子数组，返回其长度。若不存在这样的子数组，返回 `0`。\n\n## 示例\n\n**示例 1**\n\n输入：`target = 7, nums = [2,3,1,2,4,3]`\n\n输出：`2`\n\n解释：子数组 `[4,3]` 的和为 7，是满足条件的最短子数组。\n\n**示例 2**\n\n输入：`target = 4, nums = [1,4,4]`\n\n输出：`1`\n\n**示例 3**\n\n输入：`target = 11, nums = [1,1,1,1,1,1,1,1]`\n\n输出：`0`\n\n解释：数组总和为 8，小于 11，不存在满足条件的子数组。\n\n## 提示\n\n- `1 <= target <= 10^9`\n- `1 <= nums.length <= 10^5`\n- `1 <= nums[i] <= 10^4`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "滑动窗口",
       "referenceAnswer": "因为数组元素全为正数，窗口和随窗口扩张单调不减，可用双指针做可变长度窗口。右指针逐位把元素加入窗口和，当窗口和大于等于 `target` 时，用当前窗口长度更新答案，然后不断右移左指针并扣减窗口和，直到窗口和重新小于 `target`。每个元素最多进出窗口一次，时间复杂度 O(n)，空间复杂度 O(1)。",
-      "keyPoints": ["正数数组的单调性", "可变长度窗口", "收缩时更新最小长度"],
-      "kpNames": ["滑动窗口", "数组", "前缀和"],
+      "keyPoints": [
+        "正数数组的单调性",
+        "可变长度窗口",
+        "收缩时更新最小长度"
+      ],
+      "kpNames": [
+        "滑动窗口",
+        "数组",
+        "前缀和"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/minimum-size-subarray-sum/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "minSubArrayLen",
-      "paramTypes": ["int", "int[]"],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n target，第二行 n 个正整数\n        // TODO 输出最短子数组长度；不存在则输出 0\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n target，第二行 n 个正整数\n    # TODO 输出最短子数组长度；不存在则输出 0\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def minSubArrayLen(self, target: int, nums: List[int]) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[7,[2,3,1,2,4,3]]", "expectedOutput": "2", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[4,[1,4,4]]", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[11,[1,1,1,1,1,1,1,1]]", "expectedOutput": "0", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "6 7\n2 3 1 2 4 3", "expectedOutput": "2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "3 4\n1 4 4", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "8 11\n1 1 1 1 1 1 1 1", "expectedOutput": "0", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "串联所有单词的子串",
-      "content": "## 题目描述\n\n给定一个字符串 `s` 和一个所有元素长度相同的单词数组 `words`，请找出 `s` 中所有恰好由 `words` 中**全部单词**串联而成的子串，返回这些子串的起始下标。\n\n串联要求：子串由 `words` 中每个单词各出现一次、连续拼接而成，单词之间不能有额外字符，顺序不限。返回的下标按**升序**排列。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"barfoothefoobarman\", words = [\"foo\",\"bar\"]`\n\n输出：`[0,9]`\n\n解释：下标 0 开始的 `\"barfoo\"` 与下标 9 开始的 `\"foobar\"` 都满足条件。\n\n**示例 2**\n\n输入：`s = \"wordgoodgoodgoodbestword\", words = [\"word\",\"good\",\"best\",\"word\"]`\n\n输出：`[]`\n\n解释：不存在长度为 16 且恰好由这些单词组成的子串。\n\n**示例 3**\n\n输入：`s = \"barfoofoobarthefoobarman\", words = [\"bar\",\"foo\",\"the\"]`\n\n输出：`[6,9,12]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行字符串 `s`；\n- 第二行整数 `n`，表示单词个数；\n- 第三行 `n` 个单词，用单个空格分隔；\n- 输出一行，为所有满足条件的起始下标，按升序用单个空格分隔；\n- 若不存在，输出 `-1`。\n\n## 提示\n\n- `1 <= s.length <= 10^4`\n- `1 <= words.length <= 5000`\n- `1 <= words[i].length <= 30`\n- `s` 与 `words[i]` 仅包含小写英文字母\n\n> 力扣模式下只需实现 `findSubstring` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个字符串 `s` 和一个所有元素长度相同的单词数组 `words`，请找出 `s` 中所有恰好由 `words` 中**全部单词**串联而成的子串，返回这些子串的起始下标。\n\n串联要求：子串由 `words` 中每个单词各出现一次、连续拼接而成，单词之间不能有额外字符，顺序不限。返回的下标按**升序**排列。\n\n## 示例\n\n**示例 1**\n\n输入：`s = \"barfoothefoobarman\", words = [\"foo\",\"bar\"]`\n\n输出：`[0,9]`\n\n解释：下标 0 开始的 `\"barfoo\"` 与下标 9 开始的 `\"foobar\"` 都满足条件。\n\n**示例 2**\n\n输入：`s = \"wordgoodgoodgoodbestword\", words = [\"word\",\"good\",\"best\",\"word\"]`\n\n输出：`[]`\n\n解释：不存在长度为 16 且恰好由这些单词组成的子串。\n\n**示例 3**\n\n输入：`s = \"barfoofoobarthefoobarman\", words = [\"bar\",\"foo\",\"the\"]`\n\n输出：`[6,9,12]`\n\n## 提示\n\n- `1 <= s.length <= 10^4`\n- `1 <= words.length <= 5000`\n- `1 <= words[i].length <= 30`\n- `s` 与 `words[i]` 仅包含小写英文字母\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 3,
       "domain": "滑动窗口",
       "referenceAnswer": "单词长度相同是关键。设单词长度为 w、个数为 m，则窗口总长为 w*m。用哈希表记录 `words` 每个单词的需求次数，然后按起始偏移 0..w-1 分组，每组以 w 为步长滑动窗口：每次移入一个单词、移出最左侧一个单词，动态维护窗口内各单词计数与已匹配单词种类数，当所有单词需求恰好满足时记录起点。时间复杂度 O(w * n / w) 即 O(n)，空间复杂度 O(m)。",
-      "keyPoints": ["单词等长的分偏移滑动", "窗口内单词计数", "匹配种类数判满"],
-      "kpNames": ["滑动窗口", "哈希表", "字符串"],
+      "keyPoints": [
+        "单词等长的分偏移滑动",
+        "窗口内单词计数",
+        "匹配种类数判满"
+      ],
+      "kpNames": [
+        "滑动窗口",
+        "哈希表",
+        "字符串"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/substring-with-concatenation-of-all-words/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "findSubstring",
-      "paramTypes": ["String", "String[]"],
-      "returnType": "List<Integer>",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 s，第二行 n，第三行 n 个单词（空格分隔）\n        // TODO 输出所有起始下标（升序、空格分隔）；不存在则输出 -1\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 s，第二行 n，第三行 n 个单词（空格分隔）\n    # TODO 输出所有起始下标（升序、空格分隔）；不存在则输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public List<Integer> findSubstring(String s, String[] words) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def findSubstring(self, s: str, words: List[str]) -> List[int]:\n        # TODO\n        return []"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[\"barfoothefoobarman\",[\"foo\",\"bar\"]]", "expectedOutput": "[0,9]", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[\"wordgoodgoodgoodbestword\",[\"word\",\"good\",\"best\",\"word\"]]", "expectedOutput": "[]", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[\"barfoofoobarthefoobarman\",[\"bar\",\"foo\",\"the\"]]", "expectedOutput": "[6,9,12]", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "barfoothefoobarman\n2\nfoo bar", "expectedOutput": "0 9", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "wordgoodgoodgoodbestword\n4\nword good best word", "expectedOutput": "-1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "barfoofoobarthefoobarman\n3\nbar foo the", "expectedOutput": "6 9 12", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "滑动窗口最大值",
-      "content": "## 题目描述\n\n给定一个整数数组 `nums` 和一个大小为 `k` 的滑动窗口，窗口从数组最左端开始，每次向右移动一位，请返回每个窗口内的最大值组成的数组。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,3,-1,-3,5,3,6,7], k = 3`\n\n输出：`[3,3,5,5,6,7]`\n\n解释：\n\n- 窗口 `[1,3,-1]` 最大值为 3\n- 窗口 `[3,-1,-3]` 最大值为 3\n- 窗口 `[-1,-3,5]` 最大值为 5\n- 窗口 `[-3,5,3]` 最大值为 5\n- 窗口 `[5,3,6]` 最大值为 6\n- 窗口 `[3,6,7]` 最大值为 7\n\n**示例 2**\n\n输入：`nums = [1], k = 1`\n\n输出：`[1]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n` 和 `k`；\n- 第二行 `n` 个整数；\n- 输出共 `n - k + 1` 个整数，即各窗口最大值，用单个空格分隔。\n\n## 提示\n\n- `1 <= nums.length <= 10^5`\n- `-10^4 <= nums[i] <= 10^4`\n- `1 <= k <= nums.length`\n\n> 力扣模式下只需实现 `maxSlidingWindow` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个整数数组 `nums` 和一个大小为 `k` 的滑动窗口，窗口从数组最左端开始，每次向右移动一位，请返回每个窗口内的最大值组成的数组。\n\n## 示例\n\n**示例 1**\n\n输入：`nums = [1,3,-1,-3,5,3,6,7], k = 3`\n\n输出：`[3,3,5,5,6,7]`\n\n解释：\n\n- 窗口 `[1,3,-1]` 最大值为 3\n- 窗口 `[3,-1,-3]` 最大值为 3\n- 窗口 `[-1,-3,5]` 最大值为 5\n- 窗口 `[-3,5,3]` 最大值为 5\n- 窗口 `[5,3,6]` 最大值为 6\n- 窗口 `[3,6,7]` 最大值为 7\n\n**示例 2**\n\n输入：`nums = [1], k = 1`\n\n输出：`[1]`\n\n## 提示\n\n- `1 <= nums.length <= 10^5`\n- `-10^4 <= nums[i] <= 10^4`\n- `1 <= k <= nums.length`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 3,
       "domain": "滑动窗口",
       "referenceAnswer": "用单调队列维护窗口内元素下标，队列中对应值单调递减，队首即当前窗口最大值。右指针右移时，把队尾所有不大于新元素的值弹出后再入队，保证单调性；同时把下标已滑出窗口的左端元素从队首移除。当窗口长度达到 k 后，每次取队首值写入答案。每个元素最多入队和出队一次，时间复杂度 O(n)，空间复杂度 O(k)。",
-      "keyPoints": ["单调递减队列", "队首即窗口最大值", "下标过期剔除"],
-      "kpNames": ["滑动窗口", "单调队列", "数组"],
+      "keyPoints": [
+        "单调递减队列",
+        "队首即窗口最大值",
+        "下标过期剔除"
+      ],
+      "kpNames": [
+        "滑动窗口",
+        "单调队列",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/sliding-window-maximum/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "maxSlidingWindow",
-      "paramTypes": ["int[]", "int"],
-      "returnType": "int[]",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n k，第二行 n 个整数\n        // TODO 输出 n-k+1 个窗口最大值，空格分隔\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n k，第二行 n 个整数\n    # TODO 输出 n-k+1 个窗口最大值，空格分隔\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int[] maxSlidingWindow(int[] nums, int k) {\n        // TODO\n        return new int[0];\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def maxSlidingWindow(self, nums: List[int], k: int) -> List[int]:\n        # TODO\n        return []"
-      },
-      "testCases": [
-        {"caseMode": "LEETCODE", "input": "[[1,3,-1,-3,5,3,6,7],3]", "expectedOutput": "[3,3,5,5,6,7]", "isSample": 1, "sort": 1},
-        {"caseMode": "LEETCODE", "input": "[[1],1]", "expectedOutput": "[1]", "isSample": 1, "sort": 2},
-        {"caseMode": "LEETCODE", "input": "[[1,-1],2]", "expectedOutput": "[1]", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "8 3\n1 3 -1 -3 5 3 6 7", "expectedOutput": "3 3 5 5 6 7", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1 1\n1", "expectedOutput": "1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "2 2\n1 -1", "expectedOutput": "1", "isSample": 0, "sort": 3}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     }
   ]
 }

@@ -4,18 +4,7 @@ import { authFetch, unwrapJson } from './http'
 export type QuestionStatus = 'TODO' | 'DONE' | 'WRONG'
 export type QuestionType = 'BASICS' | 'SCENARIO' | 'PROJECT' | 'CODE'
 export type JudgeMode = 'TEXT' | 'CODING'
-/** ACM 标准输入输出 / LEETCODE 只写函数 */
-export type CodeMode = 'ACM' | 'LEETCODE'
 export type CodeLanguage = 'JAVA' | 'PYTHON'
-export type CodingStatus =
-  | 'PENDING'
-  | 'RUNNING'
-  | 'ACCEPTED'
-  | 'WRONG_ANSWER'
-  | 'COMPILE_ERROR'
-  | 'RUNTIME_ERROR'
-  | 'TIME_LIMIT_EXCEEDED'
-  | 'SYSTEM_ERROR'
 
 export interface QuestionBankSummary {
   total: number
@@ -31,7 +20,6 @@ export interface QuestionBankItem {
   preview: string
   type: QuestionType
   judgeMode: JudgeMode
-  codeMode: CodeMode | null
   difficulty: number
   domain: string
   knowledgePoints: string[]
@@ -195,10 +183,23 @@ export async function submitQuestionAnswer(id: string, answer: string): Promise<
 
 // ---------- 编程题 ----------
 
-export interface CodingSampleCase {
-  input: string
-  expectedOutput: string
-  sort: number
+/** 自由运行的结果:只表示程序是否跑完,不判断答案对错 */
+export type FreeRunStatus =
+  | 'SUCCESS'
+  | 'COMPILE_ERROR'
+  | 'RUNTIME_ERROR'
+  | 'TIME_LIMIT_EXCEEDED'
+  | 'SYSTEM_ERROR'
+
+export interface CodingReviewView {
+  id: string
+  code: string
+  score: number
+  hitPoints: string[]
+  missedPoints: string[]
+  comment: string | null
+  suggestion: string | null
+  createdAt: string | null
 }
 
 export interface CodingDetail {
@@ -209,54 +210,31 @@ export interface CodingDetail {
   difficulty: number
   domain: string
   knowledgePoints: string[]
-  /** 该题支持的编程模式,顺序为 ACM、LEETCODE */
-  codeModes: CodeMode[]
-  /** ACM 模式初始代码 */
+  /** main 骨架 */
   starterCode: Partial<Record<CodeLanguage, string>>
-  /** 力扣模式初始代码 */
-  starterCodeFunction: Partial<Record<CodeLanguage, string>>
   timeLimitMs: number
   memoryLimitMb: number
-  /** 按模式分组的例题 */
-  samples: Partial<Record<CodeMode, CodingSampleCase[]>>
   status: QuestionStatus
-  submissionCount: number
-  accepted: boolean
-  functionName: string | null
-  paramTypes: string[]
-  returnType: string | null
-}
-
-export interface CodeCaseResult {
-  index: number
-  input: string
-  expectedOutput: string
-  actualOutput: string
-  passed: boolean
-  message: string
 }
 
 export interface CodeRunResult {
-  status: CodingStatus
-  passed: number
-  total: number
+  runStatus: FreeRunStatus
+  stdout: string
+  stderr: string
+  exitCode: number
   runtimeMs: number
-  errorMessage: string | null
-  cases: CodeCaseResult[]
 }
 
-export interface CodingSubmission {
-  id: string
-  questionId: string
-  language: CodeLanguage
-  code: string
-  status: CodingStatus
-  passed: number
-  total: number
-  runtimeMs: number | null
-  errorMessage: string | null
+export interface CodingReviewResult extends CodeRunResult {
+  score: number
+  hitPoints: string[]
+  missedPoints: string[]
+  comment: string | null
+  suggestion: string | null
+  progressStatus: QuestionStatus
+  attemptCount: number
+  bestScore: number | null
   createdAt: string | null
-  finishedAt: string | null
 }
 
 export async function getCodingDetail(id: string): Promise<CodingDetail> {
@@ -268,36 +246,29 @@ export async function runCode(
   id: string,
   language: CodeLanguage,
   code: string,
-  codeMode?: CodeMode,
 ): Promise<CodeRunResult> {
   const res = await request(`/api/questions/${id}/run`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ language, code, codeMode }),
+    body: JSON.stringify({ language, code }),
   })
   return unwrapJson<CodeRunResult>(res, '运行失败')
 }
 
-export async function submitCode(
+export async function reviewCode(
   id: string,
   language: CodeLanguage,
   code: string,
-  codeMode?: CodeMode,
-): Promise<CodingSubmission> {
-  const res = await request(`/api/questions/${id}/submissions`, {
+): Promise<CodingReviewResult> {
+  const res = await request(`/api/questions/${id}/review`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ language, code, codeMode }),
+    body: JSON.stringify({ language, code }),
   })
-  return unwrapJson<CodingSubmission>(res, '提交失败')
+  return unwrapJson<CodingReviewResult>(res, 'AI 点评失败')
 }
 
-export async function getSubmission(submissionId: string): Promise<CodingSubmission> {
-  const res = await request(`/api/questions/submissions/${submissionId}`)
-  return unwrapJson<CodingSubmission>(res, '查询判题结果失败')
-}
-
-export async function getCodingSubmissions(id: string): Promise<CodingSubmission[]> {
-  const res = await request(`/api/questions/${id}/submissions`)
-  return unwrapJson<CodingSubmission[]>(res, '加载提交历史失败')
+export async function getCodingReviews(id: string): Promise<CodingReviewView[]> {
+  const res = await request(`/api/questions/${id}/reviews`)
+  return unwrapJson<CodingReviewView[]>(res, '加载点评历史失败')
 }

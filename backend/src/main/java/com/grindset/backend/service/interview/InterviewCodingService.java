@@ -633,8 +633,11 @@ public class InterviewCodingService {
             }
             builder.append(line).append('\n');
         }
-        return builder.toString().strip()
-                + "\n\n> 这是开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。";
+        String result = builder.toString().strip();
+        if (!result.contains("开放式编码")) {
+            result += "\n\n> 这是开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。";
+        }
+        return result;
     }
 
     private static Map<String, String> starterCode() {

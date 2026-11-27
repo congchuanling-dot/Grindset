@@ -1,139 +1,54 @@
 package com.grindset.backend.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
-import com.grindset.backend.common.SnowflakeIdGenerator;
-import com.grindset.backend.common.SubmissionScene;
-import com.grindset.backend.common.Texts;
 import com.grindset.backend.common.constant.JudgeLanguage;
-import com.grindset.backend.common.constant.SubmissionStatus;
+import com.grindset.backend.dto.BankEvaluation;
 import com.grindset.backend.dto.CodeRunRequest;
 import com.grindset.backend.dto.CodeRunResult;
 import com.grindset.backend.dto.CodingDetail;
-import com.grindset.backend.dto.CodingSubmissionView;
+import com.grindset.backend.dto.CodingReviewResult;
+import com.grindset.backend.dto.CodingReviewView;
 import com.grindset.backend.entity.QuestionBank;
-import com.grindset.backend.entity.QuestionSubmission;
-import com.grindset.backend.entity.QuestionTestCase;
-import com.grindset.backend.mapper.QuestionSubmissionMapper;
-import com.grindset.backend.mapper.QuestionTestCaseMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.grindset.backend.common.constant.InputLimits.MAX_CODE_LENGTH;
-import static com.grindset.backend.common.constant.InputLimits.MAX_FEEDBACK_LENGTH;
-import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
- * 编程题:题目视图、运行样例、异步提交与判题历史。
+ * 题库编程题:自由运行 + AI 点评。
  *
- * <p>提交先落库为 PENDING 再进单线程队列判题,前端轮询;
- * 同一用户同时只允许一个运行/判题任务,防止刷爆判题机。</p>
+ * <p>用户写完整 main,自己构造输入并运行;平台不提供隐藏用例,
+ * 提交点评时由大模型检查代码逻辑、边界与潜在错误,并回写做题进度。</p>
  */
 @Service
 public class CodingService {
 
-    private static final Logger log = LoggerFactory.getLogger(CodingService.class);
-
-    private static final int TIME_LIMIT_DEFAULT = 2000;
+    private static final int TIME_LIMIT_DEFAULT = 5000;
     private static final int MEMORY_LIMIT_DEFAULT = 256;
-    private static final int HISTORY_LIMIT = 20;
-
-    /** 题库提交 */
-    public static final SubmissionScene SCENE_BANK = SubmissionScene.BANK;
-
-    /** 面试手撕代码提交 */
-    public static final SubmissionScene SCENE_INTERVIEW = SubmissionScene.INTERVIEW;
-
-    /** 支持的编程模式,顺序决定详情接口 codeModes 的顺序 */
-    private static final List<String> MODES = List.of("ACM", "LEETCODE");
-    private static final String CODE_MODE_ACM = "ACM";
-    private static final String CODE_MODE_LEETCODE = "LEETCODE";
 
     private final QuestionBankService questionBankService;
-    private final QuestionTestCaseMapper testCaseMapper;
-    private final QuestionSubmissionMapper submissionMapper;
     private final JudgeService judgeService;
-    private final SnowflakeIdGenerator idGenerator;
+    private final InterviewLlmService llmService;
 
-    /** 判题串行执行,单机够用;后续要扩容再换成队列 */
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "coding-judge");
-        thread.setDaemon(true);
-        return thread;
-    });
-
-    /** 正在运行样例或判题的用户,避免同一用户并发占用容器 */
+    /** 正在运行或点评的用户,避免同一用户并发占用容器 */
     private final Set<Long> activeUsers = ConcurrentHashMap.newKeySet();
 
-    /** 提交场景:题库提交与面试提交共用判题链路,但统计与进度回写要隔离 */
-    public record SubmissionContext(SubmissionScene scene, Long sessionId, Long interviewQuestionId) {
-
-        public static SubmissionContext bank() {
-            return new SubmissionContext(SCENE_BANK, null, null);
-        }
-
-        public static SubmissionContext interview(long sessionId, long interviewQuestionId) {
-            return new SubmissionContext(SCENE_INTERVIEW, sessionId, interviewQuestionId);
-        }
-    }
-
     public CodingService(QuestionBankService questionBankService,
-                         QuestionTestCaseMapper testCaseMapper,
-                         QuestionSubmissionMapper submissionMapper,
                          JudgeService judgeService,
-                         SnowflakeIdGenerator idGenerator) {
+                         InterviewLlmService llmService) {
         this.questionBankService = questionBankService;
-        this.testCaseMapper = testCaseMapper;
-        this.submissionMapper = submissionMapper;
         this.judgeService = judgeService;
-        this.idGenerator = idGenerator;
+        this.llmService = llmService;
     }
 
-    // ---------- 题目 ----------
-
-    /** 编程题详情:两种模式的初始代码与例题,隐藏用例不出库 */
+    /** 编程题详情:题面、main 骨架与最近一次点评 */
     public CodingDetail detail(long userId, long id) {
         QuestionBank question = questionBankService.requireCodingQuestion(id);
-        List<QuestionTestCase> cases = allCases(id);
-
-        Map<String, List<CodingDetail.SampleCase>> samples = new LinkedHashMap<>();
-        List<String> modes = new ArrayList<>();
-        for (String mode : MODES) {
-            List<CodingDetail.SampleCase> views = cases.stream()
-                    .filter(item -> mode.equals(caseMode(item)) && intValue(item.getIsSample()) == 1)
-                    .map(item -> new CodingDetail.SampleCase(nullToEmpty(item.getInput()),
-                            nullToEmpty(item.getExpectedOutput()), intValue(item.getSort())))
-                    .toList();
-            samples.put(mode, views);
-            boolean hasCases = cases.stream().anyMatch(item -> mode.equals(caseMode(item)));
-            if (hasCases) {
-                modes.add(mode);
-            }
-        }
-
-        long submissionCount = submissionMapper.selectCount(new QueryWrapper<QuestionSubmission>()
-                .eq("user_id", userId)
-                .eq("question_id", id)
-                .eq("scene", SCENE_BANK.name()));
-        long acceptedCount = submissionMapper.selectCount(new QueryWrapper<QuestionSubmission>()
-                .eq("user_id", userId)
-                .eq("question_id", id)
-                .eq("scene", SCENE_BANK.name())
-                .eq("status", SubmissionStatus.ACCEPTED.name()));
-
         return new CodingDetail(
                 String.valueOf(question.getId()),
                 question.getTitle(),
@@ -142,247 +57,64 @@ public class CodingService {
                 question.getDifficulty() == null ? 2 : question.getDifficulty(),
                 question.getDomain(),
                 question.getKpNames() == null ? List.of() : question.getKpNames(),
-                modes.isEmpty() ? List.of(CODE_MODE_ACM) : modes,
                 question.getStarterCode() == null ? Map.of() : question.getStarterCode(),
-                question.getStarterCodeFunction() == null ? Map.of() : question.getStarterCodeFunction(),
                 positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
                 positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT),
-                samples,
-                questionBankService.progressStatus(userId, id),
-                (int) submissionCount,
-                acceptedCount > 0,
-                question.getFunctionName(),
-                question.getParamTypes() == null ? List.of() : question.getParamTypes(),
-                question.getReturnType());
+                questionBankService.progressStatus(userId, id));
     }
 
-    /** 用例所属模式,历史数据没有值时按 ACM 处理 */
-    private static String caseMode(QuestionTestCase testCase) {
-        return CODE_MODE_LEETCODE.equalsIgnoreCase(testCase.getCaseMode()) ? CODE_MODE_LEETCODE : CODE_MODE_ACM;
-    }
-
-    /** 解析请求里的模式:没传就用题目的默认模式,非编程题一律 ACM */
-    private static String resolveMode(QuestionBank question, CodeRunRequest request) {
-        String raw = request == null ? null : request.codeMode();
-        if (raw != null && !raw.isBlank()) {
-            String upper = raw.strip().toUpperCase(Locale.ROOT);
-            if (MODES.contains(upper)) {
-                return upper;
-            }
-            throw new BizException(ErrorCode.BAD_REQUEST, "不支持的编程模式：" + raw);
-        }
-        return CODE_MODE_LEETCODE.equalsIgnoreCase(question.getCodeMode()) ? CODE_MODE_LEETCODE : CODE_MODE_ACM;
-    }
-
-    /** 函数模式下把题目的签名整理成判题器需要的结构 */
-    private static JudgeService.FunctionSpec functionSpec(QuestionBank question) {
-        List<String> params = question.getParamTypes() == null ? List.of() : question.getParamTypes();
-        return new JudgeService.FunctionSpec(question.getFunctionName(), params, question.getReturnType());
-    }
-
-    // ---------- 运行样例 ----------
-
-    /** 运行例题,同步返回逐用例结果,不写提交历史 */
+    /** 运行完整代码,只回传控制台输出,不写点评历史 */
     public CodeRunResult run(long userId, long id, CodeRunRequest request) {
         QuestionBank question = questionBankService.requireCodingQuestion(id);
-        String mode = resolveMode(question, request);
         JudgeLanguage language = requireLanguage(request);
         String code = requireCode(request);
 
-        List<QuestionTestCase> samples = sampleCases(id, mode);
-        if (samples.isEmpty()) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "这道题还没有配置该模式的例题用例");
-        }
         if (!activeUsers.add(userId)) {
             throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "上一次运行还没结束，请稍候");
         }
         try {
-            int timeLimit = positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT);
-            int memoryLimit = positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT);
-            // 函数题走注入驱动的判题,ACM 题直接跑标准输入输出
-            JudgeService.JudgeOutcome outcome = CODE_MODE_LEETCODE.equals(mode)
-                    ? judgeService.judgeFunction(language, code, functionSpec(question), samples,
-                            timeLimit, memoryLimit)
-                    : judgeService.judge(language, code, samples, timeLimit, memoryLimit);
-            List<CodeRunResult.CaseResult> cases = outcome.cases().stream()
-                    .map(item -> new CodeRunResult.CaseResult(item.index(), nullToEmpty(item.input()),
-                            nullToEmpty(item.expectedOutput()), nullToEmpty(item.actualOutput()),
-                            item.passed(), item.message()))
-                    .toList();
-            return new CodeRunResult(outcome.status().name(), outcome.passed(), outcome.total(),
-                    outcome.runtimeMs(), outcome.errorMessage(), cases);
+            JudgeService.FreeRunOutcome outcome = execute(question, language, code);
+            return new CodeRunResult(outcome.status().name(), outcome.stdout(), outcome.stderr(),
+                    outcome.exitCode(), outcome.runtimeMs());
         } finally {
             activeUsers.remove(userId);
         }
     }
 
-    // ---------- 提交 ----------
-
-    /** 提交代码:落库后异步判题,返回 PENDING 记录供前端轮询 */
-    public CodingSubmissionView submit(long userId, long id, CodeRunRequest request) {
-        return submit(userId, id, request, SubmissionContext.bank());
-    }
-
-    /** 带场景的提交:面试提交不回写题库进度 */
-    public CodingSubmissionView submit(long userId, long id, CodeRunRequest request,
-                                       SubmissionContext context) {
+    /** 运行代码并让 AI 点评,结果落库并回写做题进度 */
+    public CodingReviewResult review(long userId, long id, CodeRunRequest request) {
         QuestionBank question = questionBankService.requireCodingQuestion(id);
-        String mode = resolveMode(question, request);
         JudgeLanguage language = requireLanguage(request);
         String code = requireCode(request);
 
-        List<QuestionTestCase> cases = allCases(id, mode);
-        if (cases.isEmpty()) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "这道题还没有配置该模式的测试用例");
-        }
         if (!activeUsers.add(userId)) {
             throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "上一次运行还没结束，请稍候");
         }
-
-        QuestionSubmission submission = new QuestionSubmission();
-        submission.setId(idGenerator.nextId());
-        submission.setUserId(userId);
-        submission.setQuestionId(id);
-        submission.setScene(context.scene());
-        submission.setInterviewSessionId(context.sessionId());
-        submission.setInterviewQuestionId(context.interviewQuestionId());
-        submission.setLanguage(language);
-        submission.setCode(code);
-        submission.setStatus(SubmissionStatus.PENDING);
-        submission.setPassed(0);
-        submission.setTotal(cases.size());
-        submission.setCreatedAt(LocalDateTime.now());
-        submissionMapper.insert(submission);
-
-        long submissionId = submission.getId();
-        executor.submit(() -> judgeAsync(submissionId, userId, question, language, code, cases,
-                mode, context.scene()));
-        return toView(submission);
-    }
-
-    private void judgeAsync(long submissionId, long userId, QuestionBank question,
-                            JudgeLanguage language, String code, List<QuestionTestCase> cases,
-                            String mode, SubmissionScene scene) {
         try {
-            QuestionSubmission running = new QuestionSubmission();
-            running.setId(submissionId);
-            running.setStatus(SubmissionStatus.RUNNING);
-            submissionMapper.updateById(running);
-
-            JudgeService.JudgeOutcome outcome = CODE_MODE_LEETCODE.equals(mode)
-                    ? judgeService.judgeFunction(language, code, functionSpec(question), cases,
-                            positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
-                            positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT))
-                    : judgeService.judge(language, code, cases,
-                            positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
-                            positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT));
-
-            QuestionSubmission finished = new QuestionSubmission();
-            finished.setId(submissionId);
-            finished.setStatus(outcome.status());
-            finished.setPassed(outcome.passed());
-            finished.setTotal(outcome.total());
-            finished.setRuntimeMs(outcome.runtimeMs());
-            finished.setErrorMessage(Texts.truncate(outcome.errorMessage(), MAX_FEEDBACK_LENGTH));
-            finished.setFinishedAt(LocalDateTime.now());
-            submissionMapper.updateById(finished);
-
-            // 面试提交只在面试域内结算,不能污染题库进度
-            if (SCENE_BANK == scene) {
-                boolean accepted = SubmissionStatus.ACCEPTED.equals(outcome.status());
-                try {
-                    questionBankService.recordCodingOutcome(userId, question.getId(), accepted, code,
-                            outcome.errorMessage());
-                } catch (Exception e) {
-                    log.error("编程题结果回写失败 userId={} questionId={}", userId, question.getId(), e);
-                }
-            }
-        } catch (Exception e) {
-            log.error("判题异常 submissionId={}", submissionId, e);
-            QuestionSubmission failed = new QuestionSubmission();
-            failed.setId(submissionId);
-            failed.setStatus(SubmissionStatus.SYSTEM_ERROR);
-            failed.setErrorMessage(Texts.truncate("判题服务异常：" + e.getMessage(), MAX_FEEDBACK_LENGTH));
-            failed.setFinishedAt(LocalDateTime.now());
-            submissionMapper.updateById(failed);
+            JudgeService.FreeRunOutcome outcome = execute(question, language, code);
+            BankEvaluation evaluation = llmService.bankCodingReview(question, code, language.name(),
+                    outcome.status().name(), outcome.stdout(), outcome.stderr(), outcome.exitCode(), userId);
+            QuestionBankService.CodingReviewRecord saved = questionBankService.recordCodingReview(
+                    userId, id, code, evaluation);
+            return new CodingReviewResult(outcome.status().name(), outcome.stdout(), outcome.stderr(),
+                    outcome.exitCode(), outcome.runtimeMs(), saved.score(), saved.hitPoints(),
+                    saved.missedPoints(), saved.comment(), saved.suggestion(),
+                    saved.progressStatus(), saved.attemptCount(), saved.bestScore(), saved.createdAt());
         } finally {
             activeUsers.remove(userId);
         }
     }
 
-    // ---------- 历史 ----------
-
-    public CodingSubmissionView submission(long userId, long submissionId) {
-        QuestionSubmission submission = submissionMapper.selectById(submissionId);
-        if (submission == null || submission.getUserId() == null || submission.getUserId() != userId) {
-            throw new BizException(ErrorCode.NOT_FOUND, "提交记录不存在");
-        }
-        return toView(submission);
-    }
-
-    public List<CodingSubmissionView> history(long userId, long id) {
+    /** 这道题的点评历史,最新在前 */
+    public List<CodingReviewView> reviews(long userId, long id) {
         questionBankService.requireCodingQuestion(id);
-        return submissionMapper.selectList(new QueryWrapper<QuestionSubmission>()
-                        .eq("user_id", userId)
-                        .eq("question_id", id)
-                        .eq("scene", SCENE_BANK.name())
-                        .orderByDesc("created_at")
-                        .last("LIMIT " + HISTORY_LIMIT))
-                .stream().map(this::toView).toList();
+        return questionBankService.codingReviews(userId, id);
     }
 
-    /** 面试题最近一次提交,用于刷新恢复和复盘兜底 */
-    public QuestionSubmission latestInterviewSubmission(long interviewQuestionId) {
-        return submissionMapper.selectOne(new QueryWrapper<QuestionSubmission>()
-                .eq("interview_question_id", interviewQuestionId)
-                .eq("scene", SCENE_INTERVIEW.name())
-                .orderByDesc("created_at")
-                .last("LIMIT 1"));
-    }
-
-    /** 面试提交详情,校验归属 */
-    public CodingSubmissionView interviewSubmission(long userId, long sessionId,
-                                                    long interviewQuestionId, long submissionId) {
-        QuestionSubmission submission = submissionMapper.selectById(submissionId);
-        if (submission == null
-                || submission.getUserId() == null || submission.getUserId() != userId
-                || submission.getInterviewSessionId() == null
-                || submission.getInterviewSessionId() != sessionId
-                || submission.getInterviewQuestionId() == null
-                || submission.getInterviewQuestionId() != interviewQuestionId) {
-            throw new BizException(ErrorCode.NOT_FOUND, "提交记录不存在");
-        }
-        return toView(submission);
-    }
-
-    // ---------- 工具 ----------
-
-    private List<QuestionTestCase> sampleCases(long id, String mode) {
-        return testCaseMapper.selectList(new QueryWrapper<QuestionTestCase>()
-                .eq("question_id", id)
-                .eq("case_mode", mode)
-                .eq("is_sample", 1)
-                .orderByAsc("sort")
-                .orderByAsc("id"));
-    }
-
-    private List<QuestionTestCase> allCases(long id, String mode) {
-        return testCaseMapper.selectList(new QueryWrapper<QuestionTestCase>()
-                .eq("question_id", id)
-                .eq("case_mode", mode)
-                .orderByAsc("is_sample")
-                .orderByAsc("sort")
-                .orderByAsc("id"));
-    }
-
-    /** 两种模式的全部用例,详情页用来按模式分组 */
-    private List<QuestionTestCase> allCases(long id) {
-        return testCaseMapper.selectList(new QueryWrapper<QuestionTestCase>()
-                .eq("question_id", id)
-                .orderByAsc("case_mode")
-                .orderByAsc("is_sample")
-                .orderByAsc("sort")
-                .orderByAsc("id"));
+    private JudgeService.FreeRunOutcome execute(QuestionBank question, JudgeLanguage language, String code) {
+        return judgeService.runFree(language, code,
+                positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
+                positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT));
     }
 
     private static JudgeLanguage requireLanguage(CodeRunRequest request) {
@@ -404,34 +136,7 @@ public class CodingService {
         return code;
     }
 
-    public CodingSubmissionView toView(QuestionSubmission submission) {
-        return new CodingSubmissionView(
-                String.valueOf(submission.getId()),
-                String.valueOf(submission.getQuestionId()),
-                submission.getLanguage() == null ? null : submission.getLanguage().name(),
-                Texts.truncate(submission.getCode(), MAX_CODE_LENGTH),
-                submission.getStatus() == null ? null : submission.getStatus().name(),
-                submission.getPassed() == null ? 0 : submission.getPassed(),
-                submission.getTotal() == null ? 0 : submission.getTotal(),
-                submission.getRuntimeMs(),
-                submission.getErrorMessage(),
-                format(submission.getCreatedAt()),
-                format(submission.getFinishedAt()));
-    }
-
     private static int positive(Integer value, int fallback) {
         return value == null || value <= 0 ? fallback : value;
-    }
-
-    private static int intValue(Integer value) {
-        return value == null ? 0 : value;
-    }
-
-    private static String nullToEmpty(String value) {
-        return value == null ? "" : value;
-    }
-
-    private static String format(LocalDateTime time) {
-        return time == null ? null : time.format(STANDARD);
     }
 }

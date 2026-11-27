@@ -2,219 +2,211 @@
   "questions": [
     {
       "title": "LRU 缓存",
-      "content": "## 题目描述\n\n请你实现一个 LRU（最近最少使用）缓存，支持 `get` 与 `put` 两种操作：\n\n- `get key`：如果键存在，返回对应的值，并把该键标记为最近使用；不存在返回 `-1`；\n- `put key value`：写入或更新键值；如果写入后键的数量超过容量，淘汰最久未使用的键。\n\n要求 `get` 与 `put` 的时间复杂度都接近 O(1)。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n2\n9\nput 1 1\nput 2 2\nget 1\nput 3 3\nget 2\nput 4 4\nget 1\nget 3\nget 4\n```\n\n输出：\n\n```\n1\n-1\n-1\n3\n4\n```\n\n解释：容量为 2。`put 3 3` 时键 2 最久未使用被淘汰；`put 4 4` 时键 1 最久未使用被淘汰。\n\n**示例 2**\n\n输入：\n\n```\n1\n5\nput 1 10\nget 1\nput 2 20\nget 1\nget 2\n```\n\n输出：\n\n```\n10\n-1\n20\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `cap`，表示缓存容量；\n- 第二行一个整数 `m`，表示操作条数；\n- 随后 `m` 行，每行是 `put key value` 或 `get key`；\n- 每个 `get` 输出一行结果：命中输出值，未命中输出 `-1`；`put` 不输出。\n\n## 提示\n\n- `1 <= cap <= 3000`\n- `1 <= m <= 2 * 10^5`\n- `0 <= key, value <= 10^4`\n- 同一时刻缓存中的键数量不会超过 `cap`",
+      "content": "## 题目描述\n\n请你实现一个 LRU（最近最少使用）缓存，支持 `get` 与 `put` 两种操作：\n\n- `get key`：如果键存在，返回对应的值，并把该键标记为最近使用；不存在返回 `-1`；\n- `put key value`：写入或更新键值；如果写入后键的数量超过容量，淘汰最久未使用的键。\n\n要求 `get` 与 `put` 的时间复杂度都接近 O(1)。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n2\n9\nput 1 1\nput 2 2\nget 1\nput 3 3\nget 2\nput 4 4\nget 1\nget 3\nget 4\n```\n\n输出：\n\n```\n1\n-1\n-1\n3\n4\n```\n\n解释：容量为 2。`put 3 3` 时键 2 最久未使用被淘汰；`put 4 4` 时键 1 最久未使用被淘汰。\n\n**示例 2**\n\n输入：\n\n```\n1\n5\nput 1 10\nget 1\nput 2 20\nget 1\nget 2\n```\n\n输出：\n\n```\n10\n-1\n20\n```\n\n## 提示\n\n- `1 <= cap <= 3000`\n- `1 <= m <= 2 * 10^5`\n- `0 <= key, value <= 10^4`\n- 同一时刻缓存中的键数量不会超过 `cap`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "设计",
       "referenceAnswer": "用哈希表保存 key 到双向链表节点的映射，链表头部为最近使用、尾部为最久未使用。get 命中时把节点移到头部并返回值；put 时若 key 已存在则更新值并移到头部，否则新建节点插入头部，容量超限时删除尾节点并同步删除哈希表项。两种操作都是 O(1)。",
-      "keyPoints": ["哈希表", "双向链表", "O(1) 淘汰"],
-      "kpNames": ["哈希表", "双向链表"],
+      "keyPoints": [
+        "哈希表",
+        "双向链表",
+        "O(1) 淘汰"
+      ],
+      "kpNames": [
+        "哈希表",
+        "双向链表"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/lru-cache/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    static class LRUCache {\n        LRUCache(int capacity) {\n            // TODO 初始化\n        }\n\n        int get(int key) {\n            // TODO 命中返回值并标记为最近使用，未命中返回 -1\n            return -1;\n        }\n\n        void put(int key, int value) {\n            // TODO 写入或更新，超出容量时淘汰最久未使用的键\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 cap，第二行 m，随后 m 行 put k v / get k\n        // 每个 get 输出一行（未命中 -1），put 不输出\n        int cap = Integer.parseInt(sc.nextLine().trim());\n        int m = Integer.parseInt(sc.nextLine().trim());\n        LRUCache cache = new LRUCache(cap);\n        StringBuilder out = new StringBuilder();\n        for (int i = 0; i < m; i++) {\n            String[] p = sc.nextLine().trim().split(\"\\\\s+\");\n            if (p[0].equals(\"put\")) {\n                cache.put(Integer.parseInt(p[1]), Integer.parseInt(p[2]));\n            } else {\n                out.append(cache.get(Integer.parseInt(p[1]))).append('\\n');\n            }\n        }\n        System.out.print(out);\n    }\n}",
-        "PYTHON": "import sys\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        # TODO 初始化\n        pass\n\n    def get(self, key: int) -> int:\n        # TODO 命中返回值并标记为最近使用，未命中返回 -1\n        return -1\n\n    def put(self, key: int, value: int) -> None:\n        # TODO 写入或更新，超出容量时淘汰最久未使用的键\n        pass\n\ndef main():\n    # 第一行 cap，第二行 m，随后 m 行 put k v / get k\n    # 每个 get 输出一行（未命中 -1），put 不输出\n    lines = sys.stdin.read().splitlines()\n    cap = int(lines[0].strip())\n    m = int(lines[1].strip())\n    cache = LRUCache(cap)\n    out = []\n    for line in lines[2:2 + m]:\n        p = line.split()\n        if p[0] == 'put':\n            cache.put(int(p[1]), int(p[2]))\n        else:\n            out.append(str(cache.get(int(p[1]))))\n    sys.stdout.write('\\n'.join(out))\n\nif __name__ == '__main__':\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "2\n9\nput 1 1\nput 2 2\nget 1\nput 3 3\nget 2\nput 4 4\nget 1\nget 3\nget 4", "expectedOutput": "1\n-1\n-1\n3\n4", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1\n5\nput 1 10\nget 1\nput 2 20\nget 1\nget 2", "expectedOutput": "10\n-1\n20", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "3\n8\nput 1 1\nput 2 2\nput 3 3\nget 1\nput 4 4\nget 2\nget 3\nget 4", "expectedOutput": "1\n-1\n3\n4", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "2\n6\nput 2 1\nput 2 2\nget 2\nput 1 1\nput 4 4\nget 2", "expectedOutput": "2\n-1", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "1\n3\nget 1\nput 1 5\nget 1", "expectedOutput": "-1\n5", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "最小栈",
-      "content": "## 题目描述\n\n设计一个栈，除了常规的 `push` 与 `pop`，还能在 O(1) 时间内取得当前栈中的最小元素。\n\n- `push x`：把 `x` 压入栈；\n- `pop`：弹出栈顶元素并返回它；\n- `top`：返回栈顶元素；\n- `getMin`：返回当前栈中的最小元素。\n\n数据保证调用 `pop`、`top`、`getMin` 时栈不为空。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\npush -2\npush 0\npush -3\ngetMin\npop\ntop\ngetMin\n```\n\n输出：\n\n```\n-3\n-3\n0\n-2\n```\n\n解释：`getMin` 先得到 -3；`pop` 弹出 -3；随后栈顶是 0，最小值是 -2。\n\n**示例 2**\n\n输入：\n\n```\n5\npush 2\npush 5\ntop\ngetMin\npop\n```\n\n输出：\n\n```\n5\n2\n5\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `m`，表示操作条数；\n- 随后 `m` 行，每行为 `push x`、`pop`、`top` 或 `getMin`；\n- `pop`、`top`、`getMin` 各输出一行整数（`pop` 输出被弹出的值），`push` 不输出。\n\n## 提示\n\n- `1 <= m <= 3 * 10^4`\n- `-10^4 <= x <= 10^4`\n- 保证 `pop`、`top`、`getMin` 调用时栈非空",
+      "content": "## 题目描述\n\n设计一个栈，除了常规的 `push` 与 `pop`，还能在 O(1) 时间内取得当前栈中的最小元素。\n\n- `push x`：把 `x` 压入栈；\n- `pop`：弹出栈顶元素并返回它；\n- `top`：返回栈顶元素；\n- `getMin`：返回当前栈中的最小元素。\n\n数据保证调用 `pop`、`top`、`getMin` 时栈不为空。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\npush -2\npush 0\npush -3\ngetMin\npop\ntop\ngetMin\n```\n\n输出：\n\n```\n-3\n-3\n0\n-2\n```\n\n解释：`getMin` 先得到 -3；`pop` 弹出 -3；随后栈顶是 0，最小值是 -2。\n\n**示例 2**\n\n输入：\n\n```\n5\npush 2\npush 5\ntop\ngetMin\npop\n```\n\n输出：\n\n```\n5\n2\n5\n```\n\n## 提示\n\n- `1 <= m <= 3 * 10^4`\n- `-10^4 <= x <= 10^4`\n- 保证 `pop`、`top`、`getMin` 调用时栈非空\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "设计",
       "referenceAnswer": "用两个栈：数据栈保存全部元素，辅助栈保存与数据栈每个位置对应的最小值。push 时数据栈直接入栈，辅助栈压入 min(新值, 辅助栈顶)；pop 时两栈同时弹出；top 取数据栈栈顶；getMin 取辅助栈栈顶。所有操作都是 O(1)。",
-      "keyPoints": ["辅助栈", "最小值同步", "O(1) 查询"],
-      "kpNames": ["栈", "单调栈"],
+      "keyPoints": [
+        "辅助栈",
+        "最小值同步",
+        "O(1) 查询"
+      ],
+      "kpNames": [
+        "栈",
+        "单调栈"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/min-stack/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    static class MinStack {\n        MinStack() {\n            // TODO 初始化\n        }\n\n        void push(int x) {\n            // TODO\n        }\n\n        int pop() {\n            // TODO 弹出并返回栈顶元素\n            return 0;\n        }\n\n        int top() {\n            // TODO 返回栈顶元素\n            return 0;\n        }\n\n        int getMin() {\n            // TODO 返回当前最小值\n            return 0;\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m，随后 m 行 push x / pop / top / getMin\n        // pop、top、getMin 各输出一行，push 不输出\n        int m = Integer.parseInt(sc.nextLine().trim());\n        MinStack stack = new MinStack();\n        StringBuilder out = new StringBuilder();\n        for (int i = 0; i < m; i++) {\n            String[] p = sc.nextLine().trim().split(\"\\\\s+\");\n            switch (p[0]) {\n                case \"push\" -> stack.push(Integer.parseInt(p[1]));\n                case \"pop\" -> out.append(stack.pop()).append('\\n');\n                case \"top\" -> out.append(stack.top()).append('\\n');\n                default -> out.append(stack.getMin()).append('\\n');\n            }\n        }\n        System.out.print(out);\n    }\n}",
-        "PYTHON": "import sys\n\nclass MinStack:\n    def __init__(self):\n        # TODO 初始化\n        pass\n\n    def push(self, x: int) -> None:\n        # TODO\n        pass\n\n    def pop(self) -> int:\n        # TODO 弹出并返回栈顶元素\n        return 0\n\n    def top(self) -> int:\n        # TODO 返回栈顶元素\n        return 0\n\n    def get_min(self) -> int:\n        # TODO 返回当前最小值\n        return 0\n\ndef main():\n    # 第一行 m，随后 m 行 push x / pop / top / getMin\n    # pop、top、getMin 各输出一行，push 不输出\n    lines = sys.stdin.read().splitlines()\n    m = int(lines[0].strip())\n    stack = MinStack()\n    out = []\n    for line in lines[1:1 + m]:\n        p = line.split()\n        op = p[0]\n        if op == 'push':\n            stack.push(int(p[1]))\n        elif op == 'pop':\n            out.append(str(stack.pop()))\n        elif op == 'top':\n            out.append(str(stack.top()))\n        else:\n            out.append(str(stack.get_min()))\n    sys.stdout.write('\\n'.join(out))\n\nif __name__ == '__main__':\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\npush -2\npush 0\npush -3\ngetMin\npop\ntop\ngetMin", "expectedOutput": "-3\n-3\n0\n-2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "5\npush 2\npush 5\ntop\ngetMin\npop", "expectedOutput": "5\n2\n5", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "8\npush 1\npush 2\npush 3\ngetMin\npop\npop\ngetMin\ntop", "expectedOutput": "1\n3\n2\n1\n1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\npush 0\ntop\ngetMin\npop", "expectedOutput": "0\n0\n0", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "6\npush -1\npush -1\npush -1\ngetMin\npop\ngetMin", "expectedOutput": "-1\n-1\n-1", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "实现 Trie (前缀树)",
-      "content": "## 题目描述\n\n实现一棵前缀树（Trie），支持三种操作：\n\n- `insert word`：插入一个单词 `word`；\n- `search word`：判断 `word` 是否作为完整单词被插入过；\n- `startsWith prefix`：判断是否存在以 `prefix` 为前缀的单词。\n\n单词与前缀都只包含小写英文字母。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n6\ninsert apple\nsearch apple\nsearch app\nstartsWith app\ninsert app\nsearch app\n```\n\n输出：\n\n```\ntrue\nfalse\ntrue\ntrue\n```\n\n解释：插入 `apple` 后 `app` 只是前缀而不是完整单词，所以 `search app` 为 false；再插入 `app` 后变为 true。\n\n**示例 2**\n\n输入：\n\n```\n4\ninsert banana\nstartsWith ban\nstartsWith band\nsearch banana\n```\n\n输出：\n\n```\ntrue\nfalse\ntrue\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `m`，表示操作条数；\n- 随后 `m` 行，每行为 `insert 单词`、`search 单词` 或 `startsWith 前缀`；\n- `search`、`startsWith` 各输出一行 `true` 或 `false`（小写），`insert` 不输出。\n\n## 提示\n\n- `1 <= m <= 3 * 10^4`\n- `1 <= 单词/前缀长度 <= 2000`\n- 所有字符串长度之和不超过 `2 * 10^4`\n- 只包含小写英文字母",
+      "content": "## 题目描述\n\n实现一棵前缀树（Trie），支持三种操作：\n\n- `insert word`：插入一个单词 `word`；\n- `search word`：判断 `word` 是否作为完整单词被插入过；\n- `startsWith prefix`：判断是否存在以 `prefix` 为前缀的单词。\n\n单词与前缀都只包含小写英文字母。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n6\ninsert apple\nsearch apple\nsearch app\nstartsWith app\ninsert app\nsearch app\n```\n\n输出：\n\n```\ntrue\nfalse\ntrue\ntrue\n```\n\n解释：插入 `apple` 后 `app` 只是前缀而不是完整单词，所以 `search app` 为 false；再插入 `app` 后变为 true。\n\n**示例 2**\n\n输入：\n\n```\n4\ninsert banana\nstartsWith ban\nstartsWith band\nsearch banana\n```\n\n输出：\n\n```\ntrue\nfalse\ntrue\n```\n\n## 提示\n\n- `1 <= m <= 3 * 10^4`\n- `1 <= 单词/前缀长度 <= 2000`\n- 所有字符串长度之和不超过 `2 * 10^4`\n- 只包含小写英文字母\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "设计",
       "referenceAnswer": "每个节点保存 26 个字母对应的子节点指针和一个「是否单词结尾」标记。插入时沿字符逐层创建节点，最后一个节点标记为单词结尾；查找完整单词要求路径存在且末尾标记为 true；查找前缀只要求路径存在。单次操作时间 O(L)，L 为字符串长度。",
-      "keyPoints": ["字典树", "前缀匹配", "结束标记"],
-      "kpNames": ["字典树", "字符串"],
+      "keyPoints": [
+        "字典树",
+        "前缀匹配",
+        "结束标记"
+      ],
+      "kpNames": [
+        "字典树",
+        "字符串"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/implement-trie-prefix-tree/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    static class Trie {\n        Trie() {\n            // TODO 初始化\n        }\n\n        void insert(String word) {\n            // TODO\n        }\n\n        boolean search(String word) {\n            // TODO 完整单词匹配\n            return false;\n        }\n\n        boolean startsWith(String prefix) {\n            // TODO 前缀匹配\n            return false;\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m，随后 m 行 insert 单词 / search 单词 / startsWith 前缀\n        // search、startsWith 各输出一行 true/false，insert 不输出\n        int m = Integer.parseInt(sc.nextLine().trim());\n        Trie trie = new Trie();\n        StringBuilder out = new StringBuilder();\n        for (int i = 0; i < m; i++) {\n            String[] p = sc.nextLine().trim().split(\"\\\\s+\");\n            switch (p[0]) {\n                case \"insert\" -> trie.insert(p[1]);\n                case \"search\" -> out.append(trie.search(p[1])).append('\\n');\n                default -> out.append(trie.startsWith(p[1])).append('\\n');\n            }\n        }\n        System.out.print(out);\n    }\n}",
-        "PYTHON": "import sys\n\nclass Trie:\n    def __init__(self):\n        # TODO 初始化\n        pass\n\n    def insert(self, word: str) -> None:\n        # TODO\n        pass\n\n    def search(self, word: str) -> bool:\n        # TODO 完整单词匹配\n        return False\n\n    def starts_with(self, prefix: str) -> bool:\n        # TODO 前缀匹配\n        return False\n\ndef main():\n    # 第一行 m，随后 m 行 insert 单词 / search 单词 / startsWith 前缀\n    # search、startsWith 各输出一行 true/false，insert 不输出\n    lines = sys.stdin.read().splitlines()\n    m = int(lines[0].strip())\n    trie = Trie()\n    out = []\n    for line in lines[1:1 + m]:\n        p = line.split()\n        if p[0] == 'insert':\n            trie.insert(p[1])\n        elif p[0] == 'search':\n            out.append('true' if trie.search(p[1]) else 'false')\n        else:\n            out.append('true' if trie.starts_with(p[1]) else 'false')\n    sys.stdout.write('\\n'.join(out))\n\nif __name__ == '__main__':\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "6\ninsert apple\nsearch apple\nsearch app\nstartsWith app\ninsert app\nsearch app", "expectedOutput": "true\nfalse\ntrue\ntrue", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "4\ninsert banana\nstartsWith ban\nstartsWith band\nsearch banana", "expectedOutput": "true\nfalse\ntrue", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "5\ninsert a\nsearch a\nstartsWith a\nsearch ab\nstartsWith ab", "expectedOutput": "true\ntrue\nfalse\nfalse", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "6\ninsert abc\ninsert abd\nsearch ab\nstartsWith ab\nsearch abc\nsearch abd", "expectedOutput": "false\ntrue\ntrue\ntrue", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "4\ninsert hello\nsearch hell\nstartsWith hell\nsearch hello", "expectedOutput": "false\ntrue\ntrue", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "添加与搜索单词 - 数据结构设计",
-      "content": "## 题目描述\n\n设计一个数据结构，支持添加单词与按模式搜索单词：\n\n- `addWord word`：添加一个单词；\n- `search pattern`：判断是否存在与模式完全匹配的单词，模式中的 `.` 可以匹配任意一个字母。\n\n单词与模式都只包含小写英文字母和 `.`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\naddWord bad\naddWord dad\naddWord mad\nsearch pad\nsearch bad\nsearch .ad\nsearch b..\n```\n\n输出：\n\n```\nfalse\ntrue\ntrue\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n4\naddWord a\nsearch .\nsearch a\nsearch b\n```\n\n输出：\n\n```\ntrue\ntrue\nfalse\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `m`，表示操作条数；\n- 随后 `m` 行，每行为 `addWord 单词` 或 `search 模式`；\n- `search` 每行输出 `true` 或 `false`（小写），`addWord` 不输出。\n\n## 提示\n\n- `1 <= m <= 3 * 10^4`\n- `1 <= 单词/模式长度 <= 25`\n- 单词只含小写字母，模式只含小写字母与 `.`\n- 允许重复添加同一个单词",
+      "content": "## 题目描述\n\n设计一个数据结构，支持添加单词与按模式搜索单词：\n\n- `addWord word`：添加一个单词；\n- `search pattern`：判断是否存在与模式完全匹配的单词，模式中的 `.` 可以匹配任意一个字母。\n\n单词与模式都只包含小写英文字母和 `.`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\naddWord bad\naddWord dad\naddWord mad\nsearch pad\nsearch bad\nsearch .ad\nsearch b..\n```\n\n输出：\n\n```\nfalse\ntrue\ntrue\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n4\naddWord a\nsearch .\nsearch a\nsearch b\n```\n\n输出：\n\n```\ntrue\ntrue\nfalse\n```\n\n## 提示\n\n- `1 <= m <= 3 * 10^4`\n- `1 <= 单词/模式长度 <= 25`\n- 单词只含小写字母，模式只含小写字母与 `.`\n- 允许重复添加同一个单词\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "设计",
       "referenceAnswer": "用字典树存储所有单词，节点记录是否为单词结尾。search 时对模式做深度优先搜索：普通字符沿对应子节点前进；遇到 `.` 时枚举当前节点的所有非空子节点分别递归。匹配成功需要同时走到模式末尾且节点标记为单词结尾。最坏时间复杂度为 O(26^L)，L 为模式长度。",
-      "keyPoints": ["字典树", "深度优先搜索", "通配符匹配"],
-      "kpNames": ["字典树", "回溯"],
+      "keyPoints": [
+        "字典树",
+        "深度优先搜索",
+        "通配符匹配"
+      ],
+      "kpNames": [
+        "字典树",
+        "回溯"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/design-add-and-search-words-data-structure/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    static class WordDictionary {\n        WordDictionary() {\n            // TODO 初始化\n        }\n\n        void addWord(String word) {\n            // TODO\n        }\n\n        boolean search(String word) {\n            // TODO '.' 可匹配任意单个字符\n            return false;\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m，随后 m 行 addWord 单词 / search 模式\n        // search 每行输出 true/false，addWord 不输出\n        int m = Integer.parseInt(sc.nextLine().trim());\n        WordDictionary dict = new WordDictionary();\n        StringBuilder out = new StringBuilder();\n        for (int i = 0; i < m; i++) {\n            String[] p = sc.nextLine().trim().split(\"\\\\s+\");\n            if (p[0].equals(\"addWord\")) {\n                dict.addWord(p[1]);\n            } else {\n                out.append(dict.search(p[1])).append('\\n');\n            }\n        }\n        System.out.print(out);\n    }\n}",
-        "PYTHON": "import sys\n\nclass WordDictionary:\n    def __init__(self):\n        # TODO 初始化\n        pass\n\n    def add_word(self, word: str) -> None:\n        # TODO\n        pass\n\n    def search(self, word: str) -> bool:\n        # TODO '.' 可匹配任意单个字符\n        return False\n\ndef main():\n    # 第一行 m，随后 m 行 addWord 单词 / search 模式\n    # search 每行输出 true/false，addWord 不输出\n    lines = sys.stdin.read().splitlines()\n    m = int(lines[0].strip())\n    d = WordDictionary()\n    out = []\n    for line in lines[1:1 + m]:\n        p = line.split()\n        if p[0] == 'addWord':\n            d.add_word(p[1])\n        else:\n            out.append('true' if d.search(p[1]) else 'false')\n    sys.stdout.write('\\n'.join(out))\n\nif __name__ == '__main__':\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\naddWord bad\naddWord dad\naddWord mad\nsearch pad\nsearch bad\nsearch .ad\nsearch b..", "expectedOutput": "false\ntrue\ntrue\ntrue", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "4\naddWord a\nsearch .\nsearch a\nsearch b", "expectedOutput": "true\ntrue\nfalse", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "5\naddWord abc\nsearch a.c\nsearch ab.\nsearch .b.\nsearch ....", "expectedOutput": "true\ntrue\ntrue\nfalse", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\naddWord hello\naddWord hi\nsearch h.llo\nsearch h.", "expectedOutput": "true\ntrue", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "5\naddWord hello\naddWord hi\nsearch he.\nsearch hi\nsearch ..", "expectedOutput": "false\ntrue\ntrue", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "数据流的中位数",
-      "content": "## 题目描述\n\n设计一个数据结构，维护一个不断加入整数的数据流，并支持查询当前所有数字的中位数：\n\n- `addNum x`：把整数 `x` 加入数据流；\n- `findMedian`：返回当前所有数字的中位数。\n\n中位数定义：数据个数为奇数时是排序后中间的那个数；为偶数时是中间两个数的平均值。\n\n**输出格式**：中位数为整数时直接输出整数（如 `2`），否则输出保留一位小数（如 `1.5`、`-1.5`）。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\naddNum 1\naddNum 2\nfindMedian\naddNum 3\nfindMedian\n```\n\n输出：\n\n```\n1.5\n2\n```\n\n**示例 2**\n\n输入：\n\n```\n6\naddNum 6\nfindMedian\naddNum 10\nfindMedian\naddNum 2\nfindMedian\n```\n\n输出：\n\n```\n6\n8\n6\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `m`，表示操作条数；\n- 随后 `m` 行，每行为 `addNum x` 或 `findMedian`；\n- `findMedian` 每行输出一个数（整数或保留一位小数），`addNum` 不输出。\n\n## 提示\n\n- `1 <= m <= 5 * 10^4`\n- `-10^5 <= x <= 10^5`\n- 调用 `findMedian` 时数据流至少有一个元素",
+      "content": "## 题目描述\n\n设计一个数据结构，维护一个不断加入整数的数据流，并支持查询当前所有数字的中位数：\n\n- `addNum x`：把整数 `x` 加入数据流；\n- `findMedian`：返回当前所有数字的中位数。\n\n中位数定义：数据个数为奇数时是排序后中间的那个数；为偶数时是中间两个数的平均值。\n\n**输出格式**：中位数为整数时直接输出整数（如 `2`），否则输出保留一位小数（如 `1.5`、`-1.5`）。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\naddNum 1\naddNum 2\nfindMedian\naddNum 3\nfindMedian\n```\n\n输出：\n\n```\n1.5\n2\n```\n\n**示例 2**\n\n输入：\n\n```\n6\naddNum 6\nfindMedian\naddNum 10\nfindMedian\naddNum 2\nfindMedian\n```\n\n输出：\n\n```\n6\n8\n6\n```\n\n## 提示\n\n- `1 <= m <= 5 * 10^4`\n- `-10^5 <= x <= 10^5`\n- 调用 `findMedian` 时数据流至少有一个元素\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 3,
       "domain": "设计",
       "referenceAnswer": "用一个大顶堆保存较小的一半、一个小顶堆保存较大的一半，并保证两堆元素个数之差不超过 1。addNum 时根据堆顶大小把元素放入合适的一侧，再调整两堆大小；findMedian 时若总数为奇数，取元素较多一侧的堆顶，否则取两个堆顶的平均值。插入 O(log n)，查询 O(1)。",
-      "keyPoints": ["大顶堆", "小顶堆", "数据流"],
-      "kpNames": ["堆", "数据流"],
+      "keyPoints": [
+        "大顶堆",
+        "小顶堆",
+        "数据流"
+      ],
+      "kpNames": [
+        "堆",
+        "数据流"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/find-median-from-data-stream/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    static class MedianFinder {\n        MedianFinder() {\n            // TODO 初始化\n        }\n\n        void addNum(int num) {\n            // TODO\n        }\n\n        double findMedian() {\n            // TODO 返回当前中位数\n            return 0.0;\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m，随后 m 行 addNum x / findMedian\n        // findMedian 每行输出一个数：整数直接输出，否则保留一位小数\n        int m = Integer.parseInt(sc.nextLine().trim());\n        MedianFinder finder = new MedianFinder();\n        StringBuilder out = new StringBuilder();\n        for (int i = 0; i < m; i++) {\n            String[] p = sc.nextLine().trim().split(\"\\\\s+\");\n            if (p[0].equals(\"addNum\")) {\n                finder.addNum(Integer.parseInt(p[1]));\n            } else {\n                double v = finder.findMedian();\n                if (v == Math.rint(v)) {\n                    out.append((long) v);\n                } else {\n                    out.append(String.format(\"%.1f\", v));\n                }\n                out.append('\\n');\n            }\n        }\n        System.out.print(out);\n    }\n}",
-        "PYTHON": "import sys\n\nclass MedianFinder:\n    def __init__(self):\n        # TODO 初始化\n        pass\n\n    def add_num(self, num: int) -> None:\n        # TODO\n        pass\n\n    def find_median(self) -> float:\n        # TODO 返回当前中位数\n        return 0.0\n\ndef main():\n    # 第一行 m，随后 m 行 addNum x / findMedian\n    # findMedian 每行输出一个数：整数直接输出，否则保留一位小数\n    lines = sys.stdin.read().splitlines()\n    m = int(lines[0].strip())\n    finder = MedianFinder()\n    out = []\n    for line in lines[1:1 + m]:\n        p = line.split()\n        if p[0] == 'addNum':\n            finder.add_num(int(p[1]))\n        else:\n            v = finder.find_median()\n            out.append(str(int(v)) if float(v).is_integer() else '%.1f' % v)\n    sys.stdout.write('\\n'.join(out))\n\nif __name__ == '__main__':\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "5\naddNum 1\naddNum 2\nfindMedian\naddNum 3\nfindMedian", "expectedOutput": "1.5\n2", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "6\naddNum 6\nfindMedian\naddNum 10\nfindMedian\naddNum 2\nfindMedian", "expectedOutput": "6\n8\n6", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "5\naddNum -1\naddNum -2\nfindMedian\naddNum -3\nfindMedian", "expectedOutput": "-1.5\n-2", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "4\naddNum 5\naddNum 5\naddNum 5\nfindMedian", "expectedOutput": "5", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "7\naddNum 1\naddNum 3\nfindMedian\naddNum 2\nfindMedian\naddNum 4\nfindMedian", "expectedOutput": "2\n2\n2.5", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "O(1) 时间插入、删除和获取随机元素",
-      "content": "## 题目描述\n\n设计一个支持在平均 O(1) 时间内完成插入与删除的数据结构（本题只校验 `insert` 与 `remove` 的返回值，不涉及随机取值）：\n\n- `insert x`：当 `x` 不存在时插入并返回 `true`，已存在返回 `false`；\n- `remove x`：当 `x` 存在时删除并返回 `true`，不存在返回 `false`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\ninsert 1\nremove 2\ninsert 2\nremove 1\ninsert 2\n```\n\n输出：\n\n```\ntrue\nfalse\ntrue\ntrue\nfalse\n```\n\n解释：最后一次 `insert 2` 时集合中已有 2（前一步 `remove 1` 不会删掉 2），所以返回 false。\n\n**示例 2**\n\n输入：\n\n```\n4\ninsert 5\ninsert 5\nremove 5\nremove 5\n```\n\n输出：\n\n```\ntrue\nfalse\ntrue\nfalse\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `m`，表示操作条数；\n- 随后 `m` 行，每行为 `insert x` 或 `remove x`；\n- 每个操作输出一行 `true` 或 `false`（小写）。\n\n## 提示\n\n- `1 <= m <= 2 * 10^5`\n- `-10^9 <= x <= 10^9`\n- 集合中元素互不相同",
+      "content": "## 题目描述\n\n设计一个支持在平均 O(1) 时间内完成插入与删除的数据结构（本题只校验 `insert` 与 `remove` 的返回值，不涉及随机取值）：\n\n- `insert x`：当 `x` 不存在时插入并返回 `true`，已存在返回 `false`；\n- `remove x`：当 `x` 存在时删除并返回 `true`，不存在返回 `false`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5\ninsert 1\nremove 2\ninsert 2\nremove 1\ninsert 2\n```\n\n输出：\n\n```\ntrue\nfalse\ntrue\ntrue\nfalse\n```\n\n解释：最后一次 `insert 2` 时集合中已有 2（前一步 `remove 1` 不会删掉 2），所以返回 false。\n\n**示例 2**\n\n输入：\n\n```\n4\ninsert 5\ninsert 5\nremove 5\nremove 5\n```\n\n输出：\n\n```\ntrue\nfalse\ntrue\nfalse\n```\n\n## 提示\n\n- `1 <= m <= 2 * 10^5`\n- `-10^9 <= x <= 10^9`\n- 集合中元素互不相同\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "设计",
       "referenceAnswer": "用哈希表记录值到数组下标的映射，数组保存当前所有元素。insert 时若哈希表已存在返回 false，否则追加到数组末尾并记录下标；remove 时把待删元素与数组末尾元素交换位置，更新末尾元素的下标后删除数组末尾元素并移除哈希表项。均摊 O(1)。",
-      "keyPoints": ["哈希表", "数组", "均摊 O(1)"],
-      "kpNames": ["哈希表", "数组"],
+      "keyPoints": [
+        "哈希表",
+        "数组",
+        "均摊 O(1)"
+      ],
+      "kpNames": [
+        "哈希表",
+        "数组"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/insert-delete-getrandom-o1/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    static class RandomizedSet {\n        RandomizedSet() {\n            // TODO 初始化\n        }\n\n        boolean insert(int val) {\n            // TODO 不存在时插入并返回 true，已存在返回 false\n            return false;\n        }\n\n        boolean remove(int val) {\n            // TODO 存在时删除并返回 true，不存在返回 false\n            return false;\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m，随后 m 行 insert x / remove x\n        // 每个操作输出一行 true/false\n        int m = Integer.parseInt(sc.nextLine().trim());\n        RandomizedSet set = new RandomizedSet();\n        StringBuilder out = new StringBuilder();\n        for (int i = 0; i < m; i++) {\n            String[] p = sc.nextLine().trim().split(\"\\\\s+\");\n            boolean ok = p[0].equals(\"insert\")\n                    ? set.insert(Integer.parseInt(p[1]))\n                    : set.remove(Integer.parseInt(p[1]));\n            out.append(ok).append('\\n');\n        }\n        System.out.print(out);\n    }\n}",
-        "PYTHON": "import sys\n\nclass RandomizedSet:\n    def __init__(self):\n        # TODO 初始化\n        pass\n\n    def insert(self, val: int) -> bool:\n        # TODO 不存在时插入并返回 True，已存在返回 False\n        return False\n\n    def remove(self, val: int) -> bool:\n        # TODO 存在时删除并返回 True，不存在返回 False\n        return False\n\ndef main():\n    # 第一行 m，随后 m 行 insert x / remove x\n    # 每个操作输出一行 true/false\n    lines = sys.stdin.read().splitlines()\n    m = int(lines[0].strip())\n    s = RandomizedSet()\n    out = []\n    for line in lines[1:1 + m]:\n        p = line.split()\n        ok = s.insert(int(p[1])) if p[0] == 'insert' else s.remove(int(p[1]))\n        out.append('true' if ok else 'false')\n    sys.stdout.write('\\n'.join(out))\n\nif __name__ == '__main__':\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "5\ninsert 1\nremove 2\ninsert 2\nremove 1\ninsert 2", "expectedOutput": "true\nfalse\ntrue\ntrue\nfalse", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "4\ninsert 5\ninsert 5\nremove 5\nremove 5", "expectedOutput": "true\nfalse\ntrue\nfalse", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "5\ninsert -1\ninsert 0\nremove -1\ninsert 0\nremove 0", "expectedOutput": "true\ntrue\ntrue\nfalse\ntrue", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "3\nremove 3\ninsert 3\nremove 3", "expectedOutput": "false\ntrue\ntrue", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "5\ninsert 10\ninsert 20\nremove 10\ninsert 10\nremove 10", "expectedOutput": "true\ntrue\ntrue\ntrue\ntrue", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "队列的最大值（剑指 Offer 59 - II）",
-      "content": "## 题目描述\n\n请定义一个队列，并实现三个操作：\n\n- `push_back x`：把 `x` 放入队尾；\n- `pop_front`：取出队头元素并返回它；\n- `max_value`：返回队列中的最大值。\n\n当队列为空时，`pop_front` 与 `max_value` 都返回 `-1`。要求 `max_value` 的均摊时间复杂度为 O(1)。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\npush_back 1\npush_back 2\nmax_value\npop_front\nmax_value\npop_front\nmax_value\n```\n\n输出：\n\n```\n2\n1\n2\n2\n-1\n```\n\n**示例 2**\n\n输入：\n\n```\n10\npush_back 5\npush_back 3\npush_back 4\nmax_value\npop_front\nmax_value\npop_front\nmax_value\npop_front\nmax_value\n```\n\n输出：\n\n```\n5\n5\n4\n3\n4\n4\n-1\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `m`，表示操作条数；\n- 随后 `m` 行，每行为 `push_back x`、`pop_front` 或 `max_value`；\n- `pop_front` 与 `max_value` 各输出一行整数（队列为空输出 `-1`），`push_back` 不输出。\n\n## 提示\n\n- `1 <= m <= 2 * 10^4`\n- `1 <= x <= 10^5`\n- 数据保证所有操作合法",
+      "content": "## 题目描述\n\n请定义一个队列，并实现三个操作：\n\n- `push_back x`：把 `x` 放入队尾；\n- `pop_front`：取出队头元素并返回它；\n- `max_value`：返回队列中的最大值。\n\n当队列为空时，`pop_front` 与 `max_value` 都返回 `-1`。要求 `max_value` 的均摊时间复杂度为 O(1)。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7\npush_back 1\npush_back 2\nmax_value\npop_front\nmax_value\npop_front\nmax_value\n```\n\n输出：\n\n```\n2\n1\n2\n2\n-1\n```\n\n**示例 2**\n\n输入：\n\n```\n10\npush_back 5\npush_back 3\npush_back 4\nmax_value\npop_front\nmax_value\npop_front\nmax_value\npop_front\nmax_value\n```\n\n输出：\n\n```\n5\n5\n4\n3\n4\n4\n-1\n```\n\n## 提示\n\n- `1 <= m <= 2 * 10^4`\n- `1 <= x <= 10^5`\n- 数据保证所有操作合法\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "设计",
       "referenceAnswer": "用一个普通队列保存入队顺序的元素，再用一个单调递减的双端队列保存可能成为最大值的候选：push_back 时从单调队列尾部弹出所有小于新值的元素再入队；pop_front 时若出队元素等于单调队列头部则同时弹出；max_value 直接取单调队列头部，为空返回 -1。均摊 O(1)。",
-      "keyPoints": ["单调队列", "双端队列", "均摊 O(1)"],
-      "kpNames": ["单调队列", "队列"],
+      "keyPoints": [
+        "单调队列",
+        "双端队列",
+        "均摊 O(1)"
+      ],
+      "kpNames": [
+        "单调队列",
+        "队列"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/dui-lie-de-zui-da-zhi-lcof/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    static class MaxQueue {\n        MaxQueue() {\n            // TODO 初始化\n        }\n\n        void push_back(int value) {\n            // TODO 入队\n        }\n\n        int pop_front() {\n            // TODO 出队并返回队头；队列为空返回 -1\n            return -1;\n        }\n\n        int max_value() {\n            // TODO 返回当前最大值；队列为空返回 -1\n            return -1;\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m，随后 m 行 push_back x / pop_front / max_value\n        // pop_front、max_value 各输出一行，push_back 不输出\n        int m = Integer.parseInt(sc.nextLine().trim());\n        MaxQueue queue = new MaxQueue();\n        StringBuilder out = new StringBuilder();\n        for (int i = 0; i < m; i++) {\n            String[] p = sc.nextLine().trim().split(\"\\\\s+\");\n            switch (p[0]) {\n                case \"push_back\" -> queue.push_back(Integer.parseInt(p[1]));\n                case \"pop_front\" -> out.append(queue.pop_front()).append('\\n');\n                default -> out.append(queue.max_value()).append('\\n');\n            }\n        }\n        System.out.print(out);\n    }\n}",
-        "PYTHON": "import sys\n\nclass MaxQueue:\n    def __init__(self):\n        # TODO 初始化\n        pass\n\n    def push_back(self, value: int) -> None:\n        # TODO 入队\n        pass\n\n    def pop_front(self) -> int:\n        # TODO 出队并返回队头；队列为空返回 -1\n        return -1\n\n    def max_value(self) -> int:\n        # TODO 返回当前最大值；队列为空返回 -1\n        return -1\n\ndef main():\n    # 第一行 m，随后 m 行 push_back x / pop_front / max_value\n    # pop_front、max_value 各输出一行，push_back 不输出\n    lines = sys.stdin.read().splitlines()\n    m = int(lines[0].strip())\n    q = MaxQueue()\n    out = []\n    for line in lines[1:1 + m]:\n        p = line.split()\n        if p[0] == 'push_back':\n            q.push_back(int(p[1]))\n        elif p[0] == 'pop_front':\n            out.append(str(q.pop_front()))\n        else:\n            out.append(str(q.max_value()))\n    sys.stdout.write('\\n'.join(out))\n\nif __name__ == '__main__':\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7\npush_back 1\npush_back 2\nmax_value\npop_front\nmax_value\npop_front\nmax_value", "expectedOutput": "2\n1\n2\n2\n-1", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "10\npush_back 5\npush_back 3\npush_back 4\nmax_value\npop_front\nmax_value\npop_front\nmax_value\npop_front\nmax_value", "expectedOutput": "5\n5\n4\n3\n4\n4\n-1", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "5\npush_back 0\nmax_value\npop_front\npop_front\nmax_value", "expectedOutput": "0\n0\n-1\n-1", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "5\npush_back -1\npush_back -2\nmax_value\npop_front\nmax_value", "expectedOutput": "-1\n-1\n-2", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "6\npush_back 3\npush_back 3\npush_back 1\nmax_value\npop_front\nmax_value", "expectedOutput": "3\n3\n3", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "二叉搜索树迭代器",
-      "content": "## 题目描述\n\n给定一棵二叉搜索树，设计一个迭代器，按 **中序遍历（升序）** 依次访问节点，并提供两个操作：\n\n- `next`：返回下一个最小的节点值；\n- `hasNext`：判断是否还有下一个节点。\n\n二叉树用层序数组描述：按完全二叉树的顺序给出节点值，`null` 表示空节点，且空节点的子节点也不存在；尾部的 `null` 可以省略。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7 3 15 null null 9 20\n9\nnext\nnext\nhasNext\nnext\nhasNext\nnext\nhasNext\nnext\nhasNext\n```\n\n输出：\n\n```\n3\n7\ntrue\n9\ntrue\n15\ntrue\n20\nfalse\n```\n\n解释：中序遍历结果为 3, 7, 9, 15, 20。\n\n**示例 2**\n\n输入：\n\n```\n1\n3\nhasNext\nnext\nhasNext\n```\n\n输出：\n\n```\ntrue\n1\nfalse\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行二叉搜索树的层序序列，节点值之间用空格分隔，空节点写 `null`；\n- 第二行一个整数 `m`，表示操作条数；\n- 随后 `m` 行，每行为 `next` 或 `hasNext`；\n- `next` 每行输出一个整数，`hasNext` 每行输出 `true` 或 `false`（小写）。\n\n## 提示\n\n- `1 <= 节点数 <= 10^5`\n- `0 <= 节点值 <= 10^6`\n- 保证调用 `next` 时存在下一个节点",
+      "content": "## 题目描述\n\n给定一棵二叉搜索树，设计一个迭代器，按 **中序遍历（升序）** 依次访问节点，并提供两个操作：\n\n- `next`：返回下一个最小的节点值；\n- `hasNext`：判断是否还有下一个节点。\n\n二叉树用层序数组描述：按完全二叉树的顺序给出节点值，`null` 表示空节点，且空节点的子节点也不存在；尾部的 `null` 可以省略。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n7 3 15 null null 9 20\n9\nnext\nnext\nhasNext\nnext\nhasNext\nnext\nhasNext\nnext\nhasNext\n```\n\n输出：\n\n```\n3\n7\ntrue\n9\ntrue\n15\ntrue\n20\nfalse\n```\n\n解释：中序遍历结果为 3, 7, 9, 15, 20。\n\n**示例 2**\n\n输入：\n\n```\n1\n3\nhasNext\nnext\nhasNext\n```\n\n输出：\n\n```\ntrue\n1\nfalse\n```\n\n## 提示\n\n- `1 <= 节点数 <= 10^5`\n- `0 <= 节点值 <= 10^6`\n- 保证调用 `next` 时存在下一个节点\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
       "domain": "设计",
       "referenceAnswer": "用栈模拟中序遍历：初始化时从根节点出发，把沿途所有左子节点压栈。next 时弹出栈顶作为当前最小节点，再把该节点右子树中的所有左子节点压栈；hasNext 只需判断栈是否为空。均摊时间复杂度 O(1)，空间复杂度 O(h)，h 为树高。",
-      "keyPoints": ["中序遍历", "栈", "迭代器"],
-      "kpNames": ["二叉搜索树", "栈"],
+      "keyPoints": [
+        "中序遍历",
+        "栈",
+        "迭代器"
+      ],
+      "kpNames": [
+        "二叉搜索树",
+        "栈"
+      ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/binary-search-tree-iterator/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    static class TreeNode {\n        int val;\n        TreeNode left;\n        TreeNode right;\n        TreeNode(int val) { this.val = val; }\n    }\n\n    static class BSTIterator {\n        BSTIterator(TreeNode root) {\n            // TODO 初始化中序遍历\n        }\n\n        int next() {\n            // TODO 返回下一个最小节点值\n            return 0;\n        }\n\n        boolean hasNext() {\n            // TODO 是否还有下一个节点\n            return false;\n        }\n    }\n\n    static TreeNode build(String[] tokens) {\n        if (tokens.length == 0 || tokens[0].equals(\"null\")) return null;\n        TreeNode root = new TreeNode(Integer.parseInt(tokens[0]));\n        Deque<TreeNode> q = new ArrayDeque<>();\n        q.add(root);\n        int i = 1;\n        while (!q.isEmpty() && i < tokens.length) {\n            TreeNode cur = q.poll();\n            if (i < tokens.length) {\n                if (!tokens[i].equals(\"null\")) {\n                    cur.left = new TreeNode(Integer.parseInt(tokens[i]));\n                    q.add(cur.left);\n                }\n                i++;\n            }\n            if (i < tokens.length) {\n                if (!tokens[i].equals(\"null\")) {\n                    cur.right = new TreeNode(Integer.parseInt(tokens[i]));\n                    q.add(cur.right);\n                }\n                i++;\n            }\n        }\n        return root;\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行层序序列（空格分隔，null 表示空节点）\n        // 第二行 m，随后 m 行 next / hasNext\n        // next 输出一行节点值，hasNext 输出一行 true/false\n        String[] tokens = sc.nextLine().trim().split(\"\\\\s+\");\n        int m = Integer.parseInt(sc.nextLine().trim());\n        BSTIterator it = new BSTIterator(build(tokens));\n        StringBuilder out = new StringBuilder();\n        for (int i = 0; i < m; i++) {\n            String op = sc.nextLine().trim();\n            out.append(op.equals(\"next\") ? String.valueOf(it.next()) : String.valueOf(it.hasNext()));\n            out.append('\\n');\n        }\n        System.out.print(out);\n    }\n}",
-        "PYTHON": "import sys\n\nclass TreeNode:\n    def __init__(self, val: int):\n        self.val = val\n        self.left = None\n        self.right = None\n\nclass BSTIterator:\n    def __init__(self, root):\n        # TODO 初始化中序遍历\n        pass\n\n    def next(self) -> int:\n        # TODO 返回下一个最小节点值\n        return 0\n\n    def has_next(self) -> bool:\n        # TODO 是否还有下一个节点\n        return False\n\ndef build(tokens):\n    if not tokens or tokens[0] == 'null':\n        return None\n    root = TreeNode(int(tokens[0]))\n    queue = [root]\n    i = 1\n    while queue and i < len(tokens):\n        cur = queue.pop(0)\n        if i < len(tokens):\n            if tokens[i] != 'null':\n                cur.left = TreeNode(int(tokens[i]))\n                queue.append(cur.left)\n            i += 1\n        if i < len(tokens):\n            if tokens[i] != 'null':\n                cur.right = TreeNode(int(tokens[i]))\n                queue.append(cur.right)\n            i += 1\n    return root\n\ndef main():\n    # 第一行层序序列（空格分隔，null 表示空节点）\n    # 第二行 m，随后 m 行 next / hasNext\n    # next 输出一行节点值，hasNext 输出一行 true/false\n    lines = sys.stdin.read().splitlines()\n    tokens = lines[0].split()\n    m = int(lines[1].strip())\n    it = BSTIterator(build(tokens))\n    out = []\n    for line in lines[2:2 + m]:\n        if line.strip() == 'next':\n            out.append(str(it.next()))\n        else:\n            out.append('true' if it.has_next() else 'false')\n    sys.stdout.write('\\n'.join(out))\n\nif __name__ == '__main__':\n    main()"
-      },
-      "testCases": [
-        {"caseMode": "ACM", "input": "7 3 15 null null 9 20\n9\nnext\nnext\nhasNext\nnext\nhasNext\nnext\nhasNext\nnext\nhasNext", "expectedOutput": "3\n7\ntrue\n9\ntrue\n15\ntrue\n20\nfalse", "isSample": 1, "sort": 1},
-        {"caseMode": "ACM", "input": "1\n3\nhasNext\nnext\nhasNext", "expectedOutput": "true\n1\nfalse", "isSample": 1, "sort": 2},
-        {"caseMode": "ACM", "input": "5 3 8 1 4 7 9\n5\nnext\nnext\nhasNext\nnext\nnext", "expectedOutput": "1\n3\ntrue\n4\n5", "isSample": 0, "sort": 3},
-        {"caseMode": "ACM", "input": "2 1 3\n4\nnext\nnext\nnext\nhasNext", "expectedOutput": "1\n2\n3\nfalse", "isSample": 0, "sort": 4},
-        {"caseMode": "ACM", "input": "10 5 15 3 7 null 20\n6\nhasNext\nnext\nnext\nnext\nnext\nnext", "expectedOutput": "true\n3\n5\n7\n10\n15", "isSample": 0, "sort": 5}
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     }
   ]
 }

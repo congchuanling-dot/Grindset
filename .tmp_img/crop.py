@@ -1,0 +1,20 @@
+from PIL import Image
+import os
+
+src = r"c:\Users\从传领\.trae-cn\attachments\66fba948-c502-425c-a6e4-991a4d7fd42e_9dfcc903-1195-4cb9-8d44-a1cb139a6b04_image.png"
+outdir = r"g:\beliveOnly\Grindset\.tmp_img"
+os.makedirs(outdir, exist_ok=True)
+img = Image.open(src)
+print("size", img.size)
+
+def save(name, box, scale=6):
+    c = img.crop(box)
+    c = c.resize((c.width*scale, c.height*scale), Image.LANCZOS)
+    p = os.path.join(outdir, name)
+    c.save(p)
+    print(p, c.size)
+
+# top-left 3x3 matrix region (guess)
+save("matrix.png", (0, 0, 180, 180), 6)
+# options: 4 rows roughly stacked below instruction text
+save("options.png", (0, 200, 240, 600), 5)

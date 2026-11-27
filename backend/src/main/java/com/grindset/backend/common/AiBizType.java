@@ -16,6 +16,7 @@ public enum AiBizType {
     INTERVIEW_CODING_FEEDBACK("面试编程点评"),
     INTERVIEW_REPORT("面试复盘"),
     BANK_EVALUATION("题库评分"),
+    BANK_CODING_REVIEW("题库代码点评"),
     RESUME_PARSE("简历解析");
 
     private final String label;

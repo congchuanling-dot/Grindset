@@ -13,12 +13,10 @@ import com.grindset.backend.dto.InterviewSummary;
 import com.grindset.backend.entity.InterviewMessage;
 import com.grindset.backend.entity.InterviewQuestion;
 import com.grindset.backend.entity.InterviewSession;
-import com.grindset.backend.entity.QuestionSubmission;
 import com.grindset.backend.entity.Resume;
 import com.grindset.backend.mapper.InterviewMessageMapper;
 import com.grindset.backend.mapper.InterviewQuestionMapper;
 import com.grindset.backend.mapper.InterviewSessionMapper;
-import com.grindset.backend.mapper.QuestionSubmissionMapper;
 import com.grindset.backend.mapper.ResumeMapper;
 import com.grindset.backend.dto.ResumeDetail;
 import com.grindset.backend.service.ResumeService;
@@ -49,7 +47,6 @@ public class InterviewSessionService {
     private final InterviewSessionMapper sessionMapper;
     private final InterviewQuestionMapper questionMapper;
     private final InterviewMessageMapper messageMapper;
-    private final QuestionSubmissionMapper submissionMapper;
     private final ResumeMapper resumeMapper;
     private final ResumeService resumeService;
     private final SnowflakeIdGenerator idGenerator;
@@ -59,7 +56,6 @@ public class InterviewSessionService {
     public InterviewSessionService(InterviewSessionMapper sessionMapper,
                                    InterviewQuestionMapper questionMapper,
                                    InterviewMessageMapper messageMapper,
-                                   QuestionSubmissionMapper submissionMapper,
                                    ResumeMapper resumeMapper,
                                    ResumeService resumeService,
                                    SnowflakeIdGenerator idGenerator,
@@ -68,7 +64,6 @@ public class InterviewSessionService {
         this.sessionMapper = sessionMapper;
         this.questionMapper = questionMapper;
         this.messageMapper = messageMapper;
-        this.submissionMapper = submissionMapper;
         this.resumeMapper = resumeMapper;
         this.resumeService = resumeService;
         this.idGenerator = idGenerator;
@@ -185,7 +180,6 @@ public class InterviewSessionService {
                 List<Long> questionIds = questions.stream().map(InterviewQuestion::getId).toList();
                 messageMapper.delete(new QueryWrapper<InterviewMessage>().in("question_id", questionIds));
                 questionMapper.delete(new QueryWrapper<InterviewQuestion>().eq("session_id", id));
-                submissionMapper.delete(new QueryWrapper<QuestionSubmission>().eq("interview_session_id", id));
             }
             sessionMapper.deleteById(session.getId());
         });

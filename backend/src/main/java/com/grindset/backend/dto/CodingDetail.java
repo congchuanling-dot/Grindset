@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 编程题详情:题面、两种模式的初始代码与例题。
- * 每道题同时支持 ACM(标准输入输出)与 LEETCODE(函数签名),隐藏用例不下发。
+ * 编程题详情:题面、通用 main 骨架与最近一次 AI 点评。
+ * 平台不提供测试用例,由用户自己构造输入并运行。
  */
 public record CodingDetail(
         String id,
@@ -15,22 +15,8 @@ public record CodingDetail(
         int difficulty,
         String domain,
         List<String> knowledgePoints,
-        List<String> codeModes,
         Map<String, String> starterCode,
-        Map<String, String> starterCodeFunction,
         int timeLimitMs,
         int memoryLimitMb,
-        Map<String, List<SampleCase>> samples,
-        String status,
-        int submissionCount,
-        boolean accepted,
-        String functionName,
-        List<String> paramTypes,
-        String returnType) {
-
-    public record SampleCase(
-            String input,
-            String expectedOutput,
-            int sort) {
-    }
+        String status) {
 }

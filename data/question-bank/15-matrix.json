@@ -2,7 +2,7 @@
   "questions": [
     {
       "title": "矩阵置零",
-      "content": "## 题目描述\n\n给定一个 `m × n` 的整数矩阵 `matrix`。如果矩阵中某个元素为 `0`，就把该元素所在的**整行和整列**全部置为 `0`。\n\n要求**原地**完成修改，并在修改后把整张矩阵按行输出。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n1 1 1\n1 0 1\n1 1 1\n```\n\n输出：\n\n```\n1 0 1\n0 0 0\n1 0 1\n```\n\n解释：第 2 行第 2 列是 `0`，因此第 2 行与第 2 列全部变成 `0`。\n\n**示例 2**\n\n输入：\n\n```\n3 4\n0 1 2 0\n3 4 5 2\n1 3 1 5\n```\n\n输出：\n\n```\n0 0 0 0\n0 4 5 0\n0 3 1 0\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `m n`，分别表示行数和列数；\n- 随后 `m` 行，每行 `n` 个整数，表示矩阵元素；\n- 输出修改后的矩阵：共 `m` 行，每行 `n` 个整数，用空格分隔。\n\n## 提示\n\n- `1 <= m, n <= 200`\n- 行列扩散必须基于**原始**矩阵中的 `0` 判断：先找出所有需要置零的行和列，再统一置零。\n- 建议只使用 O(1) 额外空间（首行首列做标记），但本题不强制。",
+      "content": "## 题目描述\n\n给定一个 `m × n` 的整数矩阵 `matrix`。如果矩阵中某个元素为 `0`，就把该元素所在的**整行和整列**全部置为 `0`。\n\n要求**原地**完成修改，并在修改后把整张矩阵按行输出。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n1 1 1\n1 0 1\n1 1 1\n```\n\n输出：\n\n```\n1 0 1\n0 0 0\n1 0 1\n```\n\n解释：第 2 行第 2 列是 `0`，因此第 2 行与第 2 列全部变成 `0`。\n\n**示例 2**\n\n输入：\n\n```\n3 4\n0 1 2 0\n3 4 5 2\n1 3 1 5\n```\n\n输出：\n\n```\n0 0 0 0\n0 4 5 0\n0 3 1 0\n```\n\n## 提示\n\n- `1 <= m, n <= 200`\n- 行列扩散必须基于**原始**矩阵中的 `0` 判断：先找出所有需要置零的行和列，再统一置零。\n- 建议只使用 O(1) 额外空间（首行首列做标记），但本题不强制。\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -18,54 +18,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/set-matrix-zeroes/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m n，随后 m 行每行 n 个整数\n        // TODO 把含 0 的行和列全部置 0，按行输出修改后的矩阵\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    # 第一个数是 m，第二个数是 n，后面 m*n 个数按行依次给出\n    # TODO 把含 0 的行和列全部置 0，按行输出修改后的矩阵\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {
-          "caseMode": "ACM",
-          "input": "3 3\n1 1 1\n1 0 1\n1 1 1",
-          "expectedOutput": "1 0 1\n0 0 0\n1 0 1",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 4\n0 1 2 0\n3 4 5 2\n1 3 1 5",
-          "expectedOutput": "0 0 0 0\n0 4 5 0\n0 3 1 0",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 2\n1 2\n3 4",
-          "expectedOutput": "1 2\n3 4",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "1 1\n0",
-          "expectedOutput": "0",
-          "isSample": 0,
-          "sort": 4
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 3\n1 2 3\n4 0 6",
-          "expectedOutput": "1 0 3\n0 0 0",
-          "isSample": 0,
-          "sort": 5
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "螺旋矩阵",
-      "content": "## 题目描述\n\n给定一个 `m × n` 的整数矩阵，请按**顺时针螺旋顺序**返回矩阵中的所有元素：从左上角出发，先向右走完顶边，再向下走完右边，再向左走完底边，再向上走完左边，然后逐层向内重复。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n1 2 3\n4 5 6\n7 8 9\n```\n\n输出：\n\n```\n1 2 3 6 9 8 7 4 5\n```\n\n**示例 2**\n\n输入：\n\n```\n3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12\n```\n\n输出：\n\n```\n1 2 3 4 8 12 11 10 9 5 6 7\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `m n`，分别表示行数和列数；\n- 随后 `m` 行，每行 `n` 个整数，用空格分隔；\n- 输出一行，共 `m × n` 个整数，按顺时针螺旋顺序排列，用空格分隔。\n\n## 提示\n\n- `1 <= m, n <= 10`\n- `-100 <= matrix[i][j] <= 100`\n- 用 `top / bottom / left / right` 四个边界收缩，每走完一条边立刻收缩对应边界，避免重复输出。\n\n> 力扣模式下只需实现 `spiralOrder` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个 `m × n` 的整数矩阵，请按**顺时针螺旋顺序**返回矩阵中的所有元素：从左上角出发，先向右走完顶边，再向下走完右边，再向左走完底边，再向上走完左边，然后逐层向内重复。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n1 2 3\n4 5 6\n7 8 9\n```\n\n输出：\n\n```\n1 2 3 6 9 8 7 4 5\n```\n\n**示例 2**\n\n输入：\n\n```\n3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12\n```\n\n输出：\n\n```\n1 2 3 4 8 12 11 10 9 5 6 7\n```\n\n## 提示\n\n- `1 <= m, n <= 10`\n- `-100 <= matrix[i][j] <= 100`\n- 用 `top / bottom / left / right` 四个边界收缩，每走完一条边立刻收缩对应边界，避免重复输出。\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -82,70 +44,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/spiral-matrix/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "spiralOrder",
-      "paramTypes": [
-        "int[][]"
-      ],
-      "returnType": "List<Integer>",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m n，随后 m 行每行 n 个整数\n        // TODO 按顺时针螺旋顺序输出一行 m*n 个整数\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    # 第一个数是 m，第二个数是 n，后面 m*n 个数按行依次给出\n    # TODO 按顺时针螺旋顺序输出一行 m*n 个整数\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public List<Integer> spiralOrder(int[][] matrix) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def spiralOrder(self, matrix: List[List[int]]) -> List[int]:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[1,2,3],[4,5,6],[7,8,9]]]",
-          "expectedOutput": "[1,2,3,6,9,8,7,4,5]",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[1,2,3,4],[5,6,7,8],[9,10,11,12]]]",
-          "expectedOutput": "[1,2,3,4,8,12,11,10,9,5,6,7]",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[1,2],[3,4]]]",
-          "expectedOutput": "[1,2,4,3]",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 3\n1 2 3\n4 5 6\n7 8 9",
-          "expectedOutput": "1 2 3 6 9 8 7 4 5",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12",
-          "expectedOutput": "1 2 3 4 8 12 11 10 9 5 6 7",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 2\n1 2\n3 4",
-          "expectedOutput": "1 2 4 3",
-          "isSample": 0,
-          "sort": 3
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "旋转图像",
-      "content": "## 题目描述\n\n给定一个 `n × n` 的整数矩阵表示一张图像，请把图像**顺时针旋转 90 度**。要求**原地**修改，不能新建一个矩阵来存放结果。\n\n修改后把整张矩阵按行输出。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n1 2 3\n4 5 6\n7 8 9\n```\n\n输出：\n\n```\n7 4 1\n8 5 2\n9 6 3\n```\n\n**示例 2**\n\n输入：\n\n```\n2\n1 2\n3 4\n```\n\n输出：\n\n```\n3 1\n4 2\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`，表示矩阵的行数与列数；\n- 随后 `n` 行，每行 `n` 个整数；\n- 输出旋转后的矩阵：共 `n` 行，每行 `n` 个整数，用空格分隔。\n\n## 提示\n\n- `1 <= n <= 20`\n- `-1000 <= matrix[i][j] <= 1000`\n- 常见做法：先沿主对角线转置，再把每一行左右翻转；或按四个位置一组做环状交换。\n- 注意输出的必须是**旋转之后**的矩阵。",
+      "content": "## 题目描述\n\n给定一个 `n × n` 的整数矩阵表示一张图像，请把图像**顺时针旋转 90 度**。要求**原地**修改，不能新建一个矩阵来存放结果。\n\n修改后把整张矩阵按行输出。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3\n1 2 3\n4 5 6\n7 8 9\n```\n\n输出：\n\n```\n7 4 1\n8 5 2\n9 6 3\n```\n\n**示例 2**\n\n输入：\n\n```\n2\n1 2\n3 4\n```\n\n输出：\n\n```\n3 1\n4 2\n```\n\n## 提示\n\n- `1 <= n <= 20`\n- `-1000 <= matrix[i][j] <= 1000`\n- 常见做法：先沿主对角线转置，再把每一行左右翻转；或按四个位置一组做环状交换。\n- 注意输出的必须是**旋转之后**的矩阵。\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -161,47 +69,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/rotate-image/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，随后 n 行每行 n 个整数\n        // TODO 原地顺时针旋转 90 度，按行输出旋转后的矩阵\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    # 第一个数是 n，后面 n*n 个数按行依次给出\n    # TODO 原地顺时针旋转 90 度，按行输出旋转后的矩阵\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {
-          "caseMode": "ACM",
-          "input": "3\n1 2 3\n4 5 6\n7 8 9",
-          "expectedOutput": "7 4 1\n8 5 2\n9 6 3",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2\n1 2\n3 4",
-          "expectedOutput": "3 1\n4 2",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "1\n5",
-          "expectedOutput": "5",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "4\n5 1 9 11\n2 4 8 10\n13 3 6 7\n15 14 12 16",
-          "expectedOutput": "15 13 2 5\n14 3 4 1\n12 6 8 9\n16 7 10 11",
-          "isSample": 0,
-          "sort": 4
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "搜索二维矩阵 II",
-      "content": "## 题目描述\n\n给定一个 `m × n` 的整数矩阵，它的每一行从左到右严格升序，每一列从上到下严格升序。再给定一个目标值 `target`，判断矩阵中是否存在等于 `target` 的元素。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5 5 5\n1 4 7 11 15\n2 5 8 12 19\n3 6 9 16 22\n10 13 14 17 24\n18 21 23 26 30\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n5 5 20\n1 4 7 11 15\n2 5 8 12 19\n3 6 9 16 22\n10 13 14 17 24\n18 21 23 26 30\n```\n\n输出：\n\n```\nfalse\n```\n\n## 输入输出格式（ACM 模式）\n\n- 第一行三个整数 `m n target`；\n- 随后 `m` 行，每行 `n` 个整数，表示矩阵；\n- 输出 `true` 或 `false`（小写）。\n\n## 提示\n\n- `1 <= m, n <= 300`\n- `-10^9 <= matrix[i][j], target <= 10^9`\n- 从右上角（或左下角）出发：比当前值大就往下走，比当前值小就往左走，可做到 O(m + n)。\n\n> 力扣模式下只需实现 `searchMatrix` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个 `m × n` 的整数矩阵，它的每一行从左到右严格升序，每一列从上到下严格升序。再给定一个目标值 `target`，判断矩阵中是否存在等于 `target` 的元素。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n5 5 5\n1 4 7 11 15\n2 5 8 12 19\n3 6 9 16 22\n10 13 14 17 24\n18 21 23 26 30\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n5 5 20\n1 4 7 11 15\n2 5 8 12 19\n3 6 9 16 22\n10 13 14 17 24\n18 21 23 26 30\n```\n\n输出：\n\n```\nfalse\n```\n\n## 提示\n\n- `1 <= m, n <= 300`\n- `-10^9 <= matrix[i][j], target <= 10^9`\n- 从右上角（或左下角）出发：比当前值大就往下走，比当前值小就往左走，可做到 O(m + n)。\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -218,71 +95,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/search-a-2d-matrix-ii/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "searchMatrix",
-      "paramTypes": [
-        "int[][]",
-        "int"
-      ],
-      "returnType": "boolean",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m n target，随后 m 行每行 n 个整数\n        // TODO 输出 true 或 false\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    # 前三个数是 m n target，后面 m*n 个数按行依次给出\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public boolean searchMatrix(int[][] matrix, int target) {\n        // TODO\n        return false;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def searchMatrix(self, matrix: List[List[int]], target: int) -> bool:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]],5]",
-          "expectedOutput": "true",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]],20]",
-          "expectedOutput": "false",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[1,4],[2,5]],2]",
-          "expectedOutput": "true",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "5 5 5\n1 4 7 11 15\n2 5 8 12 19\n3 6 9 16 22\n10 13 14 17 24\n18 21 23 26 30",
-          "expectedOutput": "true",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "5 5 20\n1 4 7 11 15\n2 5 8 12 19\n3 6 9 16 22\n10 13 14 17 24\n18 21 23 26 30",
-          "expectedOutput": "false",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 2 2\n1 4\n2 5",
-          "expectedOutput": "true",
-          "isSample": 0,
-          "sort": 3
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "有效的数独",
-      "content": "## 题目描述\n\n判断一个 `9 × 9` 的数独盘面是否有效。只需要根据已填入的数字做校验，不需要求解数独。规则如下：\n\n1. 每一行中，数字 `1-9` 不能重复；\n2. 每一列中，数字 `1-9` 不能重复；\n3. 每个 `3 × 3` 的粗实线宫格内，数字 `1-9` 不能重复。\n\n盘面用字符表示：字符 `'1'`-`'9'` 表示已填入的数字，`'.'` 表示空格。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n53..7....\n6..195...\n.98....6.\n8...6...3\n4..8.3..1\n7...2...6\n.6....28.\n...419..5\n....8..79\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n55..7....\n6..195...\n.98....6.\n8...6...3\n4..8.3..1\n7...2...6\n.6....28.\n...419..5\n....8..79\n```\n\n输出：\n\n```\nfalse\n```\n\n解释：第一行出现了两个 `5`，违反规则 1。\n\n## 输入输出格式（ACM 模式）\n\n- 输入固定 9 行，每行一个长度为 9 的字符串，只包含 `'1'`-`'9'` 与 `'.'`；\n- 输出 `true` 或 `false`（小写）。\n\n## 提示\n\n- 盘面固定为 `9 × 9`，不需要读取行列数。\n- 可用三个布尔数组分别记录行、列、宫格中出现过的数字；宫格下标为 `(r / 3, c / 3)`。\n- 只校验已填入的数字，`'.'` 不参与去重。\n\n> 力扣模式下只需实现 `isValidSudoku` 函数，盘面参数是 `char[][]`（Python 中每行是一个字符串），不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n判断一个 `9 × 9` 的数独盘面是否有效。只需要根据已填入的数字做校验，不需要求解数独。规则如下：\n\n1. 每一行中，数字 `1-9` 不能重复；\n2. 每一列中，数字 `1-9` 不能重复；\n3. 每个 `3 × 3` 的粗实线宫格内，数字 `1-9` 不能重复。\n\n盘面用字符表示：字符 `'1'`-`'9'` 表示已填入的数字，`'.'` 表示空格。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n53..7....\n6..195...\n.98....6.\n8...6...3\n4..8.3..1\n7...2...6\n.6....28.\n...419..5\n....8..79\n```\n\n输出：\n\n```\ntrue\n```\n\n**示例 2**\n\n输入：\n\n```\n55..7....\n6..195...\n.98....6.\n8...6...3\n4..8.3..1\n7...2...6\n.6....28.\n...419..5\n....8..79\n```\n\n输出：\n\n```\nfalse\n```\n\n解释：第一行出现了两个 `5`，违反规则 1。\n\n## 提示\n\n- 盘面固定为 `9 × 9`，不需要读取行列数。\n- 可用三个布尔数组分别记录行、列、宫格中出现过的数字；宫格下标为 `(r / 3, c / 3)`。\n- 只校验已填入的数字，`'.'` 不参与去重。\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -299,70 +121,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/valid-sudoku/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "isValidSudoku",
-      "paramTypes": [
-        "char[][]"
-      ],
-      "returnType": "boolean",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 固定 9 行，每行一个长度为 9 的字符串，'.' 表示空格\n        // TODO 输出 true 或 false\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    lines = [line.strip() for line in sys.stdin.read().splitlines() if line.strip()]\n    # 固定 9 行，每行一个长度为 9 的字符串，'.' 表示空格\n    # TODO 输出 true 或 false\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public boolean isValidSudoku(char[][] board) {\n        // TODO\n        return false;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def isValidSudoku(self, board: List[List[str]]) -> bool:\n        # TODO\n        pass"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"5\",\"3\",\".\",\".\",\"7\",\".\",\".\",\".\",\".\"],[\"6\",\".\",\".\",\"1\",\"9\",\"5\",\".\",\".\",\".\"],[\".\",\"9\",\"8\",\".\",\".\",\".\",\".\",\"6\",\".\"],[\"8\",\".\",\".\",\".\",\"6\",\".\",\".\",\".\",\"3\"],[\"4\",\".\",\".\",\"8\",\".\",\"3\",\".\",\".\",\"1\"],[\"7\",\".\",\".\",\".\",\"2\",\".\",\".\",\".\",\"6\"],[\".\",\"6\",\".\",\".\",\".\",\".\",\"2\",\"8\",\".\"],[\".\",\".\",\".\",\"4\",\"1\",\"9\",\".\",\".\",\"5\"],[\".\",\".\",\".\",\".\",\"8\",\".\",\".\",\"7\",\"9\"]]]",
-          "expectedOutput": "true",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"5\",\"5\",\".\",\".\",\"7\",\".\",\".\",\".\",\".\"],[\"6\",\".\",\".\",\"1\",\"9\",\"5\",\".\",\".\",\".\"],[\".\",\"9\",\"8\",\".\",\".\",\".\",\".\",\"6\",\".\"],[\"8\",\".\",\".\",\".\",\"6\",\".\",\".\",\".\",\"3\"],[\"4\",\".\",\".\",\"8\",\".\",\"3\",\".\",\".\",\"1\"],[\"7\",\".\",\".\",\".\",\"2\",\".\",\".\",\".\",\"6\"],[\".\",\"6\",\".\",\".\",\".\",\".\",\"2\",\"8\",\".\"],[\".\",\".\",\".\",\"4\",\"1\",\"9\",\".\",\".\",\"5\"],[\".\",\".\",\".\",\".\",\"8\",\".\",\".\",\"7\",\"9\"]]]",
-          "expectedOutput": "false",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"5\",\"3\",\"4\",\"6\",\"7\",\"8\",\"9\",\"1\",\"2\"],[\"6\",\"7\",\"2\",\"1\",\"9\",\"5\",\"3\",\"4\",\"8\"],[\"1\",\"9\",\"8\",\"3\",\"4\",\"2\",\"5\",\"6\",\"7\"],[\"8\",\"5\",\"9\",\"7\",\"6\",\"1\",\"4\",\"2\",\"3\"],[\"4\",\"2\",\"6\",\"8\",\"5\",\"3\",\"7\",\"9\",\"1\"],[\"7\",\"1\",\"3\",\"9\",\"2\",\"4\",\"8\",\"5\",\"6\"],[\"9\",\"6\",\"1\",\"5\",\"3\",\"7\",\"2\",\"8\",\"4\"],[\"2\",\"8\",\"7\",\"4\",\"1\",\"9\",\"6\",\"3\",\"5\"],[\"3\",\"4\",\"5\",\"2\",\"8\",\"6\",\"1\",\"7\",\"9\"]]]",
-          "expectedOutput": "true",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "53..7....\n6..195...\n.98....6.\n8...6...3\n4..8.3..1\n7...2...6\n.6....28.\n...419..5\n....8..79",
-          "expectedOutput": "true",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "55..7....\n6..195...\n.98....6.\n8...6...3\n4..8.3..1\n7...2...6\n.6....28.\n...419..5\n....8..79",
-          "expectedOutput": "false",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "534678912\n672195348\n198342567\n859761423\n426853791\n713924856\n961537284\n287419635\n345286179",
-          "expectedOutput": "true",
-          "isSample": 0,
-          "sort": 3
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "生命游戏",
-      "content": "## 题目描述\n\n给定一个 `m × n` 的网格，每个格子是 `0`（死细胞）或 `1`（活细胞）。每个细胞与它周围 8 个位置（上下左右及四个对角）的细胞互为邻居。按照以下规则**同时**更新到下一代：\n\n1. 活细胞的活邻居少于 2 个 → 因孤独而死亡；\n2. 活细胞有 2 或 3 个活邻居 → 继续存活；\n3. 活细胞的活邻居多于 3 个 → 因拥挤而死亡；\n4. 死细胞恰好有 3 个活邻居 → 复活。\n\n要求原地更新（不能边算边改），更新后输出下一代网格。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4 3\n0 1 0\n0 0 1\n1 1 1\n0 0 0\n```\n\n输出：\n\n```\n0 0 0\n1 0 1\n0 1 1\n0 1 0\n```\n\n**示例 2**\n\n输入：\n\n```\n3 3\n1 1 1\n1 1 1\n1 1 1\n```\n\n输出：\n\n```\n1 0 1\n0 0 0\n1 0 1\n```\n\n解释：四个角各有 3 个活邻居而存活；边上的细胞有 5 个活邻居、中心细胞有 8 个活邻居，均死亡。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `m n`，分别表示行数和列数；\n- 随后 `m` 行，每行 `n` 个整数（`0` 或 `1`）；\n- 输出下一代网格：共 `m` 行，每行 `n` 个 `0/1`，用空格分隔。\n\n## 提示\n\n- `1 <= m, n <= 20`\n- 所有格子必须基于**上一代**的状态同时更新。\n- 可以复制一份原状态，或用额外状态值（如 `2` 表示死转活、`-1` 表示活转死）做原地标记。",
+      "content": "## 题目描述\n\n给定一个 `m × n` 的网格，每个格子是 `0`（死细胞）或 `1`（活细胞）。每个细胞与它周围 8 个位置（上下左右及四个对角）的细胞互为邻居。按照以下规则**同时**更新到下一代：\n\n1. 活细胞的活邻居少于 2 个 → 因孤独而死亡；\n2. 活细胞有 2 或 3 个活邻居 → 继续存活；\n3. 活细胞的活邻居多于 3 个 → 因拥挤而死亡；\n4. 死细胞恰好有 3 个活邻居 → 复活。\n\n要求原地更新（不能边算边改），更新后输出下一代网格。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4 3\n0 1 0\n0 0 1\n1 1 1\n0 0 0\n```\n\n输出：\n\n```\n0 0 0\n1 0 1\n0 1 1\n0 1 0\n```\n\n**示例 2**\n\n输入：\n\n```\n3 3\n1 1 1\n1 1 1\n1 1 1\n```\n\n输出：\n\n```\n1 0 1\n0 0 0\n1 0 1\n```\n\n解释：四个角各有 3 个活邻居而存活；边上的细胞有 5 个活邻居、中心细胞有 8 个活邻居，均死亡。\n\n## 提示\n\n- `1 <= m, n <= 20`\n- 所有格子必须基于**上一代**的状态同时更新。\n- 可以复制一份原状态，或用额外状态值（如 `2` 表示死转活、`-1` 表示活转死）做原地标记。\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -379,50 +147,12 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/game-of-life/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 m n，随后 m 行每行 n 个 0/1\n        // TODO 原地更新到下一代，按行输出新一代网格\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    # 第一个数是 m，第二个数是 n，后面 m*n 个数按行依次给出\n    # TODO 原地更新到下一代，按行输出新一代网格\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {
-          "caseMode": "ACM",
-          "input": "4 3\n0 1 0\n0 0 1\n1 1 1\n0 0 0",
-          "expectedOutput": "0 0 0\n1 0 1\n0 1 1\n0 1 0",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 3\n1 1 1\n1 1 1\n1 1 1",
-          "expectedOutput": "1 0 1\n0 0 0\n1 0 1",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 2\n1 1\n1 1",
-          "expectedOutput": "1 1\n1 1",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "1 1\n0",
-          "expectedOutput": "0",
-          "isSample": 0,
-          "sort": 4
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 3\n0 0 0\n0 1 0\n0 0 0",
-          "expectedOutput": "0 0 0\n0 0 0\n0 0 0",
-          "isSample": 0,
-          "sort": 5
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     }
   ]
 }

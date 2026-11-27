@@ -1,25 +1,14 @@
 package com.grindset.backend.dto;
 
-import java.util.List;
-
 /**
- * 运行样例的结果:逐用例输出与期望对比。
- * 只跑例题,便于用户自查,不计入提交历史。
+ * 自由运行结果:只表示程序是否跑完,不判断答案对错。
+ * runStatus 取值见 FreeRunStatus:SUCCESS / COMPILE_ERROR / RUNTIME_ERROR /
+ * TIME_LIMIT_EXCEEDED / SYSTEM_ERROR。
  */
 public record CodeRunResult(
-        String status,
-        int passed,
-        int total,
-        int runtimeMs,
-        String errorMessage,
-        List<CaseResult> cases) {
-
-    public record CaseResult(
-            int index,
-            String input,
-            String expectedOutput,
-            String actualOutput,
-            boolean passed,
-            String message) {
-    }
+        String runStatus,
+        String stdout,
+        String stderr,
+        int exitCode,
+        int runtimeMs) {
 }

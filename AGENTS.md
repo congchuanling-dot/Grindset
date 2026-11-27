@@ -76,6 +76,13 @@ mysql -uroot -p123456 < sql/011_agent_chat_schema.sql
 mysql -uroot -p123456 < sql/012_resume_original_schema.sql
 mysql -uroot -p123456 < sql/013_storage_config_schema.sql
 mysql -uroot -p123456 < sql/014_resume_parse_mq.sql
+mysql -uroot -p123456 < sql/015_ai_usage_schema.sql
+mysql -uroot -p123456 < sql/016_llm_model_prices.sql
+mysql -uroot -p123456 < sql/017_user_wallet_schema.sql
+mysql -uroot -p123456 < sql/018_interview_coding.sql
+mysql -uroot -p123456 < sql/019_interview_free_run.sql
+mysql -uroot -p123456 < sql/020_interview_free_questions.sql
+mysql -uroot -p123456 < sql/021_coding_free_run.sql
 ```
 
 大模型渠道/模型/密钥表不在 `sql/` 下，需要额外执行（**必须带 utf8mb4 参数**，否则中文展示名会乱码）：
@@ -189,7 +196,7 @@ npm run dev
 
 - 单实例内用 `ConcurrentHashMap<Long, ReentrantLock>` 按用户/题目串行化，`tryLock()` 失败返回 409/429
 - 慢 LLM 调用放在数据库事务外，先拿到结果再开短事务落库
-- 判题使用单线程 `ExecutorService` 串行执行，提交先落库 `PENDING`，前端轮询
+- 代码自由运行使用单线程队列（同一用户串行），一次运行起一个容器
 - 简历上传用 `Semaphore` 限制单实例并发（默认 8），临时文件落盘、用后即删
 
 ### 4.5 异步任务（RabbitMQ）
@@ -273,24 +280,20 @@ npm run dev
 - 进度筛选状态：`TODO` / `DONE` / `WRONG`
 - 管理端导入：`POST /api/admin/questions/import`，按题干 SHA-256 幂等
 
-### 6.4 编程题判题
+### 6.4 编程题：main 自由运行 + AI 点评
 
-- 每道编程题**同时支持两种模式**，前端在工作台顶部切换，提交时用 `codeMode` 指定：
-  - `ACM`：用户写 `Main` / `main()`，从标准输入读、向标准输出写；用例存 `case_mode='ACM'` 的 stdin 文本
-  - `LEETCODE`：用户只写 `class Solution` 的函数；判题器生成驱动读 JSON 参数、调函数、按 JSON 比较返回值；用例存 `case_mode='LEETCODE'` 的 JSON 参数
-- 函数签名存在 `question_bank.function_name` / `param_types`(JSON) / `return_type`；`starter_code` 是 ACM 初始代码，`starter_code_function` 是力扣初始代码
-- 支持类型：`int` `long` `double` `boolean` `char` `String`、对应一维数组、`int[][]` `char[][]` `String[][]`、`List<Integer>` `List<String>` `List<List<Integer>>`
-- 提交异步：先落 `PENDING` 再进单线程判题队列，前端轮询 `GET /api/questions/submissions/{id}`
+- 每道编程题只有一种形态：用户写**完整程序**（Java `public class Main` / Python `main()`），在自己的 `main` 里构造输入、调用解法、打印输出
+- 平台**不提供测试用例**，也不做 AC/WA 判题；题面只给题目描述、示例与提示，不再出现 ACM 输入输出格式或力扣函数签名
+- `POST /{id}/run` 同步运行完整代码，返回 `runStatus`（`SUCCESS` / `COMPILE_ERROR` / `RUNTIME_ERROR` / `TIME_LIMIT_EXCEEDED` / `SYSTEM_ERROR`）与控制台输出
+- `POST /{id}/review` 运行代码后调用大模型点评：检查逻辑、未处理的边界与潜在 bug，返回 1~5 分、已处理要点、遗漏边界、点评与建议，并回写做题进度
+- 代码点评复用 `question_attempts`（`answer` 存源码）；`GET /{id}/reviews` 返回点评历史
 
-`CodingService → JudgeService`
+`CodingService → JudgeService / InterviewLlmService`
 
-- 语言：`JAVA` / `PYTHON`；ACM 模式固定 `Main.java` / `main.py`，函数模式固定 `Solution.java` / `solution.py` 加自动生成的驱动
+- 语言：`JAVA` / `PYTHON`，固定 `Main.java` / `main.py`
 - 每次运行起一次性 Docker 容器，断网，限制 CPU/内存/PID，超时即杀
-- `POST /{id}/run` 同步运行**例题**（不写历史）；`POST /{id}/submissions` 异步判题并立即返回 `PENDING`
-- `GET /api/questions/submissions/{submissionId}` 前端轮询
-- 同一用户同一时刻只允许一个运行/提交任务，否则 429
-- 判题结束只回写做题进度（`user_question_progress`），不做跨题聚合统计
-- 判题状态：`PENDING` / `RUNNING` / `ACCEPTED` / `WRONG_ANSWER` / `COMPILE_ERROR` / `RUNTIME_ERROR` / `TIME_LIMIT_EXCEEDED` / `SYSTEM_ERROR`
+- 同一用户同一时刻只允许一个运行/点评任务，否则 429
+- 点评结果只回写做题进度（`user_question_progress`），不做跨题聚合统计
 
 ## 7. 接口清单
 
@@ -371,11 +374,10 @@ npm run dev
 | GET | `/{id}/neighbors` | 同一模式（问答题/编程题）下的前后相邻题 |
 | GET | `/{id}/attempts` | 某题作答历史 |
 | POST | `/{id}/attempts` | 提交问答题 `{answer}`，AI 评分 |
-| GET | `/{id}/coding` | 编程题详情（题面 + 例题 + 初始代码 + 时限 + 判题模式与函数签名） |
-| POST | `/{id}/run` | 运行例题 `{language, code, codeMode}`，同步返回逐用例结果 |
-| POST | `/{id}/submissions` | 提交判题 `{language, code, codeMode}`，返回 PENDING |
-| GET | `/submissions/{submissionId}` | 轮询判题结果 |
-| GET | `/{id}/submissions` | 我的提交历史 |
+| GET | `/{id}/coding` | 编程题详情（题面 + main 骨架 + 最近一次点评） |
+| POST | `/{id}/run` | 运行完整代码 `{language, code}`，同步返回控制台输出 |
+| POST | `/{id}/review` | 运行并由 AI 点评 `{language, code}`，回写做题进度 |
+| GET | `/{id}/reviews` | 我的代码点评历史 |
 | GET | `/images?key=` | 公开。题库配图代理，从 OSS `questions/` 前缀流式读取 |
 
 ### 管理接口（需要 `X-Admin-Token`，不需要 JWT）
@@ -416,8 +418,9 @@ npm run dev
 | `003_interview_schema.sql` | `interview_sessions`、`interview_questions`、`interview_messages` | 面试会话、题目线程、线程内消息 |
 | `006_question_bank_schema.sql` | `question_bank`、`user_question_progress`、`question_attempts` | 题库、做题进度、作答记录 |
 | `007_question_bank_seed.sql` | — | 约 60 道多领域种子题 |
-| `008_coding_schema.sql` | `question_test_cases`、`question_submissions` + `question_bank` 扩展列 | 编程题用例与提交 |
+| `008_coding_schema.sql` | `question_test_cases`、`question_submissions` + `question_bank` 扩展列 | 历史脚本；自由运行改造后由 `021` 删除 |
 | `009_coding_seed.sql` | — | 编程题种子数据 |
+| `021_coding_free_run.sql` | — | 删除用例/提交表与双模式列，代码点评复用 `question_attempts` |
 | `010_oauth_client_schema.sql` | `oauth_client_config` | 第三方登录客户端凭证（secret 加密存储） |
 | `011_agent_chat_schema.sql` | `agent_conversations`、`agent_messages` | 首页 Agent 会话与完整消息流（可重放、可恢复） |
 | `012_resume_original_schema.sql` | `resumes.original_object_key` | 简历原件在 OSS 中的对象 key |
@@ -442,7 +445,7 @@ npm run dev
 5. 资源归属校验失败统一返回 404，包括简历、面试。
 6. 面试记录接口的用户身份只从 JWT 读取，不接受前端传 userId。
 7. 会话全程落库；刷新页面能通过 `GET /api/interviews/{id}` 恢复。
-8. 题库第一版是力扣刷题形态，不做 PDF/爬虫导入、管理后台 UI、代码判题以外的扩展。
+8. 题库编程题统一为「main 自由运行 + AI 点评」，不提供测试用例、不做 AC/WA 判题、不再区分 ACM 与力扣模式。
 9. 简历预览组件在简历管理页和 AI 面试页共用同一实现，两处样式/行为必须一致。
 10. 闭集字段（文件类型、章节类型、候选人阶段、题型、判题形态、题目来源、判题语言/状态、面试风格等）在**实体层用枚举**；DTO 与前端契约保持字符串或数字。数据库值必须与枚举 `name()` 一致，例外如 `InterviewStyle` 用小写 `@EnumValue`。
 11. 简历解析是**异步任务**：上传只负责落库 + 投递消息，不在请求线程里调 LLM；消费者必须幂等（Redis 锁 + `parse_status` 判断），可重试错误走 TTL 重试队列，超过次数进死信队列。**不保存原始纯文本**，worker 从 OSS 重新下载原件。
@@ -479,7 +482,7 @@ npm run dev
 - **SQL 手工执行**：没有自动迁移，新环境必须按顺序跑完 `sql/` + `db/` 脚本。
 - **LLM 表脚本编码**：执行 `llm_catalog.sql` 必须带 `--default-character-set=utf8mb4`。
 - **管理接口默认关闭**：`ADMIN_TOKEN` 为空时所有 `/api/admin/**` 返回 403。
-- **判题需要 Docker**：Docker 未启动、镜像不存在时提交会失败；镜像名可在 `application.yml` 或环境变量里改。
+- **代码运行需要 Docker**：Docker 未启动、镜像不存在时运行会失败；镜像名可在 `application.yml` 或环境变量里改。
 - **长 ID 精度**：所有返回给前端的雪花 ID 用字符串；前端不要用 `Number` 解析 ID。
 - **SSE 参数错误**：对话/出题在响应头发出后再出错，只能走 `error` 事件，前端要处理。
 - **单实例假设**：锁和判题队列都是进程内实现，暂不支持多实例水平扩展。

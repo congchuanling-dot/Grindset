@@ -2,7 +2,7 @@
   "questions": [
     {
       "title": "岛屿数量",
-      "content": "## 题目描述\n\n给你一个由 `'1'`（陆地）和 `'0'`（水）组成的二维网格，请统计其中**岛屿**的数量。\n\n岛屿由水平或垂直方向上相邻的陆地连接而成，四周被水包围。可以认为网格的四条边之外都是水。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4 5\n11110\n11010\n11000\n00000\n```\n\n输出：`1`\n\n**示例 2**\n\n输入：\n\n```\n4 5\n11000\n11000\n00100\n00011\n```\n\n输出：`3`\n\n解释：左上角的 2×2 陆地、中间的单个陆地、右下角的两个陆地分别构成一个岛屿。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `r`、`c`，表示网格行数与列数；\n- 接下来 `r` 行，每行是一个长度为 `c` 的字符串，只含字符 `0` 和 `1`；\n- 输出一个整数，表示岛屿数量。\n\n## 提示\n\n- `1 <= r, c <= 300`\n- 网格中只含 `'0'` 与 `'1'`\n\n> 力扣模式下只需实现 `numIslands` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给你一个由 `'1'`（陆地）和 `'0'`（水）组成的二维网格，请统计其中**岛屿**的数量。\n\n岛屿由水平或垂直方向上相邻的陆地连接而成，四周被水包围。可以认为网格的四条边之外都是水。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4 5\n11110\n11010\n11000\n00000\n```\n\n输出：`1`\n\n**示例 2**\n\n输入：\n\n```\n4 5\n11000\n11000\n00100\n00011\n```\n\n输出：`3`\n\n解释：左上角的 2×2 陆地、中间的单个陆地、右下角的两个陆地分别构成一个岛屿。\n\n## 提示\n\n- `1 <= r, c <= 300`\n- 网格中只含 `'0'` 与 `'1'`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -20,70 +20,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/number-of-islands/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "numIslands",
-      "paramTypes": [
-        "char[][]"
-      ],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 r c，接下来 r 行是长度为 c 的 0/1 字符串\n        // TODO 输出岛屿数量\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 r c，接下来 r 行是长度为 c 的 0/1 字符串\n    # TODO 输出岛屿数量\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int numIslands(char[][] grid) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def numIslands(self, grid: List[List[str]]) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"1\",\"1\",\"1\",\"1\",\"0\"],[\"1\",\"1\",\"0\",\"1\",\"0\"],[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"0\",\"0\",\"0\",\"0\",\"0\"]]]",
-          "expectedOutput": "1",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"0\",\"0\",\"1\",\"0\",\"0\"],[\"0\",\"0\",\"0\",\"1\",\"1\"]]]",
-          "expectedOutput": "3",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"1\",\"0\",\"1\"],[\"0\",\"1\",\"0\"],[\"1\",\"0\",\"1\"]]]",
-          "expectedOutput": "5",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "4 5\n11110\n11010\n11000\n00000",
-          "expectedOutput": "1",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "4 5\n11000\n11000\n00100\n00011",
-          "expectedOutput": "3",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 3\n101\n010\n101",
-          "expectedOutput": "5",
-          "isSample": 0,
-          "sort": 3
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "腐烂的橘子",
-      "content": "## 题目描述\n\n在一个 `r × c` 的网格中，每个格子可以是空（`0`）、新鲜橘子（`1`）或腐烂橘子（`2`）。\n\n每一分钟，所有与腐烂橘子**上下左右相邻**的新鲜橘子都会腐烂。请返回直到网格中不再有新鲜橘子所需的最少分钟数；如果无论如何都无法让所有橘子腐烂，返回 `-1`。如果一开始就没有新鲜橘子，返回 `0`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n2 1 1\n1 1 0\n0 1 1\n```\n\n输出：`4`\n\n**示例 2**\n\n输入：\n\n```\n3 3\n2 1 1\n0 1 1\n1 0 1\n```\n\n输出：`-1`\n\n解释：左下角的新鲜橘子被空格隔开，永远无法腐烂。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `r`、`c`；\n- 接下来 `r` 行，每行 `c` 个整数（`0`/`1`/`2`），用空格分隔；\n- 输出一个整数，表示最少分钟数或 `-1`。\n\n## 提示\n\n- `1 <= r, c <= 10`\n- 每个格子的值为 `0`、`1` 或 `2`\n\n> 力扣模式下只需实现 `orangesRotting` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n在一个 `r × c` 的网格中，每个格子可以是空（`0`）、新鲜橘子（`1`）或腐烂橘子（`2`）。\n\n每一分钟，所有与腐烂橘子**上下左右相邻**的新鲜橘子都会腐烂。请返回直到网格中不再有新鲜橘子所需的最少分钟数；如果无论如何都无法让所有橘子腐烂，返回 `-1`。如果一开始就没有新鲜橘子，返回 `0`。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n3 3\n2 1 1\n1 1 0\n0 1 1\n```\n\n输出：`4`\n\n**示例 2**\n\n输入：\n\n```\n3 3\n2 1 1\n0 1 1\n1 0 1\n```\n\n输出：`-1`\n\n解释：左下角的新鲜橘子被空格隔开，永远无法腐烂。\n\n## 提示\n\n- `1 <= r, c <= 10`\n- 每个格子的值为 `0`、`1` 或 `2`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -100,70 +46,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/rotting-oranges/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "orangesRotting",
-      "paramTypes": [
-        "int[][]"
-      ],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 r c，接下来 r 行每行 c 个整数（0/1/2）\n        // TODO 输出最少分钟数，无法全部腐烂输出 -1\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 r c，接下来 r 行每行 c 个整数（0/1/2）\n    # TODO 输出最少分钟数，无法全部腐烂输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int orangesRotting(int[][] grid) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def orangesRotting(self, grid: List[List[int]]) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[2,1,1],[1,1,0],[0,1,1]]]",
-          "expectedOutput": "4",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[2,1,1],[0,1,1],[1,0,1]]]",
-          "expectedOutput": "-1",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[0,2]]]",
-          "expectedOutput": "0",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 3\n2 1 1\n1 1 0\n0 1 1",
-          "expectedOutput": "4",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 3\n2 1 1\n0 1 1\n1 0 1",
-          "expectedOutput": "-1",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "1 2\n0 2",
-          "expectedOutput": "0",
-          "isSample": 0,
-          "sort": 3
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "课程表",
-      "content": "## 题目描述\n\n你一共需要修 `numCourses` 门课，课程编号为 `0` 到 `numCourses-1`。\n\n给定先修关系 `prerequisites`，其中 `prerequisites[i] = [a, b]` 表示：要修课程 `a`，必须先修完课程 `b`。\n\n请判断是否有可能修完所有课程。可以修完返回 `true`；若存在循环依赖导致无法修完，返回 `false`。\n\n## 示例\n\n**示例 1**\n\n输入：`numCourses = 2, prerequisites = [[1,0]]`\n\n输出：`true`\n\n解释：先修课程 0，再修课程 1。\n\n**示例 2**\n\n输入：`numCourses = 2, prerequisites = [[1,0],[0,1]]`\n\n输出：`false`\n\n解释：课程 0 与课程 1 互相依赖，形成环。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n`、`m`，`n` 为课程数，`m` 为先修关系条数；\n- 接下来 `m` 行，每行两个整数 `a b`，表示修 `a` 前必须先修 `b`；\n- 输出 `YES` 表示可以修完，输出 `NO` 表示存在循环依赖。\n\n## 提示\n\n- `1 <= n <= 2000`\n- `0 <= m <= 5000`\n- 先修关系不重复\n\n> 力扣模式下只需实现 `canFinish` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n你一共需要修 `numCourses` 门课，课程编号为 `0` 到 `numCourses-1`。\n\n给定先修关系 `prerequisites`，其中 `prerequisites[i] = [a, b]` 表示：要修课程 `a`，必须先修完课程 `b`。\n\n请判断是否有可能修完所有课程。可以修完返回 `true`；若存在循环依赖导致无法修完，返回 `false`。\n\n## 示例\n\n**示例 1**\n\n输入：`numCourses = 2, prerequisites = [[1,0]]`\n\n输出：`true`\n\n解释：先修课程 0，再修课程 1。\n\n**示例 2**\n\n输入：`numCourses = 2, prerequisites = [[1,0],[0,1]]`\n\n输出：`false`\n\n解释：课程 0 与课程 1 互相依赖，形成环。\n\n## 提示\n\n- `1 <= n <= 2000`\n- `0 <= m <= 5000`\n- 先修关系不重复\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -180,71 +72,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/course-schedule/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "canFinish",
-      "paramTypes": [
-        "int",
-        "int[][]"
-      ],
-      "returnType": "boolean",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n m，接下来 m 行每行 a b，表示修 a 前必须先修 b\n        // TODO 输出 YES 或 NO\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n m，接下来 m 行每行 a b，表示修 a 前必须先修 b\n    # TODO 输出 YES 或 NO\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        // TODO\n        return false;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:\n        # TODO\n        return False"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[2,[[1,0]]]",
-          "expectedOutput": "true",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[2,[[1,0],[0,1]]]",
-          "expectedOutput": "false",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[4,[[1,0],[2,1],[3,2]]]",
-          "expectedOutput": "true",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 1\n1 0",
-          "expectedOutput": "YES",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 2\n1 0\n0 1",
-          "expectedOutput": "NO",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "4 3\n1 0\n2 1\n3 2",
-          "expectedOutput": "YES",
-          "isSample": 0,
-          "sort": 3
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "课程表 II",
-      "content": "## 题目描述\n\n你一共需要修 `numCourses` 门课，课程编号为 `0` 到 `numCourses-1`。\n\n给定先修关系 `prerequisites`，其中 `prerequisites[i] = [a, b]` 表示：要修课程 `a`，必须先修完课程 `b`。\n\n请返回一个可以修完所有课程的顺序。若存在多种合法顺序，返回**字典序最小**的那一组（这是唯一的输出顺序）；若无法修完所有课程，返回空数组。\n\n## 示例\n\n**示例 1**\n\n输入：`numCourses = 2, prerequisites = [[1,0]]`\n\n输出：`[0,1]`\n\n**示例 2**\n\n输入：`numCourses = 4, prerequisites = [[1,0],[2,0],[3,1],[3,2]]`\n\n输出：`[0,1,2,3]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `n`、`m`，`n` 为课程数，`m` 为先修关系条数；\n- 接下来 `m` 行，每行两个整数 `a b`，表示修 `a` 前必须先修 `b`；\n- 输出字典序最小的拓扑序，数字之间用空格分隔；\n- 若无法修完所有课程，输出 `-1`。\n\n## 提示\n\n- `1 <= n <= 2000`\n- `0 <= m <= 5000`\n- 先修关系不重复\n\n> 力扣模式下只需实现 `findOrder` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n你一共需要修 `numCourses` 门课，课程编号为 `0` 到 `numCourses-1`。\n\n给定先修关系 `prerequisites`，其中 `prerequisites[i] = [a, b]` 表示：要修课程 `a`，必须先修完课程 `b`。\n\n请返回一个可以修完所有课程的顺序。若存在多种合法顺序，返回**字典序最小**的那一组（这是唯一的输出顺序）；若无法修完所有课程，返回空数组。\n\n## 示例\n\n**示例 1**\n\n输入：`numCourses = 2, prerequisites = [[1,0]]`\n\n输出：`[0,1]`\n\n**示例 2**\n\n输入：`numCourses = 4, prerequisites = [[1,0],[2,0],[3,1],[3,2]]`\n\n输出：`[0,1,2,3]`\n\n## 提示\n\n- `1 <= n <= 2000`\n- `0 <= m <= 5000`\n- 先修关系不重复\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -261,71 +98,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/course-schedule-ii/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "findOrder",
-      "paramTypes": [
-        "int",
-        "int[][]"
-      ],
-      "returnType": "int[]",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n m，接下来 m 行每行 a b，表示修 a 前必须先修 b\n        // TODO 输出字典序最小的拓扑序（空格分隔）；无解输出 -1\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n m，接下来 m 行每行 a b，表示修 a 前必须先修 b\n    # TODO 输出字典序最小的拓扑序（空格分隔）；无解输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public int[] findOrder(int numCourses, int[][] prerequisites) {\n        // TODO\n        return new int[0];\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def findOrder(self, numCourses: int, prerequisites: List[List[int]]) -> List[int]:\n        # TODO\n        return []"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[2,[[1,0]]]",
-          "expectedOutput": "[0,1]",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[4,[[1,0],[2,0],[3,1],[3,2]]]",
-          "expectedOutput": "[0,1,2,3]",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[3,[[2,0],[2,1],[0,2]]]",
-          "expectedOutput": "[]",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 1\n1 0",
-          "expectedOutput": "0 1",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "4 4\n1 0\n2 0\n3 1\n3 2",
-          "expectedOutput": "0 1 2 3",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 3\n2 0\n2 1\n0 2",
-          "expectedOutput": "-1",
-          "isSample": 0,
-          "sort": 3
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "被围绕的区域",
-      "content": "## 题目描述\n\n给你一个只包含 `'X'` 和 `'O'` 的二维棋盘。请把所有**被 `'X'` 完全包围**的 `'O'` 区域翻转为 `'X'`。\n\n与棋盘边界相连的 `'O'` 以及和它连通的 `'O'` 不会被翻转。只考虑上下左右四个方向。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4 4\nXXXX\nXOOX\nXXOX\nXOXX\n```\n\n输出：\n\n```\nXXXX\nXXXX\nXXXX\nXOXX\n```\n\n解释：右下角的 `O` 与边界相连，保持不变；中间的 `O` 被 `X` 包围，翻转为 `X`。\n\n**示例 2**\n\n输入：\n\n```\n3 3\nXXX\nXOX\nXXX\n```\n\n输出：\n\n```\nXXX\nXXX\nXXX\n```\n\n## 输入输出格式\n\n- 第一行两个整数 `r`、`c`；\n- 接下来 `r` 行，每行是一个长度为 `c` 的字符串，只含 `X` 和 `O`；\n- 输出 `r` 行，表示处理后的棋盘。\n\n## 提示\n\n- `1 <= r, c <= 200`\n- 棋盘只含 `'X'` 与 `'O'`\n\n注意：本题在 ACM 模式下作答，请按上面的格式读写标准输入输出。",
+      "content": "## 题目描述\n\n给你一个只包含 `'X'` 和 `'O'` 的二维棋盘。请把所有**被 `'X'` 完全包围**的 `'O'` 区域翻转为 `'X'`。\n\n与棋盘边界相连的 `'O'` 以及和它连通的 `'O'` 不会被翻转。只考虑上下左右四个方向。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4 4\nXXXX\nXOOX\nXXOX\nXOXX\n```\n\n输出：\n\n```\nXXXX\nXXXX\nXXXX\nXOXX\n```\n\n解释：右下角的 `O` 与边界相连，保持不变；中间的 `O` 被 `X` 包围，翻转为 `X`。\n\n**示例 2**\n\n输入：\n\n```\n3 3\nXXX\nXOX\nXXX\n```\n\n输出：\n\n```\nXXX\nXXX\nXXX\n```\n\n## 提示\n\n- `1 <= r, c <= 200`\n- 棋盘只含 `'X'` 与 `'O'`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -343,47 +125,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/surrounded-regions/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 r c，接下来 r 行是长度为 c 的 X/O 字符串\n        // TODO 翻转被 X 完全包围的 O，输出 r 行结果\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 r c，接下来 r 行是长度为 c 的 X/O 字符串\n    # TODO 翻转被 X 完全包围的 O，输出 r 行结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {
-          "caseMode": "ACM",
-          "input": "4 4\nXXXX\nXOOX\nXXOX\nXOXX",
-          "expectedOutput": "XXXX\nXXXX\nXXXX\nXOXX",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 3\nXXX\nXOX\nXXX",
-          "expectedOutput": "XXX\nXXX\nXXX",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 3\nOXO\nXOX\nOXO",
-          "expectedOutput": "OXO\nXOX\nOXO",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 2\nXX\nXX",
-          "expectedOutput": "XX\nXX",
-          "isSample": 0,
-          "sort": 4
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "克隆图",
-      "content": "## 题目描述\n\n给定一个无向连通图的邻接表。图中有 `n` 个节点，编号为 `1` 到 `n`，第 `i` 行列出与节点 `i` 直接相连的所有节点编号。\n\n请对这个图做**深拷贝**（克隆出全新节点，结构与原图一致）。为了便于判题，你只需要输出克隆图的邻接表。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4\n2 4\n1 3\n2 4\n1 3\n```\n\n输出：\n\n```\n2 4\n1 3\n2 4\n1 3\n```\n\n解释：这是一个 4 个节点的环，克隆后结构不变。\n\n**示例 2**\n\n输入：\n\n```\n2\n2\n1\n```\n\n输出：\n\n```\n2\n1\n```\n\n## 输入输出格式\n\n- 第一行一个整数 `n`（`1 <= n <= 100`）；\n- 接下来 `n` 行，第 `i` 行是节点 `i` 的邻居编号，用空格分隔；没有邻居时为空行；\n- 输出 `n` 行，第 `i` 行是克隆图中节点 `i` 的邻居编号，**按编号升序**排列，用空格分隔；没有邻居时输出空行。\n\n## 提示\n\n- 输入保证图连通、无自环、无重复边\n- 输入中邻居的顺序可能不是升序，输出必须按升序\n- 由于克隆图与原图结构相同、编号相同，正确输出就是把原图邻接表按升序整理后的结果\n\n注意：本题在 ACM 模式下作答，请按上面的格式读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个无向连通图的邻接表。图中有 `n` 个节点，编号为 `1` 到 `n`，第 `i` 行列出与节点 `i` 直接相连的所有节点编号。\n\n请对这个图做**深拷贝**（克隆出全新节点，结构与原图一致）。为了便于判题，你只需要输出克隆图的邻接表。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\n4\n2 4\n1 3\n2 4\n1 3\n```\n\n输出：\n\n```\n2 4\n1 3\n2 4\n1 3\n```\n\n解释：这是一个 4 个节点的环，克隆后结构不变。\n\n**示例 2**\n\n输入：\n\n```\n2\n2\n1\n```\n\n输出：\n\n```\n2\n1\n```\n\n## 提示\n\n- 输入保证图连通、无自环、无重复边\n- 输入中邻居的顺序可能不是升序，输出必须按升序\n- 由于克隆图与原图结构相同、编号相同，正确输出就是把原图邻接表按升序整理后的结果\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -401,47 +152,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/clone-graph/",
-      "codeMode": "ACM",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，接下来 n 行是节点 1..n 的邻居编号（空格分隔）\n        // TODO 深拷贝图，按升序输出克隆图每个节点的邻居，每行一个节点\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，接下来 n 行是节点 1..n 的邻居编号（空格分隔）\n    # TODO 深拷贝图，按升序输出克隆图每个节点的邻居，每行一个节点\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "testCases": [
-        {
-          "caseMode": "ACM",
-          "input": "4\n2 4\n1 3\n2 4\n1 3",
-          "expectedOutput": "2 4\n1 3\n2 4\n1 3",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2\n2\n1",
-          "expectedOutput": "2\n1",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3\n3 2\n3 1\n1 2",
-          "expectedOutput": "2 3\n1 3\n1 2",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "4\n2 3\n1 4\n1 4\n2 3",
-          "expectedOutput": "2 3\n1 4\n1 4\n2 3",
-          "isSample": 0,
-          "sort": 4
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "除法求值",
-      "content": "## 题目描述\n\n给定一组形如 `a / b = k` 的等式（`k` 为浮点数），以及若干查询 `x / y`，请根据已知等式计算每个查询的结果。\n\n若两个变量之间不存在可推导的倍数关系，或变量从未出现在等式中，则查询结果为 `-1.0`。\n\n## 示例\n\n**示例 1**\n\n输入：`equations = [[\"a\",\"b\"],[\"b\",\"c\"]]`，`values = [2.0,2.0]`，`queries = [[\"b\",\"a\"],[\"c\",\"b\"],[\"c\",\"a\"]]`\n\n输出：`[0.5,0.5,0.25]`\n\n**示例 2**\n\n输入：`equations = [[\"x\",\"y\"]]`，`values = [4.0]`，`queries = [[\"y\",\"x\"]]`\n\n输出：`[0.25]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `k`，表示等式数量；\n- 接下来 `k` 行，每行 `u v w`，表示 `u / v = w`（`w` 为浮点数）；\n- 再下一行一个整数 `q`，表示查询数量；\n- 接下来 `q` 行，每行 `x y`，表示查询 `x / y`；\n- 输出 `q` 行，每行一个数，**保留两位小数**（四舍五入）；无法确定时输出 `-1.00`。\n\n## 提示\n\n- `1 <= k <= 20`\n- `1 <= q <= 20`\n- 变量名为长度 1~5 的小写字母串\n- 查询结果均为有限小数\n\n> 力扣模式下只需实现 `calcEquation` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一组形如 `a / b = k` 的等式（`k` 为浮点数），以及若干查询 `x / y`，请根据已知等式计算每个查询的结果。\n\n若两个变量之间不存在可推导的倍数关系，或变量从未出现在等式中，则查询结果为 `-1.0`。\n\n## 示例\n\n**示例 1**\n\n输入：`equations = [[\"a\",\"b\"],[\"b\",\"c\"]]`，`values = [2.0,2.0]`，`queries = [[\"b\",\"a\"],[\"c\",\"b\"],[\"c\",\"a\"]]`\n\n输出：`[0.5,0.5,0.25]`\n\n**示例 2**\n\n输入：`equations = [[\"x\",\"y\"]]`，`values = [4.0]`，`queries = [[\"y\",\"x\"]]`\n\n输出：`[0.25]`\n\n## 提示\n\n- `1 <= k <= 20`\n- `1 <= q <= 20`\n- 变量名为长度 1~5 的小写字母串\n- 查询结果均为有限小数\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -459,72 +179,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/evaluate-division/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "calcEquation",
-      "paramTypes": [
-        "String[][]",
-        "double[]",
-        "String[][]"
-      ],
-      "returnType": "double[]",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 k；接下来 k 行 u v w（u/v=w）；下一行 q；接下来 q 行 x y\n        // TODO 每行输出一个查询结果，保留两位小数；不可达输出 -1.00\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 k；接下来 k 行 u v w（u/v=w）；下一行 q；接下来 q 行 x y\n    # TODO 每行输出一个查询结果，保留两位小数；不可达输出 -1.00\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public double[] calcEquation(String[][] equations, double[] values, String[][] queries) {\n        // TODO\n        return new double[0];\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def calcEquation(self, equations: List[List[str]], values: List[float], queries: List[List[str]]) -> List[float]:\n        # TODO\n        return []"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"a\",\"b\"],[\"b\",\"c\"]],[2.0,2.0],[[\"b\",\"a\"],[\"c\",\"b\"],[\"c\",\"a\"]]]",
-          "expectedOutput": "[0.5,0.5,0.25]",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"x\",\"y\"]],[4.0],[[\"y\",\"x\"]]]",
-          "expectedOutput": "[0.25]",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"a\",\"b\"],[\"b\",\"c\"],[\"c\",\"d\"]],[2.0,2.0,2.0],[[\"d\",\"c\"],[\"d\",\"b\"],[\"d\",\"a\"]]]",
-          "expectedOutput": "[0.5,0.25,0.125]",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2\na b 2\nb c 2\n3\nb a\nc b\nc a",
-          "expectedOutput": "0.50\n0.50\n0.25",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "1\nx y 4\n1\ny x",
-          "expectedOutput": "0.25",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2\na b 2\nc d 4\n3\nb a\nd c\na c",
-          "expectedOutput": "0.50\n0.25\n-1.00",
-          "isSample": 0,
-          "sort": 3
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "蛇梯棋",
-      "content": "## 题目描述\n\n给你一个 `n × n` 的棋盘 `board`。格子按**蛇形（boustrophedon）**方式从下往上、左右交替编号：\n\n- 最下面一行从左到右编号为 `1` 到 `n`；\n- 倒数第二行从右到左编号为 `n+1` 到 `2n`；\n- 依此类推交替进行，直到最上面一行。\n\n`board[i][j]` 为 `-1` 表示普通格；为正数时，落在该格会立即传送到编号 `board[i][j]`（大于当前编号是梯子，小于是蛇，传送只发生一次）。\n\n从编号 `1` 出发，每步可以前进 `1` 到 `6` 格（落点编号不超过 `n²`，超过按 `n²` 计算）。请返回到达编号 `n²` 的最少步数；无法到达返回 `-1`。\n\n## 示例\n\n**示例 1**\n\n输入：`board = [[-1,-1],[-1,-1]]`\n\n输出：`1`\n\n解释：棋盘共 4 格，从 1 直接走 3 步到达 4。\n\n**示例 2**\n\n输入：`board = [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]]`\n\n输出：`2`\n\n解释：先从 1 走到 7，再从 7 走 2 步到达 9。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行一个整数 `n`；\n- 接下来 `n` 行，每行 `n` 个整数，表示 `board[i][j]`；\n- 输出一个整数，表示最少步数或 `-1`。\n\n## 提示\n\n- `2 <= n <= 20`\n- `board[i][j] == -1` 或 `1 <= board[i][j] <= n²`\n- `board[0][0] == -1`\n\n> 力扣模式下只需实现 `snakesAndLadders` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给你一个 `n × n` 的棋盘 `board`。格子按**蛇形（boustrophedon）**方式从下往上、左右交替编号：\n\n- 最下面一行从左到右编号为 `1` 到 `n`；\n- 倒数第二行从右到左编号为 `n+1` 到 `2n`；\n- 依此类推交替进行，直到最上面一行。\n\n`board[i][j]` 为 `-1` 表示普通格；为正数时，落在该格会立即传送到编号 `board[i][j]`（大于当前编号是梯子，小于是蛇，传送只发生一次）。\n\n从编号 `1` 出发，每步可以前进 `1` 到 `6` 格（落点编号不超过 `n²`，超过按 `n²` 计算）。请返回到达编号 `n²` 的最少步数；无法到达返回 `-1`。\n\n## 示例\n\n**示例 1**\n\n输入：`board = [[-1,-1],[-1,-1]]`\n\n输出：`1`\n\n解释：棋盘共 4 格，从 1 直接走 3 步到达 4。\n\n**示例 2**\n\n输入：`board = [[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]]`\n\n输出：`2`\n\n解释：先从 1 走到 7，再从 7 走 2 步到达 9。\n\n## 提示\n\n- `2 <= n <= 20`\n- `board[i][j] == -1` 或 `1 <= board[i][j] <= n²`\n- `board[0][0] == -1`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -541,63 +205,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/snakes-and-ladders/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "snakesAndLadders",
-      "paramTypes": [
-        "int[][]"
-      ],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 n，接下来 n 行每行 n 个整数表示棋盘\n        // TODO 输出到达 n*n 的最少步数，无法到达输出 -1\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 n，接下来 n 行每行 n 个整数表示棋盘\n    # TODO 输出到达 n*n 的最少步数，无法到达输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int snakesAndLadders(int[][] board) {\n        // TODO\n        return -1;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def snakesAndLadders(self, board: List[List[int]]) -> int:\n        # TODO\n        return -1"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[-1,-1],[-1,-1]]]",
-          "expectedOutput": "1",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[-1,-1,-1],[-1,-1,-1],[-1,-1,-1]]]",
-          "expectedOutput": "2",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[-1,-1,1],[-1,-1,-1],[-1,-1,-1]]]",
-          "expectedOutput": "-1",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3\n-1 -1 -1\n-1 -1 -1\n-1 -1 -1",
-          "expectedOutput": "2",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3\n-1 -1 -1\n-1 -1 -1\n-1 9 -1",
-          "expectedOutput": "1",
-          "isSample": 0,
-          "sort": 2
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "最小基因变化",
-      "content": "## 题目描述\n\n基因序列由 8 个字符组成，字符只能是 `'A'`、`'C'`、`'G'`、`'T'`。一次**基因突变**指把一个字符改成另一种字符。\n\n给定起始基因 `startGene`、目标基因 `endGene` 和合法基因库 `bank`。每次突变后的基因都必须出现在基因库中。请返回从起始基因变到目标基因所需的最少突变次数；若无法完成，返回 `-1`。\n\n## 示例\n\n**示例 1**\n\n输入：`startGene = \"AACCGGTT\", endGene = \"AACCGGTA\", bank = [\"AACCGGTA\"]`\n\n输出：`1`\n\n**示例 2**\n\n输入：`startGene = \"AACCGGTT\", endGene = \"AAACGGTA\", bank = [\"AACCGGTA\",\"AACCGCTA\",\"AAACGGTA\"]`\n\n输出：`2`\n\n解释：`AACCGGTT → AACCGGTA → AAACGGTA`。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行起始基因；\n- 第二行目标基因；\n- 第三行一个整数 `k`，表示基因库大小；\n- 接下来 `k` 行，每行一个基因串；\n- 输出最少突变次数；无法完成输出 `-1`。\n\n## 提示\n\n- 基因串长度固定为 8\n- `0 <= k <= 10`\n- 基因串只含 `'A'`、`'C'`、`'G'`、`'T'`\n\n> 力扣模式下只需实现 `minMutation` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n基因序列由 8 个字符组成，字符只能是 `'A'`、`'C'`、`'G'`、`'T'`。一次**基因突变**指把一个字符改成另一种字符。\n\n给定起始基因 `startGene`、目标基因 `endGene` 和合法基因库 `bank`。每次突变后的基因都必须出现在基因库中。请返回从起始基因变到目标基因所需的最少突变次数；若无法完成，返回 `-1`。\n\n## 示例\n\n**示例 1**\n\n输入：`startGene = \"AACCGGTT\", endGene = \"AACCGGTA\", bank = [\"AACCGGTA\"]`\n\n输出：`1`\n\n**示例 2**\n\n输入：`startGene = \"AACCGGTT\", endGene = \"AAACGGTA\", bank = [\"AACCGGTA\",\"AACCGCTA\",\"AAACGGTA\"]`\n\n输出：`2`\n\n解释：`AACCGGTT → AACCGGTA → AAACGGTA`。\n\n## 提示\n\n- 基因串长度固定为 8\n- `0 <= k <= 10`\n- 基因串只含 `'A'`、`'C'`、`'G'`、`'T'`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -614,65 +231,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/minimum-genetic-mutation/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "minMutation",
-      "paramTypes": [
-        "String",
-        "String",
-        "String[]"
-      ],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 start，第二行 end，第三行 k，接下来 k 行基因串\n        // TODO 输出最少突变次数，无法完成输出 -1\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 start，第二行 end，第三行 k，接下来 k 行基因串\n    # TODO 输出最少突变次数，无法完成输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public int minMutation(String startGene, String endGene, String[] bank) {\n        // TODO\n        return -1;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def minMutation(self, startGene: str, endGene: str, bank: List[str]) -> int:\n        # TODO\n        return -1"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[\"AACCGGTT\",\"AACCGGTA\",[\"AACCGGTA\"]]",
-          "expectedOutput": "1",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[\"AACCGGTT\",\"AAACGGTA\",[\"AACCGGTA\",\"AACCGCTA\",\"AAACGGTA\"]]",
-          "expectedOutput": "2",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[\"AAAAACCC\",\"AACCCCCC\",[\"AAAACCCC\",\"AAACCCCC\"]]",
-          "expectedOutput": "-1",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "AACCGGTT\nAACCGGTA\n1\nAACCGGTA",
-          "expectedOutput": "1",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "AAAAACCC\nAACCCCCC\n2\nAAAACCCC\nAAACCCCC",
-          "expectedOutput": "-1",
-          "isSample": 0,
-          "sort": 2
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "单词接龙",
-      "content": "## 题目描述\n\n给定起始单词 `beginWord`、目标单词 `endWord` 和单词列表 `wordList`，求从起始单词变到目标单词的**最短转换序列长度**。\n\n每次只能改变一个字母，且转换后的单词必须出现在 `wordList` 中。起始单词不必在列表中。序列长度按单词个数计算（包含起始单词与目标单词）。若无法完成转换，返回 `0`。\n\n## 示例\n\n**示例 1**\n\n输入：`beginWord = \"hit\", endWord = \"cog\", wordList = [\"hot\",\"dot\",\"dog\",\"lot\",\"log\",\"cog\"]`\n\n输出：`5`\n\n解释：`hit → hot → dot → dog → cog`，共 5 个单词。\n\n**示例 2**\n\n输入：`beginWord = \"hit\", endWord = \"cog\", wordList = [\"hot\",\"dot\",\"dog\",\"lot\",\"log\"]`\n\n输出：`0`\n\n解释：目标单词不在列表中，无法转换。\n\n## 输入输出格式（ACM 模式）\n\n- 第一行起始单词；\n- 第二行目标单词；\n- 第三行一个整数 `k`，表示单词列表长度；\n- 接下来 `k` 行，每行一个单词；\n- 输出最短转换序列长度；无法转换输出 `0`。\n\n## 提示\n\n- 所有单词长度相同\n- `1 <= k <= 5000`\n- 单词只含小写英文字母\n\n> 力扣模式下只需实现 `ladderLength` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定起始单词 `beginWord`、目标单词 `endWord` 和单词列表 `wordList`，求从起始单词变到目标单词的**最短转换序列长度**。\n\n每次只能改变一个字母，且转换后的单词必须出现在 `wordList` 中。起始单词不必在列表中。序列长度按单词个数计算（包含起始单词与目标单词）。若无法完成转换，返回 `0`。\n\n## 示例\n\n**示例 1**\n\n输入：`beginWord = \"hit\", endWord = \"cog\", wordList = [\"hot\",\"dot\",\"dog\",\"lot\",\"log\",\"cog\"]`\n\n输出：`5`\n\n解释：`hit → hot → dot → dog → cog`，共 5 个单词。\n\n**示例 2**\n\n输入：`beginWord = \"hit\", endWord = \"cog\", wordList = [\"hot\",\"dot\",\"dog\",\"lot\",\"log\"]`\n\n输出：`0`\n\n解释：目标单词不在列表中，无法转换。\n\n## 提示\n\n- 所有单词长度相同\n- `1 <= k <= 5000`\n- 单词只含小写英文字母\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 3,
@@ -690,72 +258,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/word-ladder/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 3000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "ladderLength",
-      "paramTypes": [
-        "String",
-        "String",
-        "List<String>"
-      ],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 begin，第二行 end，第三行 k，接下来 k 行单词\n        // TODO 输出最短转换序列长度，无法转换输出 0\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 begin，第二行 end，第三行 k，接下来 k 行单词\n    # TODO 输出最短转换序列长度，无法转换输出 0\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public int ladderLength(String beginWord, String endWord, List<String> wordList) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def ladderLength(self, beginWord: str, endWord: str, wordList: List[str]) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[\"hit\",\"cog\",[\"hot\",\"dot\",\"dog\",\"lot\",\"log\",\"cog\"]]",
-          "expectedOutput": "5",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[\"hot\",\"dog\",[\"hot\",\"dog\",\"dot\"]]",
-          "expectedOutput": "3",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[\"hit\",\"cog\",[\"hot\",\"dot\",\"dog\",\"lot\",\"log\"]]",
-          "expectedOutput": "0",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "ACM",
-          "input": "hit\ncog\n6\nhot\ndot\ndog\nlot\nlog\ncog",
-          "expectedOutput": "5",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "hit\ncog\n5\nhot\ndot\ndog\nlot\nlog",
-          "expectedOutput": "0",
-          "isSample": 0,
-          "sort": 2
-        },
-        {
-          "caseMode": "ACM",
-          "input": "hit\nhot\n1\nhot",
-          "expectedOutput": "2",
-          "isSample": 0,
-          "sort": 3
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "单词搜索 II",
-      "content": "## 题目描述\n\n给定一个 `r × c` 的字符棋盘和一个单词列表，找出所有同时满足以下条件的单词：\n\n- 单词可以由棋盘中相邻（上下左右）格子的字符依次拼接而成；\n- 同一个格子在一个单词中最多使用一次。\n\n返回所有找到的单词，结果**按字典序升序**排列（这是唯一的输出顺序）。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\nboard = [[\"o\",\"a\",\"a\",\"n\"],[\"e\",\"t\",\"a\",\"e\"],[\"i\",\"h\",\"k\",\"r\"],[\"i\",\"f\",\"l\",\"v\"]]\nwords = [\"oath\",\"pea\",\"eat\",\"rain\"]\n```\n\n输出：`[\"eat\",\"oath\"]`\n\n**示例 2**\n\n输入：`board = [[\"a\"]], words = [\"a\"]`\n\n输出：`[\"a\"]`\n\n## 输入输出格式（ACM 模式）\n\n- 第一行两个整数 `r`、`c`；\n- 接下来 `r` 行，每行一个长度为 `c` 的字符串（只含小写字母）；\n- 再下一行一个整数 `k`，表示单词数量；\n- 接下来 `k` 行，每行一个单词；\n- 输出所有找到的单词，**按字典序升序**，每行一个；若一个都没有，输出 `-1`。\n\n## 提示\n\n- `1 <= r, c <= 12`\n- `1 <= k <= 100`\n- 单词只含小写英文字母，长度不超过 10\n- 结果顺序固定为字典序升序\n\n> 力扣模式下只需实现 `findWords` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n给定一个 `r × c` 的字符棋盘和一个单词列表，找出所有同时满足以下条件的单词：\n\n- 单词可以由棋盘中相邻（上下左右）格子的字符依次拼接而成；\n- 同一个格子在一个单词中最多使用一次。\n\n返回所有找到的单词，结果**按字典序升序**排列（这是唯一的输出顺序）。\n\n## 示例\n\n**示例 1**\n\n输入：\n\n```\nboard = [[\"o\",\"a\",\"a\",\"n\"],[\"e\",\"t\",\"a\",\"e\"],[\"i\",\"h\",\"k\",\"r\"],[\"i\",\"f\",\"l\",\"v\"]]\nwords = [\"oath\",\"pea\",\"eat\",\"rain\"]\n```\n\n输出：`[\"eat\",\"oath\"]`\n\n**示例 2**\n\n输入：`board = [[\"a\"]], words = [\"a\"]`\n\n输出：`[\"a\"]`\n\n## 提示\n\n- `1 <= r, c <= 12`\n- `1 <= k <= 100`\n- 单词只含小写英文字母，长度不超过 10\n- 结果顺序固定为字典序升序\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 3,
@@ -773,71 +285,16 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/word-search-ii/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 3000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "findWords",
-      "paramTypes": [
-        "char[][]",
-        "String[]"
-      ],
-      "returnType": "List<String>",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 第一行 r c，接下来 r 行字符串；下一行 k，接下来 k 行单词\n        // TODO 输出找到的单词（字典序升序，每行一个）；没有则输出 -1\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 第一行 r c，接下来 r 行字符串；下一行 k，接下来 k 行单词\n    # TODO 输出找到的单词（字典序升序，每行一个）；没有则输出 -1\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "import java.util.*;\n\nclass Solution {\n    public List<String> findWords(char[][] board, String[] words) {\n        // TODO\n        return new ArrayList<>();\n    }\n}",
-        "PYTHON": "from typing import List\n\nclass Solution:\n    def findWords(self, board: List[List[str]], words: List[str]) -> List[str]:\n        # TODO\n        return []"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"o\",\"a\",\"a\",\"n\"],[\"e\",\"t\",\"a\",\"e\"],[\"i\",\"h\",\"k\",\"r\"],[\"i\",\"f\",\"l\",\"v\"]],[\"oath\",\"pea\",\"eat\",\"rain\"]]",
-          "expectedOutput": "[\"eat\",\"oath\"]",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"a\"]],[\"a\"]]",
-          "expectedOutput": "[\"a\"]",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"a\",\"b\"],[\"c\",\"d\"]],[\"ac\",\"bd\",\"abd\"]]",
-          "expectedOutput": "[\"abd\",\"ac\",\"bd\"]",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[[[\"a\",\"b\"],[\"c\",\"d\"]],[\"abcb\"]]",
-          "expectedOutput": "[]",
-          "isSample": 0,
-          "sort": 4
-        },
-        {
-          "caseMode": "ACM",
-          "input": "4 4\noaan\netae\nihkr\niflv\n4\noath\npea\neat\nrain",
-          "expectedOutput": "eat\noath",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 2\nab\ncd\n3\nac\nbd\nabd",
-          "expectedOutput": "abd\nac\nbd",
-          "isSample": 0,
-          "sort": 2
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     },
     {
       "title": "机器人的运动范围（剑指 Offer 13）",
-      "content": "## 题目描述\n\n地上有一个 `m` 行 `n` 列的方格，机器人从坐标 `(0,0)` 出发，每次可以向上、下、左、右移动一格，但不能进入**行坐标与列坐标的数位之和大于 `k`** 的格子。\n\n例如 `k = 18` 时，机器人可以进入 `(35,37)`，因为 `3+5+3+7 = 18`；但不能进入 `(35,38)`，因为数位和为 19。\n\n请返回机器人能够到达多少个格子（包含起点）。\n\n## 示例\n\n**示例 1**\n\n输入：`m = 2, n = 3, k = 1`\n\n输出：`3`\n\n**示例 2**\n\n输入：`m = 3, n = 2, k = 2`\n\n输出：`5`\n\n## 输入输出格式（ACM 模式）\n\n- 仅一行三个整数 `m n k`；\n- 输出一个整数，表示机器人能到达的格子数量。\n\n## 提示\n\n- `1 <= m, n <= 100`\n- `0 <= k <= 20`\n\n> 力扣模式下只需实现 `movingCount` 函数，不需要读写标准输入输出。",
+      "content": "## 题目描述\n\n地上有一个 `m` 行 `n` 列的方格，机器人从坐标 `(0,0)` 出发，每次可以向上、下、左、右移动一格，但不能进入**行坐标与列坐标的数位之和大于 `k`** 的格子。\n\n例如 `k = 18` 时，机器人可以进入 `(35,37)`，因为 `3+5+3+7 = 18`；但不能进入 `(35,38)`，因为数位和为 19。\n\n请返回机器人能够到达多少个格子（包含起点）。\n\n## 示例\n\n**示例 1**\n\n输入：`m = 2, n = 3, k = 1`\n\n输出：`3`\n\n**示例 2**\n\n输入：`m = 3, n = 2, k = 2`\n\n输出：`5`\n\n## 提示\n\n- `1 <= m, n <= 100`\n- `0 <= k <= 20`\n\n> 开放式编码：平台不提供测试用例，请自己构造输入、调用解法，并用控制台输出结果。",
       "type": "CODE",
       "judgeMode": "CODING",
       "difficulty": 2,
@@ -854,68 +311,12 @@
       ],
       "source": "CRAWL",
       "sourceUrl": "https://leetcode.cn/problems/ji-qi-ren-de-yun-dong-fan-wei-lcof/",
-      "codeMode": "LEETCODE",
-      "timeLimitMs": 2000,
+      "timeLimitMs": 5000,
       "memoryLimitMb": 256,
-      "functionName": "movingCount",
-      "paramTypes": [
-        "int",
-        "int",
-        "int"
-      ],
-      "returnType": "int",
       "starterCode": {
-        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // 仅一行三个整数 m n k\n        // TODO 输出机器人能到达的格子数量\n    }\n}",
-        "PYTHON": "import sys\n\ndef main():\n    # 仅一行三个整数 m n k\n    # TODO 输出机器人能到达的格子数量\n    pass\n\nif __name__ == \"__main__\":\n    main()"
-      },
-      "starterCodeFunction": {
-        "JAVA": "class Solution {\n    public int movingCount(int m, int n, int k) {\n        // TODO\n        return 0;\n    }\n}",
-        "PYTHON": "class Solution:\n    def movingCount(self, m: int, n: int, k: int) -> int:\n        # TODO\n        return 0"
-      },
-      "testCases": [
-        {
-          "caseMode": "LEETCODE",
-          "input": "[2,3,1]",
-          "expectedOutput": "3",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[3,1,0]",
-          "expectedOutput": "1",
-          "isSample": 1,
-          "sort": 2
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[3,2,2]",
-          "expectedOutput": "5",
-          "isSample": 0,
-          "sort": 3
-        },
-        {
-          "caseMode": "LEETCODE",
-          "input": "[2,2,0]",
-          "expectedOutput": "1",
-          "isSample": 0,
-          "sort": 4
-        },
-        {
-          "caseMode": "ACM",
-          "input": "2 3 1",
-          "expectedOutput": "3",
-          "isSample": 1,
-          "sort": 1
-        },
-        {
-          "caseMode": "ACM",
-          "input": "3 2 2",
-          "expectedOutput": "5",
-          "isSample": 0,
-          "sort": 2
-        }
-      ]
+        "JAVA": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // 在这里构造输入、调用你的解法，并用 System.out.println 输出结果\n    }\n}",
+        "PYTHON": "import sys\n\ndef main():\n    # 在这里构造输入、调用你的解法，并用 print 输出结果\n    pass\n\nif __name__ == \"__main__\":\n    main()"
+      }
     }
   ]
 }
