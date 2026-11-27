@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * 一次答题后的结果:一句话点评 + 追问或本题评分。
- * nextAction = ANSWER_FOLLOW_UP / NEXT_QUESTION / REPORT_READY;
+ * nextAction = ANSWER_FOLLOW_UP / NEXT_QUESTION / CODING_READY / REPORT_READY;
  */
 public record AnswerResult(
         String feedback,

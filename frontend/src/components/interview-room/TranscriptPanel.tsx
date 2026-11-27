@@ -15,7 +15,10 @@ interface TranscriptPanelProps {
   canAsk: boolean
   onAsk: () => void
   onSubmit: (answer: string) => Promise<boolean>
-  onClose: () => void
+  onClose?: () => void
+  title?: string
+  emptyText?: string
+  askLabel?: string
 }
 
 /**
@@ -32,6 +35,9 @@ function TranscriptPanel({
   onAsk,
   onSubmit,
   onClose,
+  title = '对话记录',
+  emptyText = '面试还没开始',
+  askLabel,
 }: TranscriptPanelProps) {
   const [answer, setAnswer] = useState('')
   const [hint, setHint] = useState<string | null>(null)
@@ -64,24 +70,26 @@ function TranscriptPanel({
     <aside className="flex h-full w-full flex-col border-l border-white/10 bg-[#181b20] pb-20">
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
         <Volume2 size={14} className="text-brand-400" />
-        <span className="text-xs font-medium text-white/80">对话记录</span>
+        <span className="text-xs font-medium text-white/80">{title}</span>
         <span className="ml-auto text-[11px] text-white/35">边说话边记录，复盘用</span>
-        <button
-          type="button"
-          onClick={onClose}
-          title="收起对话记录"
-          className="rounded-md p-1 text-white/40 transition hover:bg-white/10 hover:text-white/80"
-        >
-          <X size={14} />
-        </button>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            title="收起对话记录"
+            className="rounded-md p-1 text-white/40 transition hover:bg-white/10 hover:text-white/80"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
         {questions.length === 0 && !pendingText && (
           <div className="mt-10 text-center text-xs leading-6 text-white/35">
-            面试还没开始
+            {emptyText}
             <br />
-            点下方按钮让面试官提第一个问题
+            点下方输入框或麦克风开始交流
           </div>
         )}
 
@@ -155,7 +163,7 @@ function TranscriptPanel({
                 ) : (
                   <Sparkles size={13} />
                 )}
-                {questions.length === 0 ? '开始面试，让面试官提问' : '让面试官继续提问'}
+                {askLabel ?? (questions.length === 0 ? '开始面试，让面试官提问' : '让面试官继续提问')}
               </button>
             )}
 
@@ -170,7 +178,7 @@ function TranscriptPanel({
                 }}
                 rows={3}
                 disabled={locked}
-                placeholder="输入你的回答，或点麦克风直接说"
+                placeholder="输入内容，或点麦克风直接说"
                 className="w-full resize-none bg-transparent px-3 py-2 text-xs leading-5 text-white/85 outline-none placeholder:text-white/25 disabled:opacity-50"
               />
               <div className="flex items-center gap-1 px-2 pb-2">

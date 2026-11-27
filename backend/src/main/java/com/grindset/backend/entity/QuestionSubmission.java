@@ -3,6 +3,7 @@ package com.grindset.backend.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.grindset.backend.common.SubmissionScene;
 import com.grindset.backend.common.constant.JudgeLanguage;
 import com.grindset.backend.common.constant.SubmissionStatus;
 
@@ -21,6 +22,13 @@ public class QuestionSubmission {
     private Long userId;
 
     private Long questionId;
+
+    /** BANK 题库 / INTERVIEW 面试 */
+    private SubmissionScene scene;
+
+    private Long interviewSessionId;
+
+    private Long interviewQuestionId;
 
     /** JAVA / PYTHON */
     private JudgeLanguage language;
@@ -64,6 +72,30 @@ public class QuestionSubmission {
 
     public void setQuestionId(Long questionId) {
         this.questionId = questionId;
+    }
+
+    public SubmissionScene getScene() {
+        return scene;
+    }
+
+    public void setScene(SubmissionScene scene) {
+        this.scene = scene;
+    }
+
+    public Long getInterviewSessionId() {
+        return interviewSessionId;
+    }
+
+    public void setInterviewSessionId(Long interviewSessionId) {
+        this.interviewSessionId = interviewSessionId;
+    }
+
+    public Long getInterviewQuestionId() {
+        return interviewQuestionId;
+    }
+
+    public void setInterviewQuestionId(Long interviewQuestionId) {
+        this.interviewQuestionId = interviewQuestionId;
     }
 
     public JudgeLanguage getLanguage() {

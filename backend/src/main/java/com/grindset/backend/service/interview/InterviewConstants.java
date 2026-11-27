@@ -25,6 +25,12 @@ public final class InterviewConstants {
     /** 消息类型:面试官点评 */
     public static final String TYPE_FEEDBACK = "FEEDBACK";
 
+    /** 消息类型:手撕代码阶段的双向交流 */
+    public static final String TYPE_CODING_CHAT = "CODING_CHAT";
+
+    /** 编程题默认时限(秒) */
+    public static final int DEFAULT_CODING_TIME_LIMIT_SEC = 1800;
+
     /** 单场面试可选的总题数 */
     public static final Set<Integer> QUESTION_COUNTS = Set.of(3, 5, 8);
 

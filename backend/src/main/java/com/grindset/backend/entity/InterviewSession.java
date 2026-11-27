@@ -36,6 +36,12 @@ public class InterviewSession {
 
     private Integer questionCount;
 
+    /** 1 最后一题手撕代码 / 0 不启用 */
+    private Integer codingEnabled;
+
+    /** 编程环节时限(秒) */
+    private Integer codingTimeLimitSec;
+
     private Integer completedQuestions;
 
     /** 0 进行中 / 1 已结束 */
@@ -111,6 +117,22 @@ public class InterviewSession {
 
     public void setQuestionCount(Integer questionCount) {
         this.questionCount = questionCount;
+    }
+
+    public Integer getCodingEnabled() {
+        return codingEnabled;
+    }
+
+    public void setCodingEnabled(Integer codingEnabled) {
+        this.codingEnabled = codingEnabled;
+    }
+
+    public Integer getCodingTimeLimitSec() {
+        return codingTimeLimitSec;
+    }
+
+    public void setCodingTimeLimitSec(Integer codingTimeLimitSec) {
+        this.codingTimeLimitSec = codingTimeLimitSec;
     }
 
     public Integer getCompletedQuestions() {

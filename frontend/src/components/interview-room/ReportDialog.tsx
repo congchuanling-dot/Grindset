@@ -12,6 +12,7 @@ const DIMENSION_LABELS: Record<string, string> = {
   logic: '逻辑表达',
   project: '项目经验',
   communication: '沟通表达',
+  编码: '编码能力',
 }
 
 function ReportList({ title, items, tone }: { title: string; items: string[]; tone: 'brand' | 'rose' | 'slate' }) {
@@ -80,6 +81,36 @@ function ReportDialog({ report, position, onClose }: ReportDialogProps) {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {report.coding && (
+          <div className="mb-5 rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-slate-700">手撕代码</span>
+              <span className="text-[11px] text-slate-500">{report.coding.title}</span>
+              <span className="ml-auto rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-brand-700">
+                {report.coding.status ?? '未运行'}
+              </span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+              {report.coding.exitCode != null && <span>退出码 {report.coding.exitCode}</span>}
+              {report.coding.runtimeMs != null && <span>{report.coding.runtimeMs}ms</span>}
+              {report.coding.score != null && <span>本题 {report.coding.score}/5 分</span>}
+            </div>
+            {report.coding.stdout && (
+              <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap rounded-lg bg-white px-2.5 py-1.5 font-mono text-[10px] leading-5 text-slate-600">
+                {report.coding.stdout}
+              </pre>
+            )}
+            {report.coding.stderr && (
+              <pre className="mt-1.5 max-h-24 overflow-auto whitespace-pre-wrap rounded-lg bg-rose-50 px-2.5 py-1.5 font-mono text-[10px] leading-5 text-rose-600">
+                {report.coding.stderr}
+              </pre>
+            )}
+            {report.coding.comment && (
+              <p className="mt-2 text-[11px] leading-5 text-slate-600">{report.coding.comment}</p>
+            )}
           </div>
         )}
 

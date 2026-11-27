@@ -1,5 +1,6 @@
 package com.grindset.backend.service;
 
+import com.grindset.backend.common.FreeRunStatus;
 import com.grindset.backend.common.constant.JudgeLanguage;
 import com.grindset.backend.common.constant.SubmissionStatus;
 import com.grindset.backend.entity.QuestionTestCase;
@@ -490,6 +491,72 @@ public class JudgeService {
         }
     }
 
+    /**
+     * FREE_RUN 面试模式:候选人写完整 main,不提供测试用例,只执行并返回控制台输出。
+     * 不比对期望答案,status 只表示是否成功跑完。
+     */
+    public FreeRunOutcome runFree(JudgeLanguage lang, String code, int timeLimitMs, int memoryLimitMb) {
+        if (lang == null) {
+            return new FreeRunOutcome(FreeRunStatus.SYSTEM_ERROR, "", "暂不支持的语言",
+                    -1, 0, false);
+        }
+        if (code == null || code.isBlank()) {
+            return new FreeRunOutcome(FreeRunStatus.COMPILE_ERROR, "", "代码不能为空",
+                    -1, 0, false);
+        }
+        if (code.length() > MAX_CODE_LENGTH) {
+            return new FreeRunOutcome(FreeRunStatus.COMPILE_ERROR, "",
+                    "代码不能超过 " + MAX_CODE_LENGTH + " 字符", -1, 0, false);
+        }
+
+        String image = lang == JudgeLanguage.JAVA ? javaImage : pythonImage;
+        if (!dockerImageExists(image)) {
+            log.error("运行镜像不存在 image={}", image);
+            return new FreeRunOutcome(FreeRunStatus.SYSTEM_ERROR, "",
+                    "运行环境未就绪，缺少镜像 " + image + "，请先执行 docker pull " + image,
+                    -1, 0, false);
+        }
+
+        Path workspace = null;
+        try {
+            workspace = Files.createTempDirectory("grindset-free-run-");
+            Files.writeString(workspace.resolve("runner.sh"), RUNNER_SCRIPT, StandardCharsets.UTF_8);
+            if (lang == JudgeLanguage.JAVA) {
+                Files.writeString(workspace.resolve("Main.java"), code, StandardCharsets.UTF_8);
+                ExecResult compile = exec(dockerRun(workspace, image, memoryLimitMb,
+                                List.of("sh", "-c", "javac -encoding UTF-8 -d out Main.java")),
+                        COMPILE_TIMEOUT_MS);
+                if (!compile.ok()) {
+                    return new FreeRunOutcome(FreeRunStatus.COMPILE_ERROR, "",
+                            limit(firstNonBlank(compile.stderr(), compile.stdout()), MAX_FEEDBACK_LENGTH),
+                            compile.exitCode(), (int) compile.elapsedMs(), compile.timedOut());
+                }
+            } else {
+                Files.writeString(workspace.resolve("main.py"), code, StandardCharsets.UTF_8);
+            }
+
+            QuestionTestCase empty = new QuestionTestCase();
+            empty.setInput("");
+            empty.setExpectedOutput("");
+            ExecResult run = runCaseWith(lang, workspace, image, memoryLimitMb, timeLimitMs, empty,
+                    defaultProgram(lang, memoryLimitMb));
+
+            FreeRunStatus status = run.timedOut()
+                    ? FreeRunStatus.TIME_LIMIT_EXCEEDED
+                    : run.exitCode() == 0 ? FreeRunStatus.SUCCESS : FreeRunStatus.RUNTIME_ERROR;
+            return new FreeRunOutcome(status,
+                    limit(run.stdout(), OUTPUT_LIMIT),
+                    limit(run.stderr(), OUTPUT_LIMIT),
+                    run.exitCode(), (int) run.elapsedMs(), run.timedOut());
+        } catch (IOException e) {
+            log.error("FREE_RUN 执行失败 language={}", lang, e);
+            return new FreeRunOutcome(FreeRunStatus.SYSTEM_ERROR, "",
+                    "运行服务异常：" + e.getMessage(), -1, 0, false);
+        } finally {
+            deleteQuietly(workspace);
+        }
+    }
+
     // ---------- 力扣模式:函数签名 ----------
 
     /** 函数题签名:方法名、参数类型(按顺序)、返回值类型 */
@@ -970,5 +1037,15 @@ public class JudgeService {
             int runtimeMs,
             String errorMessage,
             List<CaseOutcome> cases) {
+    }
+
+    /** FREE_RUN 结果:只代表代码是否成功跑完,不判断答案对错 */
+    public record FreeRunOutcome(
+            FreeRunStatus status,
+            String stdout,
+            String stderr,
+            int exitCode,
+            int runtimeMs,
+            boolean timedOut) {
     }
 }

@@ -47,6 +47,8 @@ interface StartSettings {
   style: string
   round: string
   focus: string[]
+   codingEnabled: boolean
+  codingTimeLimitSec: number
 }
 
 /**
@@ -148,6 +150,8 @@ function InterviewPage() {
         round: settings.round,
         focus: settings.focus,
         questionCount,
+        codingEnabled: settings.codingEnabled,
+        codingTimeLimitSec: settings.codingTimeLimitSec,
       })
       navigate(`/interview/${session.id}`)
     } catch (e) {
@@ -304,6 +308,8 @@ function InterviewSettings({
   const [tone, setTone] = useState('middle')
   const [round, setRound] = useState(ROUNDS[0])
   const [focus, setFocus] = useState<string[]>(['项目深挖', '基础八股'])
+  const [codingEnabled, setCodingEnabled] = useState(true)
+  const [codingLimit, setCodingLimit] = useState(1800)
 
   function toggleFocus(item: string) {
     setFocus((prev) => (prev.includes(item) ? prev.filter((v) => v !== item) : [...prev, item]))
@@ -383,6 +389,37 @@ function InterviewSettings({
           </select>
         </label>
 
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              checked={codingEnabled}
+              onChange={(event) => setCodingEnabled(event.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-400"
+            />
+            <span>
+              <span className="block text-xs font-medium text-slate-700">最后一题手撕代码</span>
+              <span className="mt-0.5 block text-[11px] leading-5 text-slate-400">
+                从题库随机选一道力扣题，可以在面试间里写代码并和面试官讨论
+              </span>
+            </span>
+          </label>
+          {codingEnabled && (
+            <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
+              编程时限
+              <select
+                value={codingLimit}
+                onChange={(event) => setCodingLimit(Number(event.target.value))}
+                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:border-brand-400"
+              >
+                <option value={1200}>20 分钟</option>
+                <option value={1800}>30 分钟</option>
+                <option value={2700}>45 分钟</option>
+              </select>
+            </label>
+          )}
+        </div>
+
         <div className="mt-4">
           <span className="text-xs text-slate-500">侧重方向</span>
           <div className="mt-1 flex flex-wrap gap-1.5">
@@ -406,7 +443,14 @@ function InterviewSettings({
         <button
           type="button"
           disabled={!canStart || starting}
-          onClick={() => onStart({ position, style: tone, round, focus })}
+          onClick={() => onStart({
+            position,
+            style: tone,
+            round,
+            focus,
+            codingEnabled,
+            codingTimeLimitSec: codingLimit,
+          })}
           className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-600 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
         >
           {starting ? <Loader2 size={15} className="animate-spin" /> : <Briefcase size={15} />}

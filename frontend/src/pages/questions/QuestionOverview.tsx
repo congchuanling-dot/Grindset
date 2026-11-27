@@ -50,10 +50,10 @@ function QuestionOverview() {
           <Stat label="错题" value={summary?.wrong ?? 0} tone="rose" />
         </div>
 
-        <div className="mt-4 h-1 bg-slate-200">
+        <div className="mt-4 h-1 overflow-hidden bg-slate-200">
           <div
-            className="h-full bg-marker transition-all duration-500"
-            style={{ width: `${percent}%` }}
+            className="h-full w-full origin-left bg-marker transition-transform duration-300"
+            style={{ transform: `scaleX(${percent / 100})` }}
           />
         </div>
         <p className="mt-2 text-xs tabular-nums text-slate-500">已覆盖 {percent}%</p>

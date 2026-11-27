@@ -1,5 +1,6 @@
-// AI 面试接口封装:普通请求走 JSON,出题走 SSE 流。
+// AI 面试接口封装:普通请求走 JSON,出题与编程交流走 SSE 流。
 import { authFetch, readApiError, unwrapJson } from './http'
+import type { CodeLanguage } from './questionBank'
 import { isAbortError, readField, readSse } from './sse'
 
 export interface InterviewSummary {
@@ -19,21 +20,42 @@ export interface InterviewMessage {
   id: string
   seq: number
   role: 'INTERVIEWER' | 'USER'
-  type: 'QUESTION' | 'FOLLOW_UP' | 'ANSWER' | 'FEEDBACK'
+  type: 'QUESTION' | 'FOLLOW_UP' | 'ANSWER' | 'FEEDBACK' | 'CODING_CHAT'
   content: string
   createdAt: string
 }
 
+export type InterviewQuestionType = 'VERBAL' | 'CODING'
+
 export interface InterviewQuestion {
   id: string
   seq: number
+  type: InterviewQuestionType
   status: number
   followUpCount: number
   score: number | null
   knowledgePoints: string[]
   comment: string | null
   suggestion: string | null
+  codingQuestionId: string | null
+  codingTitle: string | null
+  judgeStatus: string | null
+  passed: number | null
+  total: number | null
+  codingSubmissionId: string | null
+  deadlineAt: string | null
   messages: InterviewMessage[]
+}
+
+export interface InterviewCodingReport {
+  title: string | null
+  status: string | null
+  exitCode: number | null
+  stdout: string | null
+  stderr: string | null
+  runtimeMs: number | null
+  score: number | null
+  comment: string | null
 }
 
 export interface InterviewReport {
@@ -42,6 +64,7 @@ export interface InterviewReport {
   weakPoints: string[]
   highlights: string[]
   advice: string[]
+  coding?: InterviewCodingReport | null
 }
 
 export interface InterviewDetail {
@@ -53,6 +76,8 @@ export interface InterviewDetail {
   round: string | null
   focus: string[]
   questionCount: number
+  codingEnabled: boolean
+  codingTimeLimitSec: number
   completedQuestions: number
   status: number
   overallScore: number | null
@@ -71,7 +96,7 @@ export interface AnswerResult {
     comment: string | null
     suggestion: string | null
   } | null
-  nextAction: 'ANSWER_FOLLOW_UP' | 'NEXT_QUESTION' | 'REPORT_READY'
+  nextAction: 'ANSWER_FOLLOW_UP' | 'NEXT_QUESTION' | 'CODING_READY' | 'REPORT_READY'
   completedQuestions: number
   questionCount: number
 }
@@ -83,6 +108,8 @@ export interface CreateInterviewPayload {
   round: string
   focus: string[]
   questionCount: number
+  codingEnabled?: boolean
+  codingTimeLimitSec?: number
 }
 
 async function request(path: string, init?: RequestInit): Promise<Response> {
@@ -136,6 +163,48 @@ export async function finishInterview(sessionId: string): Promise<InterviewRepor
   return unwrapJson<InterviewReport | null>(res, '生成复盘报告失败')
 }
 
+export interface InterviewRunResult {
+  status: string
+  stdout: string
+  stderr: string
+  exitCode: number
+  runtimeMs: number
+  ranAt: string | null
+}
+
+export interface InterviewCodingView {
+  interviewQuestionId: string | null
+  seq: number
+  skipped: boolean
+  codingQuestionId: string | null
+  title: string | null
+  content: string | null
+  difficulty: number
+  domain: string | null
+  knowledgePoints: string[]
+  intro: string | null
+  deadlineAt: string | null
+  deadlineAtEpochMs: number | null
+  starterCode: Partial<Record<CodeLanguage, string>>
+  codeDraft: string | null
+  codeLanguage: CodeLanguage | null
+  latestRun: InterviewRunResult | null
+}
+
+export interface InterviewCodingResult {
+  status: string
+  exitCode: number
+  stdout: string
+  stderr: string
+  runtimeMs: number
+  score: number
+  comment: string | null
+  suggestion: string | null
+  nextAction: 'REPORT_READY'
+  completedQuestions: number
+  questionCount: number
+}
+
 export interface QuestionStreamHandlers {
   onDelta: (text: string) => void
   onError: (message: string) => void
@@ -177,6 +246,86 @@ export async function streamNextQuestion(
       const questionId = readField(data, 'questionId')
       const seq = Number(readField(data, 'seq'))
       if (questionId) handlers.onDone?.({ questionId, seq: Number.isFinite(seq) ? seq : 0 })
+      return true
+    }
+  })
+}
+
+// ---------- 手撕代码 ----------
+
+export async function startInterviewCoding(sessionId: string): Promise<InterviewCodingView> {
+  const res = await request(`/api/interviews/${sessionId}/coding/start`, { method: 'POST' })
+  return unwrapJson<InterviewCodingView>(res, '开始手撕代码失败')
+}
+
+export async function runInterviewCode(
+  sessionId: string,
+  language: CodeLanguage,
+  code: string,
+): Promise<InterviewRunResult> {
+  const res = await request(`/api/interviews/${sessionId}/coding/run`, jsonInit('POST', {
+    language,
+    code,
+  }))
+  return unwrapJson<InterviewRunResult>(res, '运行失败')
+}
+
+export async function completeInterviewCoding(sessionId: string): Promise<InterviewCodingResult> {
+  const res = await request(`/api/interviews/${sessionId}/coding/complete`, { method: 'POST' })
+  return unwrapJson<InterviewCodingResult>(res, '完成本题失败')
+}
+
+export async function saveInterviewCodingDraft(
+  sessionId: string,
+  language: CodeLanguage,
+  code: string,
+): Promise<void> {
+  const res = await request(`/api/interviews/${sessionId}/coding/draft`, jsonInit('POST', {
+    language,
+    code,
+  }))
+  await unwrapJson<null>(res, '保存代码草稿失败')
+}
+
+export interface CodingChatHandlers {
+  onDelta: (text: string) => void
+  onError: (message: string) => void
+  onDone?: () => void
+}
+
+/** 编程阶段问面试官;带上当前代码,面试官才能基于最新实现回答 */
+export async function streamCodingChat(
+  sessionId: string,
+  payload: { message: string; code: string; language: CodeLanguage },
+  handlers: CodingChatHandlers,
+  signal?: AbortSignal,
+): Promise<void> {
+  let res: Response
+  try {
+    res = await authFetch(`/api/interviews/${sessionId}/coding/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+      body: JSON.stringify(payload),
+      signal,
+    })
+  } catch (error) {
+    if (isAbortError(error)) throw error
+    throw new Error('无法连接服务器，请确认后端已启动')
+  }
+
+  if (!res.ok) {
+    throw new Error(await readApiError(res, '面试官回复失败'))
+  }
+
+  await readSse(res, ({ event, data }) => {
+    if (event === 'delta') {
+      const text = readField(data, 'text')
+      if (text) handlers.onDelta(text)
+    } else if (event === 'error') {
+      handlers.onError(readField(data, 'message') || '面试官回复失败，请重试')
+      return true
+    } else if (event === 'done') {
+      handlers.onDone?.()
       return true
     }
   })

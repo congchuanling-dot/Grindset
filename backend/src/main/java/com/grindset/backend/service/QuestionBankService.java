@@ -239,6 +239,60 @@ public class QuestionBankService {
         return String.valueOf(pool.get(ThreadLocalRandom.current().nextInt(pool.size())).getId());
     }
 
+    /**
+     * 为面试手撕代码挑一道力扣模式题目。
+     * 优先匹配难度,没有合适的就放宽难度;返回 null 表示当前题库没有可用编程题。
+     */
+    public QuestionBank pickCodingQuestion(int difficulty, Set<Long> excludeIds) {
+        List<QuestionBank> pool = allQuestions().stream()
+                .filter(q -> q.getJudgeMode() == JudgeMode.CODING)
+                .filter(q -> q.getStarterCodeFunction() != null && !q.getStarterCodeFunction().isEmpty())
+                .filter(q -> hasLeetCodeCases(q.getId()))
+                .filter(q -> excludeIds == null || !excludeIds.contains(q.getId()))
+                .toList();
+        if (pool.isEmpty()) {
+            return null;
+        }
+        List<QuestionBank> preferred = pool.stream()
+                .filter(q -> q.getDifficulty() != null && Math.abs(q.getDifficulty() - difficulty) <= 1)
+                .toList();
+        List<QuestionBank> candidates = preferred.isEmpty() ? pool : preferred;
+        return candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+    }
+
+    /**
+     * FREE_RUN 面试选题:只要求是上架编程题且有题面,不需要测试用例和函数签名。
+     */
+    public QuestionBank pickFreeCodingQuestion(int difficulty, Set<Long> excludeIds) {
+        // 优先使用面试专用题面:它直接给出具体输入和期望输出,不再出现 ACM 输入格式
+        List<QuestionBank> pool = allQuestions().stream()
+                .filter(q -> q.getJudgeMode() == JudgeMode.CODING)
+                .filter(q -> q.getFreeContent() != null && !q.getFreeContent().isBlank())
+                .filter(q -> excludeIds == null || !excludeIds.contains(q.getId()))
+                .toList();
+        if (pool.isEmpty()) {
+            pool = allQuestions().stream()
+                    .filter(q -> q.getJudgeMode() == JudgeMode.CODING)
+                    .filter(q -> q.getContent() != null && !q.getContent().isBlank())
+                    .filter(q -> excludeIds == null || !excludeIds.contains(q.getId()))
+                    .toList();
+        }
+        if (pool.isEmpty()) {
+            return null;
+        }
+        List<QuestionBank> preferred = pool.stream()
+                .filter(q -> q.getDifficulty() != null && Math.abs(q.getDifficulty() - difficulty) <= 1)
+                .toList();
+        List<QuestionBank> candidates = preferred.isEmpty() ? pool : preferred;
+        return candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+    }
+
+    private boolean hasLeetCodeCases(Long questionId) {
+        return testCaseMapper.selectCount(new QueryWrapper<QuestionTestCase>()
+                .eq("question_id", questionId)
+                .eq("case_mode", "LEETCODE")) > 0;
+    }
+
     /** 某道题的作答历史,最新在前 */
     public List<QuestionBankDetail.AttemptView> attempts(long userId, long id) {
         requireOn(id);

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import * as monaco from 'monaco-editor'
 import editorWorker from 'monaco-editor/editor/editor.worker?worker'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getCodingDetail,
@@ -54,12 +54,62 @@ const STATUS_LABELS: Record<CodingStatus, string> = {
 
 const PENDING_STATUSES: CodingStatus[] = ['PENDING', 'RUNNING']
 
+export interface CodingAdapter {
+  getDetail: (questionId: string) => Promise<CodingDetail>
+  getHistory: (questionId: string) => Promise<CodingSubmission[]>
+  run: (questionId: string, language: CodeLanguage, code: string, mode: CodeMode) => Promise<CodeRunResult>
+  submit: (questionId: string, language: CodeLanguage, code: string, mode: CodeMode) => Promise<CodingSubmission>
+  poll: (submissionId: string) => Promise<CodingSubmission>
+}
+
+export interface CodingDraftState {
+  code: string
+  language: CodeLanguage
+  mode: CodeMode
+}
+
+export interface CodingWorkspaceProps {
+  questionId: string
+  /** 题库页不传,使用题库接口;面试页传面试 adapter */
+  adapter?: CodingAdapter
+  /** 面试页直接把 round.coding 传进来,避免重复请求 */
+  initialDetail?: CodingDetail | null
+  initialDraft?: CodingDraftState | null
+  preferredMode?: CodeMode
+  hideModeSwitch?: boolean
+  headerless?: boolean
+  onBack?: () => void
+  onDraftChange?: (draft: CodingDraftState) => void
+  onComplete?: (submission: CodingSubmission) => Promise<void> | void
+}
+
+const bankAdapter: CodingAdapter = {
+  getDetail: getCodingDetail,
+  getHistory: getCodingSubmissions,
+  run: (id, language, code, mode) => runCode(id, language, code, mode),
+  submit: (id, language, code, mode) => submitCode(id, language, code, mode),
+  poll: getSubmission,
+}
+
 /**
  * 编程题工作台:左侧题面与例题,右侧 Monaco 编辑器,可运行样例、提交判题。
  * 提交是异步的,前端轮询判题结果,隐藏用例只回传通过数。
  */
-function CodingWorkspace({ questionId }: { questionId: string }) {
+function CodingWorkspace({
+  questionId,
+  adapter = bankAdapter,
+  initialDetail = null,
+  initialDraft = null,
+  preferredMode,
+  hideModeSwitch = false,
+  headerless = false,
+  onBack,
+  onDraftChange,
+  onComplete,
+}: CodingWorkspaceProps) {
   const navigate = useNavigate()
+  const draftCallbackRef = useRef(onDraftChange)
+  draftCallbackRef.current = onDraftChange
 
   const [detail, setDetail] = useState<CodingDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -72,6 +122,7 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
 
   const [running, setRunning] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [completing, setCompleting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [runResult, setRunResult] = useState<CodeRunResult | null>(null)
   const [submission, setSubmission] = useState<CodingSubmission | null>(null)
@@ -81,12 +132,36 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
     let cancelled = false
     setLoading(true)
     setLoadError(null)
-    Promise.all([getCodingDetail(questionId), getCodingSubmissions(questionId)])
+
+    if (initialDetail) {
+      const initialMode = initialDraft?.mode
+        ?? preferredMode
+        ?? initialDetail.codeModes[0]
+        ?? 'ACM'
+      const starter = starterFor(initialDetail, initialMode)
+      const initialLanguage = initialDraft?.language ?? (starter.JAVA || !starter.PYTHON ? 'JAVA' : 'PYTHON')
+      setDetail(initialDetail)
+      setHistory([])
+      setMode(initialMode)
+      setLanguage(initialLanguage)
+      setCodes({
+        ...starterCodes(initialDetail, initialMode),
+        ...(initialDraft && initialDraft.code
+          ? { [codeKey(initialDraft.mode, initialDraft.language)]: initialDraft.code }
+          : {}),
+      })
+      setLoading(false)
+      return () => {
+        cancelled = true
+      }
+    }
+
+    Promise.all([adapter.getDetail(questionId), adapter.getHistory(questionId)])
       .then(([coding, submissions]) => {
         if (cancelled) return
         setDetail(coding)
         setHistory(submissions)
-        const initialMode = coding.codeModes[0] ?? 'ACM'
+        const initialMode = preferredMode ?? coding.codeModes[0] ?? 'ACM'
         setMode(initialMode)
         setCodes(starterCodes(coding, initialMode))
         const starter = starterFor(coding, initialMode)
@@ -103,20 +178,20 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
     return () => {
       cancelled = true
     }
-  }, [questionId])
+  }, [questionId, adapter, initialDetail, initialDraft, preferredMode])
 
   // 提交后轮询判题结果
   useEffect(() => {
     if (!submission || !PENDING_STATUSES.includes(submission.status)) return
     const timer = window.setInterval(async () => {
       try {
-        const latest = await getSubmission(submission.id)
+        const latest = await adapter.poll(submission.id)
         setSubmission(latest)
         if (!PENDING_STATUSES.includes(latest.status)) {
           window.clearInterval(timer)
           const [nextHistory, nextDetail] = await Promise.all([
-            getCodingSubmissions(questionId),
-            getCodingDetail(questionId),
+            adapter.getHistory(questionId),
+            adapter.getDetail(questionId),
           ])
           setHistory(nextHistory)
           setDetail(nextDetail)
@@ -126,10 +201,16 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
       }
     }, 1200)
     return () => window.clearInterval(timer)
-  }, [questionId, submission])
+  }, [questionId, submission, adapter])
 
   const code = codes[codeKey(mode, language)] ?? ''
   const samples = detail?.samples[mode] ?? []
+
+  // 面试页用它做服务端草稿同步,题库页不传
+  useEffect(() => {
+    if (!detail) return
+    draftCallbackRef.current?.({ code, language, mode })
+  }, [code, language, mode, detail])
   const isFunction = mode === 'LEETCODE'
   const signatureText = detail?.functionName
     ? `${detail.returnType ?? 'Object'} ${detail.functionName}(${detail.paramTypes.join(', ')})`
@@ -155,13 +236,13 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
     setActionError(null)
     setRunResult(null)
     try {
-      setRunResult(await runCode(questionId, language, code, mode))
+      setRunResult(await adapter.run(questionId, language, code, mode))
     } catch (e) {
       setActionError(errMessage(e))
     } finally {
       setRunning(false)
     }
-  }, [code, detail, language, mode, questionId, running, submitting])
+  }, [adapter, code, detail, language, mode, questionId, running, submitting])
 
   const submit = useCallback(async () => {
     if (!detail || running || submitting) return
@@ -169,45 +250,50 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
     setActionError(null)
     setRunResult(null)
     try {
-      setSubmission(await submitCode(questionId, language, code, mode))
+      setSubmission(await adapter.submit(questionId, language, code, mode))
     } catch (e) {
       setActionError(errMessage(e))
     } finally {
       setSubmitting(false)
     }
-  }, [code, detail, language, mode, questionId, running, submitting])
+  }, [adapter, code, detail, language, mode, questionId, running, submitting])
 
   const judging = submission != null && PENDING_STATUSES.includes(submission.status)
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-slate-50">
-      <header className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5 md:px-6">
-        <button
-          type="button"
-          onClick={() => navigate('/questions/coding')}
-          className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-        >
-          <ArrowLeft size={14} />
-          返回编程题
-        </button>
-        {detail && (
-          <div className="ml-1 flex min-w-0 flex-wrap items-center gap-1.5">
-            <h1 className="truncate text-sm font-semibold text-slate-800">{detail.title}</h1>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
-              {detail.domain}
-            </span>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] ${difficultyClass(detail.difficulty)}`}>
-              {difficultyLabel(detail.difficulty)}
-            </span>
-            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
-              {isFunction ? '力扣模式' : 'ACM 模式'}
-            </span>
-            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
-              {detail.accepted ? '已通过' : detail.status === 'WRONG' ? '待通过' : '未作答'}
-            </span>
-          </div>
-        )}
-      </header>
+    <div className={`flex h-full flex-col overflow-hidden ${headerless ? 'bg-transparent' : 'bg-slate-50'}`}>
+      {!headerless && (
+        <header className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5 md:px-6">
+          <button
+            type="button"
+            onClick={() => {
+              if (onBack) onBack()
+              else navigate('/questions/coding')
+            }}
+            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+          >
+            <ArrowLeft size={14} />
+            返回编程题
+          </button>
+          {detail && (
+            <div className="ml-1 flex min-w-0 flex-wrap items-center gap-1.5">
+              <h1 className="truncate text-sm font-semibold text-slate-800">{detail.title}</h1>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+                {detail.domain}
+              </span>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] ${difficultyClass(detail.difficulty)}`}>
+                {difficultyLabel(detail.difficulty)}
+              </span>
+              <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
+                {isFunction ? '力扣模式' : 'ACM 模式'}
+              </span>
+              <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
+                {detail.accepted ? '已通过' : detail.status === 'WRONG' ? '待通过' : '未作答'}
+              </span>
+            </div>
+          )}
+        </header>
+      )}
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-xs text-slate-400">
@@ -220,7 +306,10 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
           <p className="text-sm text-slate-600">{loadError || '题目不存在或已下架'}</p>
           <button
             type="button"
-            onClick={() => navigate('/questions/coding')}
+            onClick={() => {
+              if (onBack) onBack()
+              else navigate('/questions/coding')
+            }}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600"
           >
             返回编程题
@@ -318,11 +407,12 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
                     key={item}
                     type="button"
                     onClick={() => changeMode(item)}
+                    disabled={hideModeSwitch}
                     className={`rounded-md px-2 py-1 text-[11px] transition ${
                       mode === item
                         ? 'bg-white font-medium text-brand-700 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700'
-                    }`}
+                    } ${hideModeSwitch && mode !== item ? 'hidden' : ''}`}
                   >
                     {item === 'LEETCODE' ? '力扣模式' : 'ACM 模式'}
                   </button>
@@ -370,6 +460,25 @@ function CodingWorkspace({ questionId }: { questionId: string }) {
                   {submitting || judging ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
                   {judging ? '判题中…' : '提交'}
                 </button>
+                {onComplete && submission && !PENDING_STATUSES.includes(submission.status) && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (completing) return
+                      setCompleting(true)
+                      try {
+                        await onComplete(submission)
+                      } finally {
+                        setCompleting(false)
+                      }
+                    }}
+                    disabled={completing}
+                    className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                  >
+                    {completing ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                    完成本题
+                  </button>
+                )}
               </div>
             </div>
 

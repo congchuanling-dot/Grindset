@@ -28,6 +28,9 @@ public class QuestionBank {
 
     private String content;
 
+    /** 面试 FREE_RUN 专用题面:直接给出具体输入和期望输出 */
+    private String freeContent;
+
     /** BASICS 八股 / SCENARIO 场景 / PROJECT 项目 / CODE 编程 */
     private QuestionType type;
 
@@ -113,6 +116,14 @@ public class QuestionBank {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getFreeContent() {
+        return freeContent;
+    }
+
+    public void setFreeContent(String freeContent) {
+        this.freeContent = freeContent;
     }
 
     public QuestionType getType() {

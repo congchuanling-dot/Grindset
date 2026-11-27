@@ -20,6 +20,12 @@ public class CreateInterviewRequest {
     /** 3 / 5 / 8 */
     private Integer questionCount;
 
+    /** 最后一题是否手撕代码 */
+    private Boolean codingEnabled;
+
+    /** 编程环节时限(秒),默认 1800 */
+    private Integer codingTimeLimitSec;
+
     public String getResumeId() {
         return resumeId;
     }
@@ -66,5 +72,21 @@ public class CreateInterviewRequest {
 
     public void setQuestionCount(Integer questionCount) {
         this.questionCount = questionCount;
+    }
+
+    public Boolean getCodingEnabled() {
+        return codingEnabled;
+    }
+
+    public void setCodingEnabled(Boolean codingEnabled) {
+        this.codingEnabled = codingEnabled;
+    }
+
+    public Integer getCodingTimeLimitSec() {
+        return codingTimeLimitSec;
+    }
+
+    public void setCodingTimeLimitSec(Integer codingTimeLimitSec) {
+        this.codingTimeLimitSec = codingTimeLimitSec;
     }
 }

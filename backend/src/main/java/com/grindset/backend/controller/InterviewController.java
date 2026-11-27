@@ -6,11 +6,16 @@ import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.AnswerRequest;
 import com.grindset.backend.dto.AnswerResult;
 import com.grindset.backend.dto.ApiResponse;
+import com.grindset.backend.dto.CodeRunRequest;
+import com.grindset.backend.dto.CodingChatRequest;
 import com.grindset.backend.dto.CreateInterviewRequest;
+import com.grindset.backend.dto.InterviewCodingResultView;
+import com.grindset.backend.dto.InterviewCodingView;
 import com.grindset.backend.dto.InterviewDetail;
 import com.grindset.backend.dto.InterviewSummary;
 import com.grindset.backend.llm.LlmException;
 import com.grindset.backend.security.LoginUser;
+import com.grindset.backend.service.interview.InterviewCodingService;
 import com.grindset.backend.service.interview.InterviewReportService;
 import com.grindset.backend.service.interview.InterviewSessionService;
 import com.grindset.backend.service.interview.InterviewTurnService;
@@ -40,6 +45,11 @@ import static com.grindset.backend.common.constant.SseTimeouts.STREAM_TIMEOUT_5_
  * GET    /api/interviews/{id}                   会话详情(刷新恢复)
  * POST   /api/interviews/{id}/questions         SSE 生成下一道主问题
  * POST   /api/interviews/{id}/answers           提交回答,返回点评 + 追问/评分
+ * POST   /api/interviews/{id}/coding/start      开始最后一题手撕代码
+ * POST   /api/interviews/{id}/coding/chat       编程阶段与面试官流式交流
+ * POST   /api/interviews/{id}/coding/run        运行完整代码并返回控制台输出
+ * POST   /api/interviews/{id}/coding/draft      保存代码草稿
+ * POST   /api/interviews/{id}/coding/complete   完成本题
  * POST   /api/interviews/{id}/finish            生成复盘报告
  * DELETE /api/interviews/{id}                   删除会话
  */
@@ -52,15 +62,18 @@ public class InterviewController {
     private final InterviewSessionService sessionService;
     private final InterviewTurnService turnService;
     private final InterviewReportService reportService;
+    private final InterviewCodingService codingService;
     private final ObjectMapper objectMapper;
 
     public InterviewController(InterviewSessionService sessionService,
                                InterviewTurnService turnService,
                                InterviewReportService reportService,
+                               InterviewCodingService codingService,
                                ObjectMapper objectMapper) {
         this.sessionService = sessionService;
         this.turnService = turnService;
         this.reportService = reportService;
+        this.codingService = codingService;
         this.objectMapper = objectMapper;
     }
 
@@ -103,6 +116,46 @@ public class InterviewController {
         return ApiResponse.ok(turnService.answer(userId(loginUser), id, request));
     }
 
+    @PostMapping("/{id}/coding/start")
+    public ApiResponse<InterviewCodingView> startCoding(@AuthenticationPrincipal LoginUser loginUser,
+                                                        @PathVariable long id) {
+        return ApiResponse.ok(codingService.start(userId(loginUser), id));
+    }
+
+    @PostMapping("/{id}/coding/run")
+    public ApiResponse<InterviewCodingView.RunView> runCoding(@AuthenticationPrincipal LoginUser loginUser,
+                                                              @PathVariable long id,
+                                                              @RequestBody CodeRunRequest request) {
+        return ApiResponse.ok(codingService.run(userId(loginUser), id, request));
+    }
+
+    /** 保存代码草稿;前端输入停止后防抖调用 */
+    @PostMapping("/{id}/coding/draft")
+    public ApiResponse<Void> saveCodingDraft(@AuthenticationPrincipal LoginUser loginUser,
+                                             @PathVariable long id,
+                                             @RequestBody CodeRunRequest request) {
+        codingService.saveDraft(userId(loginUser), id, request);
+        return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/{id}/coding/complete")
+    public ApiResponse<InterviewCodingResultView> completeCoding(@AuthenticationPrincipal LoginUser loginUser,
+                                                                 @PathVariable long id) {
+        return ApiResponse.ok(codingService.complete(userId(loginUser), id));
+    }
+
+    /** 编程阶段与面试官交流:SSE 增量返回,前端边收边播报 */
+    @PostMapping("/{id}/coding/chat")
+    public SseEmitter codingChat(@AuthenticationPrincipal LoginUser loginUser,
+                                 @PathVariable long id,
+                                 @RequestBody CodingChatRequest request) {
+        long ownerId = userId(loginUser);
+        SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
+        Thread.ofVirtual().name("interview-coding-chat-", 0)
+                .start(() -> runCodingChat(ownerId, id, request, emitter));
+        return emitter;
+    }
+
     @PostMapping("/{id}/finish")
     public ApiResponse<InterviewDetail.ReportView> finish(@AuthenticationPrincipal LoginUser loginUser,
                                                           @PathVariable long id) {
@@ -133,6 +186,25 @@ public class InterviewController {
             fail(emitter, e.getMessage());
         } catch (Exception e) {
             log.error("AI 出题失败", e);
+            fail(emitter, "服务器内部错误");
+        }
+    }
+
+    private void runCodingChat(long userId, long id, CodingChatRequest request, SseEmitter emitter) {
+        try {
+            codingService.streamChat(userId, id, request,
+                    text -> sendEvent(emitter, "delta", Map.of("text", text)));
+            sendEvent(emitter, "done", Map.of());
+            emitter.complete();
+        } catch (ClientGoneException e) {
+            log.debug("客户端已断开编程交流流");
+            emitter.complete();
+        } catch (BizException e) {
+            fail(emitter, e.getMessage());
+        } catch (LlmException e) {
+            fail(emitter, e.getMessage());
+        } catch (Exception e) {
+            log.error("面试编程交流失败", e);
             fail(emitter, "服务器内部错误");
         }
     }

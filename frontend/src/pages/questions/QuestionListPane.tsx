@@ -169,8 +169,8 @@ function QuestionListPane() {
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
             <div
-              className="h-full rounded-full bg-brand-500 transition-all"
-              style={{ width: `${percent}%` }}
+              className="h-full w-full origin-left rounded-full bg-brand-500 transition-transform duration-300"
+              style={{ transform: `scaleX(${percent / 100})` }}
             />
           </div>
           <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">

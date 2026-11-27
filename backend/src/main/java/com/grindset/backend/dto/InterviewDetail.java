@@ -16,6 +16,8 @@ public record InterviewDetail(
         String round,
         List<String> focus,
         int questionCount,
+        boolean codingEnabled,
+        int codingTimeLimitSec,
         int completedQuestions,
         int status,
         Integer overallScore,
@@ -26,12 +28,20 @@ public record InterviewDetail(
     public record QuestionView(
             String id,
             int seq,
+            String type,
             int status,
             int followUpCount,
             Integer score,
             List<String> knowledgePoints,
             String comment,
             String suggestion,
+            String codingQuestionId,
+            String codingTitle,
+            String judgeStatus,
+            Integer passed,
+            Integer total,
+            String codingSubmissionId,
+            String deadlineAt,
             List<MessageView> messages) {
     }
 
@@ -49,6 +59,19 @@ public record InterviewDetail(
             Map<String, Integer> dimensionScores,
             List<String> weakPoints,
             List<String> highlights,
-            List<String> advice) {
+            List<String> advice,
+            CodingView coding) {
+    }
+
+    /** 复盘里的手撕代码结果,由数据库真实运行结果填充,不依赖模型输出 */
+    public record CodingView(
+            String title,
+            String status,
+            Integer exitCode,
+            String stdout,
+            String stderr,
+            Integer runtimeMs,
+            Integer score,
+            String comment) {
     }
 }

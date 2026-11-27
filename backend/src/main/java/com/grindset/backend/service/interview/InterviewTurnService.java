@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.common.InterviewQuestionType;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.AnswerRequest;
@@ -106,6 +107,9 @@ public class InterviewTurnService {
             if (seq > intValue(session.getQuestionCount())) {
                 throw new BizException(ErrorCode.BAD_REQUEST, "题目已全部答完,请生成复盘报告");
             }
+            if (intValue(session.getCodingEnabled()) == 1 && seq == intValue(session.getQuestionCount())) {
+                throw new BizException(ErrorCode.CONFLICT, "请进入手撕代码环节");
+            }
 
             String resumeText = contextBuilder.resumeText(userId, session.getResumeId());
             List<String> covered = coveredPoints(id);
@@ -126,6 +130,7 @@ public class InterviewTurnService {
             question.setId(questionId);
             question.setSessionId(id);
             question.setSeq(seq);
+            question.setQuestionType(InterviewQuestionType.VERBAL);
             question.setStatus(QuestionStatus.ANSWERED);
             question.setFollowUpCount(0);
             questionMapper.insert(question);
@@ -133,8 +138,10 @@ public class InterviewTurnService {
             InterviewMessage message = newMessage(questionId, 1, ROLE_INTERVIEWER, TYPE_QUESTION, questionText);
             messageMapper.insert(message);
 
-            return new InterviewDetail.QuestionView(String.valueOf(questionId), seq, QuestionStatus.ANSWERED,
-                    0, null, List.of(), null, null, List.of(toView(message)));
+            return new InterviewDetail.QuestionView(String.valueOf(questionId), seq,
+                    InterviewQuestionType.VERBAL.name(),
+                    QuestionStatus.ANSWERED, 0, null, List.of(), null, null,
+                    null, null, null, null, null, null, null, List.of(toView(message)));
         } finally {
             lock.unlock();
         }
@@ -166,6 +173,9 @@ public class InterviewTurnService {
             InterviewQuestion question = latestQuestion(id);
             if (question == null || intValue(question.getStatus()) != QuestionStatus.ANSWERED) {
                 throw new BizException(ErrorCode.CONFLICT, "当前没有待回答的问题");
+            }
+            if (question.getQuestionType() == InterviewQuestionType.CODING) {
+                throw new BizException(ErrorCode.CONFLICT, "当前是编程题，请提交代码");
             }
 
             // 本次回答还没落库,但必须带进上下文,否则模型看不到候选人刚说的话
@@ -234,8 +244,11 @@ public class InterviewTurnService {
             });
 
             // 评分已落库,画像/错题相关旁路已下线
+            boolean codingPending = intValue(session.getCodingEnabled()) == 1
+                    && completed == intValue(session.getQuestionCount()) - 1;
             String nextAction = completed >= intValue(session.getQuestionCount())
-                    ? "REPORT_READY" : "NEXT_QUESTION";
+                    ? "REPORT_READY"
+                    : codingPending ? "CODING_READY" : "NEXT_QUESTION";
             return new AnswerResult(feedback, null, true,
                     new AnswerResult.Evaluation(finalEvaluation.getScore(),
                             finalEvaluation.getKnowledgePoints() == null ? List.of() : finalEvaluation.getKnowledgePoints(),

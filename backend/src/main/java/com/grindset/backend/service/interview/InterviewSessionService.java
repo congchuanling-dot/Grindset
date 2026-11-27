@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.common.InterviewQuestionType;
 import com.grindset.backend.common.InterviewStyle;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.CreateInterviewRequest;
@@ -12,10 +13,12 @@ import com.grindset.backend.dto.InterviewSummary;
 import com.grindset.backend.entity.InterviewMessage;
 import com.grindset.backend.entity.InterviewQuestion;
 import com.grindset.backend.entity.InterviewSession;
+import com.grindset.backend.entity.QuestionSubmission;
 import com.grindset.backend.entity.Resume;
 import com.grindset.backend.mapper.InterviewMessageMapper;
 import com.grindset.backend.mapper.InterviewQuestionMapper;
 import com.grindset.backend.mapper.InterviewSessionMapper;
+import com.grindset.backend.mapper.QuestionSubmissionMapper;
 import com.grindset.backend.mapper.ResumeMapper;
 import com.grindset.backend.dto.ResumeDetail;
 import com.grindset.backend.service.ResumeService;
@@ -28,8 +31,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.service.interview.InterviewConstants.DEFAULT_CODING_TIME_LIMIT_SEC;
 import static com.grindset.backend.service.interview.InterviewConstants.MAX_FOCUS;
 import static com.grindset.backend.service.interview.InterviewConstants.QUESTION_COUNTS;
+
 import static com.grindset.backend.common.constant.InterviewSessionStatus.ONGOING;
 import static com.grindset.backend.service.interview.InterviewViews.format;
 import static com.grindset.backend.service.interview.InterviewViews.intValue;
@@ -44,6 +49,7 @@ public class InterviewSessionService {
     private final InterviewSessionMapper sessionMapper;
     private final InterviewQuestionMapper questionMapper;
     private final InterviewMessageMapper messageMapper;
+    private final QuestionSubmissionMapper submissionMapper;
     private final ResumeMapper resumeMapper;
     private final ResumeService resumeService;
     private final SnowflakeIdGenerator idGenerator;
@@ -53,6 +59,7 @@ public class InterviewSessionService {
     public InterviewSessionService(InterviewSessionMapper sessionMapper,
                                    InterviewQuestionMapper questionMapper,
                                    InterviewMessageMapper messageMapper,
+                                   QuestionSubmissionMapper submissionMapper,
                                    ResumeMapper resumeMapper,
                                    ResumeService resumeService,
                                    SnowflakeIdGenerator idGenerator,
@@ -61,6 +68,7 @@ public class InterviewSessionService {
         this.sessionMapper = sessionMapper;
         this.questionMapper = questionMapper;
         this.messageMapper = messageMapper;
+        this.submissionMapper = submissionMapper;
         this.resumeMapper = resumeMapper;
         this.resumeService = resumeService;
         this.idGenerator = idGenerator;
@@ -118,6 +126,8 @@ public class InterviewSessionService {
         session.setRound(round);
         session.setFocus(focus);
         session.setQuestionCount(questionCount);
+        session.setCodingEnabled(Boolean.TRUE.equals(request.getCodingEnabled()) ? 1 : 0);
+        session.setCodingTimeLimitSec(normalizeCodingLimit(request.getCodingTimeLimitSec()));
         session.setCompletedQuestions(0);
         session.setStatus(ONGOING);
         sessionMapper.insert(session);
@@ -175,6 +185,7 @@ public class InterviewSessionService {
                 List<Long> questionIds = questions.stream().map(InterviewQuestion::getId).toList();
                 messageMapper.delete(new QueryWrapper<InterviewMessage>().in("question_id", questionIds));
                 questionMapper.delete(new QueryWrapper<InterviewQuestion>().eq("session_id", id));
+                submissionMapper.delete(new QueryWrapper<QuestionSubmission>().eq("interview_session_id", id));
             }
             sessionMapper.deleteById(session.getId());
         });
@@ -214,10 +225,18 @@ public class InterviewSessionService {
                     .map(InterviewViews::toView)
                     .toList();
             questionViews.add(new InterviewDetail.QuestionView(String.valueOf(question.getId()),
-                    intValue(question.getSeq()), intValue(question.getStatus()),
+                    intValue(question.getSeq()),
+                    (question.getQuestionType() == null
+                            ? InterviewQuestionType.VERBAL : question.getQuestionType()).name(),
+                    intValue(question.getStatus()),
                     intValue(question.getFollowUpCount()), question.getScore(),
                     question.getKnowledgePoints() == null ? List.of() : question.getKnowledgePoints(),
-                    question.getComment(), question.getSuggestion(), messages));
+                    question.getComment(), question.getSuggestion(),
+                    question.getCodingQuestionId() == null ? null : String.valueOf(question.getCodingQuestionId()),
+                    question.getCodingTitle(), question.getJudgeStatus(),
+                    question.getPassed(), question.getTotal(),
+                    question.getCodingSubmissionId() == null ? null : String.valueOf(question.getCodingSubmissionId()),
+                    format(question.getDeadlineAt()), messages));
         }
 
         InterviewDetail.ReportView report = null;
@@ -228,7 +247,10 @@ public class InterviewSessionService {
         return new InterviewDetail(String.valueOf(session.getId()), String.valueOf(session.getResumeId()),
                 resumeFileName, session.getPosition(), styleCode(session), session.getRound(),
                 session.getFocus() == null ? List.of() : session.getFocus(),
-                intValue(session.getQuestionCount()), intValue(session.getCompletedQuestions()),
+                intValue(session.getQuestionCount()),
+                intValue(session.getCodingEnabled()) == 1,
+                positive(session.getCodingTimeLimitSec(), DEFAULT_CODING_TIME_LIMIT_SEC),
+                intValue(session.getCompletedQuestions()),
                 intValue(session.getStatus()), session.getOverallScore(),
                 format(session.getCreatedAt()), questionViews, report);
     }
@@ -256,6 +278,17 @@ public class InterviewSessionService {
             result.add(value);
         }
         return result;
+    }
+
+    private static int normalizeCodingLimit(Integer value) {
+        if (value == null || value <= 0) {
+            return DEFAULT_CODING_TIME_LIMIT_SEC;
+        }
+        return Math.min(7200, Math.max(300, value));
+    }
+
+    private static int positive(Integer value, int fallback) {
+        return value == null || value <= 0 ? fallback : value;
     }
 
     private static long parseId(String value, String message) {

@@ -58,6 +58,18 @@
 }
 
 @layer base {
+  :root {
+    /* 动效 token：曲线与时长集中在这里，页面不自己编数值 */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+    --duration-press: 160ms;
+    --duration-fast: 150ms;
+    --duration-modal: 250ms;
+    --duration-drawer: 300ms;
+    --duration-toast: 300ms;
+  }
+
   body {
     font-family: var(--font-sans);
     background-color: var(--color-slate-50);
@@ -101,6 +113,12 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-slate-400);
+  }
+
+  /* 按压反馈的过渡放在 base 层：带 transition 工具类的按钮会用自己的配置覆盖它 */
+  .press-scope button,
+  .press-scope [role='button'] {
+    transition: scale var(--duration-press) var(--ease-out);
   }
 }
 
@@ -259,25 +277,9 @@
   cursor: zoom-in;
 }
 
-/* 右上角轻提示的入场动画 */
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.toast-in {
-  animation: toast-in 180ms ease-out;
-}
-
-/* ───────────── 全局动效 ─────────────
-   统一只动 transform / opacity，不触发重排；
-   所有动画都放在 no-preference 里，系统开启"减少动态效果"时自动失效 */
+/* ───────────── 动效 ─────────────
+   只动 transform / opacity；常触发的交互用短时长，
+   弹窗、抽屉、Toast 才用标准时长；减少动态效果时保留淡入、去掉位移 */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -290,7 +292,7 @@
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: scale(0.94);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
@@ -356,19 +358,49 @@
   background-color: #6f7276;
 }
 
+/* 页面切换与新消息：150ms 淡入，足够提示变化又不拖慢操作 */
+.anim-fade-in {
+  animation: fade-in var(--duration-fast) var(--ease-out) both;
+}
+
+/* 弹窗：250ms 淡入 + 从 96% 放大 */
+.anim-pop-in {
+  animation: pop-in var(--duration-modal) var(--ease-out) both;
+}
+
+/* 移动端抽屉：300ms，iOS 风格减速曲线 */
+.anim-slide-in-left {
+  animation: slide-in-left var(--duration-drawer) var(--ease-drawer) both;
+}
+
+/* Toast：用 transition 而不是 keyframes，连续弹出时能从当前值重定向 */
+.toast-in {
+  transform: translateY(0);
+  opacity: 1;
+  transition:
+    opacity var(--duration-toast) ease,
+    transform var(--duration-toast) ease;
+}
+
+@starting-style {
+  .toast-in {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+
+/* 流式输出光标：闪烁是"仍在生成"的提示，基础样式在减少动态效果时也要保留 */
+.streaming-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: currentColor;
+  opacity: 0.6;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  .anim-fade-in {
-    animation: fade-in 200ms ease-out both;
-  }
-
-  .anim-pop-in {
-    animation: pop-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  }
-
-  .anim-slide-in-left {
-    animation: slide-in-left 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
   /* 骨架屏扫光 */
   .skeleton {
     background-image: linear-gradient(90deg, #e9e9e5 25%, #dadcd6 37%, #e9e9e5 63%);
@@ -376,15 +408,7 @@
     animation: shimmer 1.4s ease-in-out infinite;
   }
 
-  /* 流式输出光标 */
   .streaming-caret {
-    display: inline-block;
-    width: 2px;
-    height: 1em;
-    margin-left: 2px;
-    vertical-align: -0.12em;
-    background: currentColor;
-    opacity: 0.6;
     animation: caret-blink 1s steps(1) infinite;
   }
 
@@ -400,9 +424,28 @@
     animation-delay: 0.3s;
   }
 
-  /* 按压反馈：只作用于内容区，面试间不套这层 */
+  /* 按压反馈：160ms 缩到 97%，只作用于内容区，面试间不套这层 */
   .press-scope button:not(:disabled):active,
   .press-scope [role='button']:not([aria-disabled='true']):active {
-    scale: 0.98;
+    scale: 0.97;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 去掉位移，只保留淡入 */
+  .anim-pop-in,
+  .anim-slide-in-left {
+    animation: fade-in var(--duration-modal) var(--ease-out) both;
+  }
+
+  .toast-in {
+    transform: none;
+  }
+
+  @starting-style {
+    .toast-in {
+      transform: none;
+      opacity: 0;
+    }
   }
 }

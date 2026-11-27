@@ -14,7 +14,7 @@ interface ParticipantTileProps {
 /** 单个席位外壳:负责边框、名字条、静音标记,内容完全由外部注入 */
 function ParticipantTile({ name, role, muted, action, children }: ParticipantTileProps) {
   return (
-    <div className="group/tile relative min-h-0 overflow-hidden rounded-2xl bg-[#202329] ring-1 ring-white/10">
+    <div className="group/tile relative h-full min-h-0 overflow-hidden rounded-2xl bg-[#202329] ring-1 ring-white/10">
       <div className="absolute inset-0">{children}</div>
 
       {action && <div className="absolute right-2 top-2 z-20">{action}</div>}

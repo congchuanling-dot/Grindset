@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.ErrorCode;
+import com.grindset.backend.common.InterviewQuestionType;
+import com.grindset.backend.common.Texts;
 import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.InterviewDetail;
 import com.grindset.backend.dto.InterviewReport;
@@ -35,6 +37,7 @@ public class InterviewReportService {
 
     private final InterviewSessionService sessionService;
     private final InterviewSessionLocks locks;
+    private final InterviewCodingService codingService;
     private final InterviewSessionMapper sessionMapper;
     private final InterviewQuestionMapper questionMapper;
     private final InterviewMessageMapper messageMapper;
@@ -45,6 +48,7 @@ public class InterviewReportService {
 
     public InterviewReportService(InterviewSessionService sessionService,
                                   InterviewSessionLocks locks,
+                                  InterviewCodingService codingService,
                                   InterviewSessionMapper sessionMapper,
                                   InterviewQuestionMapper questionMapper,
                                   InterviewMessageMapper messageMapper,
@@ -54,6 +58,7 @@ public class InterviewReportService {
                                   ObjectMapper objectMapper) {
         this.sessionService = sessionService;
         this.locks = locks;
+        this.codingService = codingService;
         this.sessionMapper = sessionMapper;
         this.questionMapper = questionMapper;
         this.messageMapper = messageMapper;
@@ -79,6 +84,10 @@ public class InterviewReportService {
                 }
             }
 
+            // 用户交卷/关页面时可能已经提交过代码但没点“完成本题”,复盘前自动结算
+            codingService.completeLatest(userId, id);
+            InterviewSession current = sessionService.requireOwned(userId, id);
+
             // 先关闭会话并把未答完的题标记为已放弃:
             // 即使报告生成失败,会话也不会一直停在"进行中",用户可以重试生成报告。
             transactionTemplate.executeWithoutResult(status -> {
@@ -88,8 +97,8 @@ public class InterviewReportService {
                 questionMapper.update(patch, new QueryWrapper<InterviewQuestion>()
                         .eq("session_id", id)
                         .in("status", QuestionStatus.ASKING, QuestionStatus.ANSWERED));
-                session.setStatus(FINISHED);
-                sessionMapper.updateById(session);
+                current.setStatus(FINISHED);
+                sessionMapper.updateById(current);
             });
 
             List<InterviewQuestion> questions = finishedQuestions(id);
@@ -98,15 +107,19 @@ public class InterviewReportService {
                 return null;
             }
 
-            String resumeText = contextBuilder.resumeText(userId, session.getResumeId());
+            boolean hasCoding = questions.stream()
+                    .anyMatch(q -> q.getQuestionType() == InterviewQuestionType.CODING);
+
+            String resumeText = contextBuilder.resumeText(userId, current.getResumeId());
             String threadsText = threadsText(questions);
-            InterviewReport report = llmService.report(session, resumeText, threadsText);
+            InterviewReport report = llmService.report(current, resumeText, threadsText, hasCoding);
 
-            session.setReportJson(toJson(report));
-            session.setOverallScore(report.overallScore());
-            sessionMapper.updateById(session);
+            InterviewDetail.ReportView reportView = toReportView(report, questions);
+            current.setReportJson(toJson(reportView));
+            current.setOverallScore(report.overallScore());
+            sessionMapper.updateById(current);
 
-            return toReportView(report);
+            return reportView;
         } finally {
             lock.unlock();
         }
@@ -129,6 +142,10 @@ public class InterviewReportService {
     private String threadsText(List<InterviewQuestion> questions) {
         StringBuilder builder = new StringBuilder();
         for (InterviewQuestion question : questions) {
+            if (question.getQuestionType() == InterviewQuestionType.CODING) {
+                appendCoding(builder, question);
+                continue;
+            }
             builder.append("第 ").append(question.getSeq()).append(" 题");
             if (question.getScore() != null) {
                 builder.append("(本题评分 ").append(question.getScore()).append("/5");
@@ -153,9 +170,68 @@ public class InterviewReportService {
         return builder.toString().strip();
     }
 
-    private InterviewDetail.ReportView toReportView(InterviewReport report) {
+    /** 手撕代码题单独成段,把判题结果和最终代码给复盘模型 */
+    private void appendCoding(StringBuilder builder, InterviewQuestion question) {
+        builder.append("第 ").append(question.getSeq()).append(" 题（手撕代码）");
+        if (question.getCodingTitle() != null && !question.getCodingTitle().isBlank()) {
+            builder.append("：").append(question.getCodingTitle());
+        }
+        if (question.getScore() != null) {
+            builder.append("(本题评分 ").append(question.getScore()).append("/5)");
+        }
+        builder.append('\n');
+
+        if (question.getRunAt() == null) {
+            builder.append("运行结果:未运行代码\n");
+        } else {
+            builder.append("运行结果:")
+                    .append(question.getJudgeStatus() == null ? "UNKNOWN" : question.getJudgeStatus())
+                    .append(",退出码 ").append(intValue(question.getRunExitCode()));
+            if (question.getRunRuntimeMs() != null) {
+                builder.append(",耗时 ").append(question.getRunRuntimeMs()).append("ms");
+            }
+            builder.append('\n');
+            if (question.getRunStdout() != null && !question.getRunStdout().isBlank()) {
+                builder.append("标准输出:\n<<<\n")
+                        .append(Texts.truncate(question.getRunStdout(), 4000))
+                        .append("\n>>>\n");
+            }
+            if (question.getRunStderr() != null && !question.getRunStderr().isBlank()) {
+                builder.append("错误输出:\n<<<\n")
+                        .append(Texts.truncate(question.getRunStderr(), 2000))
+                        .append("\n>>>\n");
+            }
+        }
+        if (question.getCodeDraft() != null && !question.getCodeDraft().isBlank()) {
+            builder.append("最终代码:\n<<<\n")
+                    .append(Texts.truncate(question.getCodeDraft(), 6000))
+                    .append("\n>>>\n");
+        }
+        if (question.getComment() != null && !question.getComment().isBlank()) {
+            builder.append("面试官总评:").append(question.getComment()).append('\n');
+        }
+        builder.append('\n');
+    }
+
+    private InterviewDetail.ReportView toReportView(InterviewReport report, List<InterviewQuestion> questions) {
+        InterviewDetail.CodingView coding = null;
+        for (InterviewQuestion question : questions) {
+            if (question.getQuestionType() != InterviewQuestionType.CODING) {
+                continue;
+            }
+            coding = new InterviewDetail.CodingView(
+                    question.getCodingTitle(),
+                    question.getJudgeStatus(),
+                    question.getRunExitCode(),
+                    question.getRunStdout(),
+                    question.getRunStderr(),
+                    question.getRunRuntimeMs(),
+                    question.getScore(),
+                    question.getComment());
+            break;
+        }
         return new InterviewDetail.ReportView(report.overallScore(), report.dimensionScores(),
-                report.weakPoints(), report.highlights(), report.advice());
+                report.weakPoints(), report.highlights(), report.advice(), coding);
     }
 
     private String toJson(Object value) {

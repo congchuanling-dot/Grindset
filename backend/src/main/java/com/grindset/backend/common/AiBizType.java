@@ -12,6 +12,8 @@ public enum AiBizType {
     INTERVIEW_QUESTION("面试出题"),
     INTERVIEW_DECISION("面试点评"),
     INTERVIEW_EVALUATION("面试评分"),
+    INTERVIEW_CODING_CHAT("面试编程交流"),
+    INTERVIEW_CODING_FEEDBACK("面试编程点评"),
     INTERVIEW_REPORT("面试复盘"),
     BANK_EVALUATION("题库评分"),
     RESUME_PARSE("简历解析");

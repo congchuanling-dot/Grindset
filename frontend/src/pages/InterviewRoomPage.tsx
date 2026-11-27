@@ -2,12 +2,22 @@ import { AlertCircle, CircleStop, Loader2, MessageSquare, RotateCw, Sparkles } f
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
+  completeInterviewCoding,
   finishInterview,
   getInterview,
+  runInterviewCode,
+  saveInterviewCodingDraft,
+  startInterviewCoding,
+  streamCodingChat,
   streamNextQuestion,
   submitAnswer,
+  type InterviewCodingView,
   type InterviewDetail,
+  type InterviewRunResult,
 } from '../api/interview'
+import type { CodeLanguage } from '../api/questionBank'
+import type { FreeCodingDraft } from '../components/interview-room/FreeCodingWorkbench'
+import CodingStage from '../components/interview-room/CodingStage'
 import { AVATAR_MODELS, AVATAR_STORAGE_KEY } from '../components/avatar/avatarModels'
 import type { VrmAvatarHandle } from '../components/avatar/VrmAvatarStage'
 import ControlBar from '../components/interview-room/ControlBar'
@@ -26,8 +36,8 @@ import { useLocalMedia } from '../hooks/useLocalMedia'
 import { useRoomParticipants } from '../hooks/useRoomParticipants'
 import { useVoiceInput } from '../hooks/useVoiceInput'
 
-/** 面试间主流程:出题 -> 播报 -> 收音 -> 提交 -> 追问/下一题 */
-type RoomPhase = 'idle' | 'asking' | 'speaking' | 'listening' | 'thinking'
+/** 面试间主流程:出题 -> 播报 -> 收音 -> 提交 -> 追问/下一题;最后一题进入手撕代码 */
+type RoomPhase = 'idle' | 'asking' | 'speaking' | 'listening' | 'thinking' | 'coding'
 
 const STYLE_LABELS: Record<string, string> = {
   pressure: '压力面',
@@ -41,6 +51,7 @@ const PHASE_LABELS: Record<RoomPhase, string> = {
   speaking: '面试官正在说话',
   listening: '正在听你说',
   thinking: '正在分析你的回答',
+  coding: '手撕代码中',
 }
 
 function readStoredAvatarId(): string {
@@ -130,8 +141,16 @@ function InterviewRoomPage() {
 
   const stageRef = useRef<VrmAvatarHandle>(null)
   const [phase, setPhase] = useState<RoomPhase>('idle')
+  const phaseRef = useRef<RoomPhase>('idle')
+  phaseRef.current = phase
   const [subtitle, setSubtitle] = useState('')
   const [heard, setHeard] = useState('')
+  const [codingRound, setCodingRound] = useState<InterviewCodingView | null>(null)
+  const [codingChatPending, setCodingChatPending] = useState('')
+  const [codingChatting, setCodingChatting] = useState(false)
+  const codingDraftRef = useRef<FreeCodingDraft>({ code: '', language: 'JAVA' })
+  const codingSaveTimerRef = useRef<number | null>(null)
+  const codingStartingRef = useRef(false)
   const autoStartedRef = useRef(false)
   // 三个步骤互相调用(出题->播报->收音->提交->出题),用 ref 打破循环依赖
   const flowRef = useRef({
@@ -141,10 +160,14 @@ function InterviewRoomPage() {
   })
 
   const voice = useInterviewerVoice({
-    // 播报结束自动开始收音;播报失败(例如 TTS 未开通)也要继续,否则整场卡住
-    onEnd: () => flowRef.current.listen(),
+    // 只有正常播报题目/追问结束才自动开麦;编程交流和收尾点评不自动开麦
+    onEnd: () => {
+      if (phaseRef.current !== 'speaking') return
+      flowRef.current.listen()
+    },
     onError: (message) => {
       setActionError(message)
+      if (phaseRef.current !== 'speaking') return
       flowRef.current.listen()
     },
     onLevel: (level) => stageRef.current?.setMouth(level),
@@ -156,6 +179,7 @@ function InterviewRoomPage() {
     onPartial: (text) => setHeard(text),
     onFinal: (text) => {
       setHeard('')
+      if (phaseRef.current === 'coding') return
       const answer = text.trim()
       if (answer) {
         void flowRef.current.answer(answer)
@@ -214,6 +238,43 @@ function InterviewRoomPage() {
     await voice.speak(question)
   }, [sessionId, refresh, handleExpired, voice])
 
+  /** 进入最后一题手撕代码:停掉主收音,打开编程舞台 */
+  const startCoding = useCallback(async () => {
+    if (codingStartingRef.current) return
+    codingStartingRef.current = true
+    voice.stop()
+    asr.cancel()
+    setActionError(null)
+    setCodingChatPending('')
+    setPhase('coding')
+    try {
+      const round = await startInterviewCoding(sessionId)
+      if (round.skipped || !round.codingQuestionId) {
+        setActionError(round.intro || '暂时没有可用的编程题，已跳过')
+        setPhase('idle')
+        await refresh()
+        await askNext()
+        return
+      }
+      setCodingRound(round)
+      const draftLanguage = round.codeLanguage ?? 'JAVA'
+      codingDraftRef.current = {
+        code: round.codeDraft || round.starterCode[draftLanguage] || '',
+        language: draftLanguage,
+      }
+      await refresh()
+      if (round.intro) {
+        setSubtitle(round.intro)
+        await voice.speak(round.intro)
+      }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : '进入手撕代码失败')
+      setPhase('idle')
+    } finally {
+      codingStartingRef.current = false
+    }
+  }, [sessionId, refresh, askNext, voice, asr])
+
   /** 开始收音。收起对话记录时也能看到实时字幕 */
   const startListening = useCallback(() => {
     setPhase('listening')
@@ -243,6 +304,10 @@ function InterviewRoomPage() {
           await finishAndReport()
           return true
         }
+        if (result.nextAction === 'CODING_READY') {
+          await startCoding()
+          return true
+        }
         await askNext()
         return true
       } catch (err) {
@@ -255,7 +320,7 @@ function InterviewRoomPage() {
     },
     // finishAndReport 定义在下面,用 ref 调用避免循环依赖
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [submitting, sessionId, refresh, askNext, voice],
+    [submitting, sessionId, refresh, askNext, startCoding, voice],
   )
 
   useEffect(() => {
@@ -266,11 +331,58 @@ function InterviewRoomPage() {
     }
   })
 
+  /** 代码草稿:本地立即保存,服务端防抖同步,刷新后可恢复 */
+  const handleCodingDraft = useCallback((draft: FreeCodingDraft) => {
+    codingDraftRef.current = draft
+    if (codingSaveTimerRef.current !== null) {
+      window.clearTimeout(codingSaveTimerRef.current)
+    }
+    codingSaveTimerRef.current = window.setTimeout(() => {
+      void saveInterviewCodingDraft(sessionId, draft.language, draft.code).catch(() => undefined)
+    }, 800)
+  }, [sessionId])
+
+  /** 编程阶段问面试官:带上当前代码,回复流式显示并语音播报 */
+  const handleCodingChat = useCallback(async (message: string): Promise<boolean> => {
+    if (codingChatting) return false
+    setCodingChatting(true)
+    setCodingChatPending('')
+    setActionError(null)
+    let buffer = ''
+    try {
+      await streamCodingChat(sessionId, {
+        message,
+        code: codingDraftRef.current.code,
+        language: codingDraftRef.current.language,
+      }, {
+        onDelta: (text) => {
+          buffer += text
+          setCodingChatPending(buffer)
+        },
+        onError: (msg) => setActionError(msg),
+      })
+      setCodingChatPending('')
+      await refresh()
+      if (buffer.trim()) {
+        setSubtitle(buffer.trim())
+        await voice.speak(buffer.trim())
+      }
+      return true
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : '面试官回复失败,请重试')
+      return false
+    } finally {
+      setCodingChatting(false)
+    }
+  }, [codingChatting, sessionId, refresh, voice])
+
   /** 手动结束(顶栏按钮) */
   const handleFinish = useCallback(async () => {
     if (finishing) return
     voice.stop()
     asr.cancel()
+    setCodingRound(null)
+    setPhase('idle')
     setFinishing(true)
     setActionError(null)
     try {
@@ -303,19 +415,51 @@ function InterviewRoomPage() {
     }
   }, [finishing, sessionId, refresh])
 
-  // 新会话进面试间就自动开始第一题
+  /** 运行完整代码:只返回控制台输出,不做判题 */
+  const handleCodingRun = useCallback((language: CodeLanguage, code: string): Promise<InterviewRunResult> => {
+    return runInterviewCode(sessionId, language, code)
+  }, [sessionId])
+
+  /** 完成本题:基于最近运行结果评分,播报点评,自动生成复盘 */
+  const handleCodingComplete = useCallback(async () => {
+    try {
+      const result = await completeInterviewCoding(sessionId)
+      setCodingRound(null)
+      setPhase('idle')
+      await refresh()
+      if (result.comment) {
+        setSubtitle(result.comment)
+        await voice.speak(result.comment)
+      }
+      await finishAndReport()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : '完成本题失败,请重试')
+    }
+  }, [sessionId, refresh, voice, finishAndReport])
+
+  // 新会话进面试间自动开始;刷新时恢复未完成的编程题
   useEffect(() => {
     if (!detail || autoStartedRef.current) return
     if (detail.status !== SessionStatus.ONGOING) return
     autoStartedRef.current = true
     if (detail.questions.length === 0) {
       void flowRef.current.ask()
+      return
     }
-  }, [detail])
+    const codingQuestion = detail.questions.find((question) => question.type === 'CODING')
+    if (codingQuestion && codingQuestion.status !== QuestionStatus.CLOSED) {
+      void startCoding()
+      return
+    }
+    if (detail.codingEnabled && detail.completedQuestions === detail.questionCount - 1) {
+      void startCoding()
+    }
+  }, [detail, startCoding])
 
   const handleLeave = useCallback(() => {
     voice.stop()
     asr.cancel()
+    setCodingRound(null)
     stop()
     navigate('/records')
   }, [voice, asr, stop, navigate])
@@ -323,6 +467,14 @@ function InterviewRoomPage() {
   const sessionFinished = detail?.status === SessionStatus.FINISHED
   const questions = detail?.questions ?? []
   const lastQuestion = questions[questions.length - 1]
+  const codingQuestion = questions.find((question) => question.type === 'CODING') ?? null
+  const codingPending = Boolean(
+    detail
+    && detail.codingEnabled
+    && !sessionFinished
+    && detail.completedQuestions === detail.questionCount - 1
+    && !codingQuestion,
+  )
   const canAsk =
     !sessionFinished &&
     !asking &&
@@ -330,11 +482,23 @@ function InterviewRoomPage() {
     (questions.length === 0 || lastQuestion?.status === QuestionStatus.CLOSED) &&
     (detail ? detail.completedQuestions < detail.questionCount : true)
 
+  const handleContinue = useCallback(() => {
+    if (codingPending) {
+      void startCoding()
+      return
+    }
+    void flowRef.current.ask()
+  }, [codingPending, startCoding])
+
   const subtitleParts = [
     detail?.resumeFileName,
     detail ? (STYLE_LABELS[detail.style] ?? detail.style) : null,
     detail?.round,
-    detail ? `已完成 ${detail.completedQuestions}/${detail.questionCount} 题` : null,
+    detail
+      ? phase === 'coding'
+        ? '手撕代码'
+        : `已完成 ${detail.completedQuestions}/${detail.questionCount} 题`
+      : null,
   ].filter(Boolean)
 
   return (
@@ -418,6 +582,29 @@ function InterviewRoomPage() {
           </div>
         )}
 
+        {phase === 'coding' && codingRound ? (
+          <CodingStage
+            round={codingRound}
+            codingQuestion={codingQuestion}
+            avatarId={avatarId}
+            onChangeAvatar={handleAvatarChange}
+            stageRef={stageRef}
+            stream={stream}
+            cameraOn={cameraOn}
+            micOn={micOn}
+            starting={starting}
+            onEnableCamera={() => void start()}
+            chatPending={codingChatPending}
+            chatting={codingChatting}
+            interviewerSpeaking={voice.speaking}
+            onChat={handleCodingChat}
+            onStopSpeaking={voice.stop}
+            onRun={handleCodingRun}
+            onComplete={handleCodingComplete}
+            onFinish={() => void handleFinish()}
+            onDraftChange={handleCodingDraft}
+          />
+        ) : (
         <div
           className={`relative flex h-full min-h-0 transition-[padding] duration-300 ${
             transcriptOpen ? 'md:pr-[380px]' : ''
@@ -483,10 +670,10 @@ function InterviewRoomPage() {
               <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center">
                 <button
                   type="button"
-                  onClick={() => void flowRef.current.ask()}
+                  onClick={handleContinue}
                   className="pointer-events-auto rounded-full bg-brand-600 px-4 py-1.5 text-xs font-medium text-white shadow-lg transition hover:bg-brand-700"
                 >
-                  继续面试
+                  {codingPending ? '进入手撕代码' : '继续面试'}
                 </button>
               </div>
             )}
@@ -504,12 +691,14 @@ function InterviewRoomPage() {
               submitting={submitting}
               sessionFinished={Boolean(sessionFinished)}
               canAsk={canAsk}
-              onAsk={() => void flowRef.current.ask()}
+              onAsk={handleContinue}
+              askLabel={codingPending ? '进入手撕代码' : undefined}
               onSubmit={handleAnswer}
               onClose={() => setTranscriptOpen(false)}
             />
           </div>
         </div>
+        )}
       </RoomLayout>
 
       {reportOpen && detail?.report && (
