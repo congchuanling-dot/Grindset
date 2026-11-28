@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -65,43 +64,22 @@ public class ChatController {
 
     /** 在虚拟线程里跑完整条流。注意:参数错误也走 SSE error 事件(响应头已经发出去了) */
     private void runChat(long userId, ChatRequest request, SseEmitter emitter) {
+        SseEvents events = new SseEvents(emitter, objectMapper);
         try {
-            chatService.stream(request, userId, text -> sendEvent(emitter, "delta", Map.of("text", text)));
-            sendEvent(emitter, "done", Map.of());
-            emitter.complete();
-        } catch (ClientGoneException e) {
+            chatService.stream(request, userId, text -> events.send("delta", Map.of("text", text)));
+            events.send("done", Map.of());
+            events.complete();
+        } catch (SseEvents.ClientGoneException e) {
             // 前端主动断开(点了停止 / 关了页面),上游已随 io 异常终止,这里静默收尾
             log.debug("客户端已断开对话流");
-            emitter.complete();
+            events.complete();
         } catch (BizException e) {
-            fail(emitter, e.getMessage());
+            events.fail(e.getMessage());
         } catch (LlmException e) {
-            fail(emitter, e.getMessage());
+            events.fail(e.getMessage());
         } catch (Exception e) {
             log.error("对话处理失败", e);
-            fail(emitter, "服务器内部错误");
+            events.fail("服务器内部错误");
         }
-    }
-
-    private void fail(SseEmitter emitter, String message) {
-        try {
-            sendEvent(emitter, "error", Map.of("message", message));
-            emitter.complete();
-        } catch (ClientGoneException e) {
-            emitter.complete();
-        }
-    }
-
-    private void sendEvent(SseEmitter emitter, String event, Map<String, String> data) {
-        try {
-            emitter.send(SseEmitter.event().name(event).data(objectMapper.writeValueAsString(data)));
-        } catch (IOException | IllegalStateException e) {
-            // 连不上或连接已关闭:用运行时异常打断上游读取循环
-            throw new ClientGoneException();
-        }
-    }
-
-    /** 客户端已断开,不是业务错误,不打日志堆栈 */
-    private static class ClientGoneException extends RuntimeException {
     }
 }

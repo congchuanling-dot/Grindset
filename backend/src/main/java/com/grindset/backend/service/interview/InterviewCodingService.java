@@ -44,13 +44,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.grindset.backend.common.constant.InterviewSessionStatus.ONGOING;
-import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
+import static com.grindset.backend.common.constant.TimeFormats.format;
 import static com.grindset.backend.service.interview.InterviewConstants.DEFAULT_CODING_TIME_LIMIT_SEC;
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_INTERVIEWER;
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_USER;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_CODING_CHAT;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_QUESTION;
-import static com.grindset.backend.service.interview.InterviewViews.intValue;
+import static com.grindset.backend.common.Numbers.intValue;
 
 /**
  * 面试最后一题:FREE_RUN 开放式手撕代码。
@@ -599,10 +599,6 @@ public class InterviewCodingService {
 
     private static String nullToEmpty(String value) {
         return value == null ? "" : value;
-    }
-
-    private static String format(LocalDateTime time) {
-        return time == null ? null : time.format(STANDARD);
     }
 
     private static Long epochMillis(LocalDateTime time) {

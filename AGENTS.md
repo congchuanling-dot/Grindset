@@ -86,6 +86,7 @@ mysql -uroot -p123456 < sql/021_coding_free_run.sql
 mysql -uroot -p123456 < sql/022_interview_jd.sql
 mysql -uroot -p123456 < sql/023_weakness_training.sql
 mysql -uroot -p123456 < sql/024_training_v2.sql
+mysql -uroot -p123456 < sql/025_coding_hotlist.sql
 ```
 
 大模型渠道/模型/密钥表不在 `sql/` 下，需要额外执行（**必须带 utf8mb4 参数**，否则中文展示名会乱码）：
@@ -444,6 +445,7 @@ npm run dev
 | `022_interview_jd.sql` | `interview_sessions` / `interview_questions` 扩展列 | 公司、岗位级别、JD 原文、岗位画像、题目考察能力项 |
 | `023_weakness_training.sql` | `interview_weakness`、`user_kp_mastery`、`user_kp_mastery_log`、`training_plan`、`training_plan_item` | 弱项诊断、知识点掌握度、训练计划与训练题 |
 | `024_training_v2.sql` | 维度/阶段列、`training_mistake`、`user_dimension_mastery`、`training_mastery_snapshot` | 五维能力、错题本、成长快照 |
+| `025_coding_hotlist.sql` | `question_bank` 扩展列（`leetcode_no`/`leetcode_slug`/`tags`/`companies`/`hot_score`/`last_asked_at`） | 编程题 Hot100 / 剑指 Offer / CodeTop 公司分类与常考热度 |
 | `010_oauth_client_schema.sql` | `oauth_client_config` | 第三方登录客户端凭证（secret 加密存储） |
 | `011_agent_chat_schema.sql` | `agent_conversations`、`agent_messages` | 首页 Agent 会话与完整消息流（可重放、可恢复） |
 | `012_resume_original_schema.sql` | `resumes.original_object_key` | 简历原件在 OSS 中的对象 key |

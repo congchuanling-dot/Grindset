@@ -16,6 +16,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.common.Numbers.intValue;
+
 /**
  * 把不同来源（题库、面试弱项、掌握度、错题）统一转成训练目标。
  * 阶段策略只认识 TrainingTarget，不需要知道数据从哪来。
@@ -120,7 +122,4 @@ public class TrainingTargetFactory {
         return mastery < 75 ? 2 : 1;
     }
 
-    private static int intValue(Integer value) {
-        return value == null ? 0 : value;
-    }
 }

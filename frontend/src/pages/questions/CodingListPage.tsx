@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   getQuestions,
+  questionTagLabel,
   type QuestionBankItem,
   type QuestionBankList,
   type QuestionStatus,
@@ -21,6 +22,9 @@ function CodingListPage() {
   const difficulty = Number(params.get('difficulty') ?? 0)
   const status = (params.get('status') ?? 'ALL') as QuestionStatus | 'ALL'
   const keyword = params.get('q') ?? ''
+  const tag = params.get('tag') ?? ''
+  const company = params.get('company') ?? ''
+  const sort = (params.get('sort') ?? 'hot') as 'hot' | 'default'
   const page = Math.max(1, Number(params.get('page') ?? 1))
   const pageSize = Number(params.get('size') ?? PAGE_SIZE_DEFAULT)
 
@@ -38,6 +42,9 @@ function CodingListPage() {
       difficulty: difficulty || undefined,
       status: status === 'ALL' ? undefined : status,
       keyword: keyword || undefined,
+      tag: tag || undefined,
+      company: company || undefined,
+      sort,
       page,
       size: pageSize,
     })
@@ -53,7 +60,7 @@ function CodingListPage() {
     return () => {
       cancelled = true
     }
-  }, [domain, difficulty, status, keyword, page, pageSize])
+  }, [domain, difficulty, status, keyword, tag, company, sort, page, pageSize])
 
   function update(patch: Record<string, string | number | undefined>, resetPage = true) {
     const next = new URLSearchParams(params)
@@ -80,7 +87,7 @@ function CodingListPage() {
             编程题
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            每道题都写完整 main、自己构造输入运行，提交后由 AI 检查逻辑与边界。
+            默认按常考热度排序，可按题单或公司筛选；每道题写完整 main，提交后由 AI 检查逻辑与边界。
           </p>
         </div>
         <div className="text-xs text-slate-400">
@@ -153,6 +160,8 @@ function CodingListPage() {
 }
 
 function CodingRow({ item, index }: { item: QuestionBankItem; index: number }) {
+  const tags = item.tags ?? []
+  const companies = item.companies ?? []
   return (
     <Link
       to={`/questions/coding/${item.id}`}
@@ -162,6 +171,23 @@ function CodingRow({ item, index }: { item: QuestionBankItem; index: number }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-slate-800">{item.title}</p>
         <p className="mt-0.5 truncate text-xs text-slate-400">{item.preview}</p>
+        {(tags.length > 0 || companies.length > 0) && (
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            {tags.filter((entry) => entry !== 'CODETOP').slice(0, 3).map((entry) => (
+              <span key={entry} className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-700">
+                {questionTagLabel(entry)}
+              </span>
+            ))}
+            {companies.slice(0, 2).map((entry) => (
+              <span key={entry} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">
+                {entry}
+              </span>
+            ))}
+            {companies.length > 2 && (
+              <span className="text-[11px] text-slate-400">+{companies.length - 2}</span>
+            )}
+          </div>
+        )}
         {item.knowledgePoints.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
             {item.knowledgePoints.slice(0, 3).map((point) => (
@@ -172,7 +198,12 @@ function CodingRow({ item, index }: { item: QuestionBankItem; index: number }) {
           </div>
         )}
       </div>
-      <span className="w-24 shrink-0 truncate text-xs text-slate-500">{item.domain}</span>
+      <span className="w-24 shrink-0 text-xs text-slate-500">
+        <span className="block truncate">{item.domain}</span>
+        {item.hotScore > 0 && (
+          <span className="mt-0.5 block text-[11px] text-amber-600">热度 {item.hotScore}</span>
+        )}
+      </span>
       <span className="flex w-16 shrink-0 justify-center">
         <DifficultyBadge difficulty={item.difficulty} />
       </span>
@@ -188,6 +219,8 @@ function CodingRow({ item, index }: { item: QuestionBankItem; index: number }) {
 }
 
 function CodingCard({ item, index }: { item: QuestionBankItem; index: number }) {
+  const tags = item.tags ?? []
+  const companies = item.companies ?? []
   return (
     <Link
       to={`/questions/coding/${item.id}`}
@@ -201,9 +234,27 @@ function CodingCard({ item, index }: { item: QuestionBankItem; index: number }) 
         <CodingStatus status={item.status} />
       </div>
       <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">{item.preview}</p>
+      {(tags.length > 0 || companies.length > 0) && (
+        <div className="mt-1 flex flex-wrap items-center gap-1">
+          {tags.filter((entry) => entry !== 'CODETOP').slice(0, 3).map((entry) => (
+            <span key={entry} className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-700">
+              {questionTagLabel(entry)}
+            </span>
+          ))}
+          {companies.slice(0, 2).map((entry) => (
+            <span key={entry} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">
+              {entry}
+            </span>
+          ))}
+          {companies.length > 2 && (
+            <span className="text-[11px] text-slate-400">+{companies.length - 2}</span>
+          )}
+        </div>
+      )}
       <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px]">
         <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">{item.domain}</span>
         <DifficultyBadge difficulty={item.difficulty} />
+        {item.hotScore > 0 && <span className="text-amber-600">热度 {item.hotScore}</span>}
         <span className="text-slate-400">
           {item.attemptCount === 0 ? '未提交' : `提交 ${item.attemptCount} 次`}
         </span>

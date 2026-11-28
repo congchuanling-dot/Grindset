@@ -134,7 +134,7 @@ function ChatPage() {
       })
       .catch((error: unknown) => {
         if (cancelled) return
-        setModelsError(error instanceof Error ? error.message : '加载模型列表失败')
+        setModelsError(errMessage(error, '加载模型列表失败'))
       })
       .finally(() => {
         if (!cancelled) setModelsLoading(false)
@@ -333,7 +333,7 @@ function ChatPage() {
         aborted = true
       } else {
         updateMessage(assistantId, {
-          content: error instanceof Error ? error.message : '对话失败,请重试',
+          content: errMessage(error, '对话失败,请重试'),
           error: true,
         })
       }

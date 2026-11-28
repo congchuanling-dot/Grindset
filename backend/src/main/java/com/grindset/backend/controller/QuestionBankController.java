@@ -1,7 +1,5 @@
 package com.grindset.backend.controller;
 
-import com.grindset.backend.common.BizException;
-import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.dto.CodeRunRequest;
 import com.grindset.backend.dto.CodeRunResult;
@@ -14,6 +12,7 @@ import com.grindset.backend.dto.QuestionBankDetail;
 import com.grindset.backend.dto.QuestionBankFacets;
 import com.grindset.backend.dto.QuestionBankView;
 import com.grindset.backend.dto.QuestionNeighbors;
+import com.grindset.backend.security.CurrentUser;
 import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.service.CodingService;
 import com.grindset.backend.service.QuestionBankService;
@@ -63,16 +62,21 @@ public class QuestionBankController {
                                               @RequestParam(required = false) String status,
                                               @RequestParam(required = false) String keyword,
                                               @RequestParam(required = false) String judgeMode,
+                                              @RequestParam(required = false) String tag,
+                                              @RequestParam(required = false) String company,
+                                              @RequestParam(required = false) String sort,
                                               @RequestParam(defaultValue = "1") int page,
                                               @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(questionBankService.list(userId(loginUser), domain, type, difficulty,
-                status, keyword, judgeMode, page, size));
+        return ApiResponse.ok(questionBankService.list(CurrentUser.requireId(loginUser), domain, type, difficulty,
+                status, keyword, judgeMode, tag, company, sort, page, size));
     }
 
     @GetMapping("/stats")
     public ApiResponse<QuestionBankView.Summary> stats(@AuthenticationPrincipal LoginUser loginUser,
-                                                       @RequestParam(required = false) String judgeMode) {
-        return ApiResponse.ok(questionBankService.stats(userId(loginUser), judgeMode));
+                                                       @RequestParam(required = false) String judgeMode,
+                                                       @RequestParam(required = false) String tag,
+                                                       @RequestParam(required = false) String company) {
+        return ApiResponse.ok(questionBankService.stats(CurrentUser.requireId(loginUser), judgeMode, tag, company));
     }
 
     @GetMapping("/facets")
@@ -89,7 +93,7 @@ public class QuestionBankController {
     @GetMapping("/{id}")
     public ApiResponse<QuestionBankDetail> detail(@AuthenticationPrincipal LoginUser loginUser,
                                                   @PathVariable long id) {
-        return ApiResponse.ok(questionBankService.detail(userId(loginUser), id));
+        return ApiResponse.ok(questionBankService.detail(CurrentUser.requireId(loginUser), id));
     }
 
     @GetMapping("/{id}/neighbors")
@@ -100,7 +104,7 @@ public class QuestionBankController {
     @GetMapping("/{id}/attempts")
     public ApiResponse<List<QuestionBankDetail.AttemptView>> attempts(
             @AuthenticationPrincipal LoginUser loginUser, @PathVariable long id) {
-        return ApiResponse.ok(questionBankService.attempts(userId(loginUser), id));
+        return ApiResponse.ok(questionBankService.attempts(CurrentUser.requireId(loginUser), id));
     }
 
     @PostMapping("/{id}/attempts")
@@ -108,39 +112,32 @@ public class QuestionBankController {
                                                       @PathVariable long id,
                                                       @RequestBody QuestionAnswerRequest request) {
         String answer = request == null ? null : request.answer();
-        return ApiResponse.ok(questionBankService.attempt(userId(loginUser), id, answer));
+        return ApiResponse.ok(questionBankService.attempt(CurrentUser.requireId(loginUser), id, answer));
     }
 
     @GetMapping("/{id}/coding")
     public ApiResponse<CodingDetail> coding(@AuthenticationPrincipal LoginUser loginUser,
                                             @PathVariable long id) {
-        return ApiResponse.ok(codingService.detail(userId(loginUser), id));
+        return ApiResponse.ok(codingService.detail(CurrentUser.requireId(loginUser), id));
     }
 
     @PostMapping("/{id}/run")
     public ApiResponse<CodeRunResult> run(@AuthenticationPrincipal LoginUser loginUser,
                                           @PathVariable long id,
                                           @RequestBody CodeRunRequest request) {
-        return ApiResponse.ok(codingService.run(userId(loginUser), id, request));
+        return ApiResponse.ok(codingService.run(CurrentUser.requireId(loginUser), id, request));
     }
 
     @PostMapping("/{id}/review")
     public ApiResponse<CodingReviewResult> review(@AuthenticationPrincipal LoginUser loginUser,
                                                   @PathVariable long id,
                                                   @RequestBody CodeRunRequest request) {
-        return ApiResponse.ok(codingService.review(userId(loginUser), id, request));
+        return ApiResponse.ok(codingService.review(CurrentUser.requireId(loginUser), id, request));
     }
 
     @GetMapping("/{id}/reviews")
     public ApiResponse<List<CodingReviewView>> reviews(
             @AuthenticationPrincipal LoginUser loginUser, @PathVariable long id) {
-        return ApiResponse.ok(codingService.reviews(userId(loginUser), id));
-    }
-
-    private static long userId(LoginUser loginUser) {
-        if (loginUser == null) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
-        }
-        return loginUser.userId();
+        return ApiResponse.ok(codingService.reviews(CurrentUser.requireId(loginUser), id));
     }
 }

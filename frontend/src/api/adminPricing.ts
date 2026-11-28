@@ -98,6 +98,30 @@ export async function listChannelBalances(): Promise<AdminChannelBalance[]> {
   return unwrapAdmin<AdminChannelBalance[]>(res, '加载余额失败')
 }
 
+/** 用户余额调整结果 */
+export interface AdminUserBalance {
+  userId: string
+  email: string
+  nickname: string
+  previousBalance: number
+  balance: number
+  currency: string
+  updatedAt: string
+}
+
+/** 按邮箱把某个用户的钱包余额设置为指定值 */
+export async function adjustUserBalance(
+  email: string,
+  balance: number,
+): Promise<AdminUserBalance> {
+  const res = await fetch('/api/admin/users/balance', {
+    method: 'PUT',
+    headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, balance }),
+  })
+  return unwrapAdmin<AdminUserBalance>(res, '修改余额失败')
+}
+
 /** 立即向厂商查询一次余额(目前仅 DeepSeek 支持) */
 export async function refreshChannelBalance(
   id: number,

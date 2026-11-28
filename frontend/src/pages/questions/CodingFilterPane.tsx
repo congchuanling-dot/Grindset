@@ -24,6 +24,14 @@ const DIFFICULTIES = [
   { value: 3, label: '困难' },
 ]
 
+const TAG_TABS = [
+  { value: '', label: '全部' },
+  { value: 'HIGH_FREQ', label: '高频' },
+  { value: 'HOT100', label: '热题100' },
+  { value: 'JIANZHI', label: '剑指Offer' },
+  { value: 'CODETOP', label: 'CodeTop' },
+] as const
+
 /** 编程题左侧筛选栏:进度、状态、难度、领域、搜索 */
 function CodingFilterPane() {
   const navigate = useNavigate()
@@ -33,6 +41,9 @@ function CodingFilterPane() {
   const difficulty = Number(params.get('difficulty') ?? 0)
   const status = params.get('status') ?? 'ALL'
   const keyword = params.get('q') ?? ''
+  const tag = params.get('tag') ?? ''
+  const company = params.get('company') ?? ''
+  const sort = params.get('sort') === 'default' ? 'default' : 'hot'
 
   const [summary, setSummary] = useState<QuestionBankSummary | null>(null)
   const [facets, setFacets] = useState<QuestionBankFacets | null>(null)
@@ -49,7 +60,7 @@ function CodingFilterPane() {
     let cancelled = false
     setLoading(true)
     Promise.all([
-      getQuestionStats('CODING').catch(() => null),
+      getQuestionStats('CODING', tag || undefined, company || undefined).catch(() => null),
       getQuestionFacets('CODING').catch(() => null),
     ])
       .then(([stats, facet]) => {
@@ -63,7 +74,7 @@ function CodingFilterPane() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [tag, company])
 
   function update(patch: Record<string, string | number | undefined>, resetPage = true) {
     const next = new URLSearchParams(params)
@@ -94,7 +105,10 @@ function CodingFilterPane() {
   const total = summary?.total ?? 0
   const passed = summary?.done ?? 0
   const percent = total === 0 ? 0 : Math.round((passed / total) * 100)
-  const hasFilter = Boolean(domain || difficulty || keyword || status !== 'ALL')
+  const hasFilter = Boolean(domain || difficulty || keyword || status !== 'ALL' || tag || company)
+  const allCount = facets?.types?.reduce((sum, item) => sum + item.count, 0) ?? 0
+  const tagCount = (value: string) =>
+    value ? (facets?.tags?.find((item) => item.value === value)?.count ?? 0) : allCount
 
   const counts = useMemo<Record<string, number>>(
     () => ({
@@ -155,13 +169,36 @@ function CodingFilterPane() {
           />
         </form>
 
+        <div className="mt-2">
+          <p className="mb-1 text-[11px] text-slate-400">题单</p>
+          <div className="flex flex-wrap gap-1">
+            {TAG_TABS.map((tab) => (
+              <button
+                key={tab.value || 'ALL'}
+                type="button"
+                onClick={() => update({ tag: tab.value || undefined })}
+                className={`rounded-full border px-2 py-0.5 text-[11px] transition ${
+                  tag === tab.value
+                    ? 'border-amber-300 bg-amber-50 font-medium text-amber-700'
+                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                }`}
+              >
+                {tab.label}
+                <span className={`ml-1 ${tag === tab.value ? 'text-amber-600' : 'text-slate-400'}`}>
+                  {tagCount(tab.value)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-2 grid grid-cols-2 gap-1.5">
           <select
             value={domain}
             onChange={(e) => update({ domain: e.target.value || undefined })}
             className="col-span-2 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-brand-400"
           >
-            <option value="">全部领域 {total}</option>
+            <option value="">全部领域 {allCount}</option>
             {facets?.domains.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.value} {option.count}
@@ -179,6 +216,44 @@ function CodingFilterPane() {
               </option>
             ))}
           </select>
+          <select
+            value={company}
+            onChange={(e) => update({ company: e.target.value || undefined })}
+            className="col-span-2 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-brand-400"
+          >
+            <option value="">全部公司</option>
+            {(facets?.companies ?? []).map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.value} {option.count}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mt-2 flex items-center gap-1 text-[11px]">
+          <span className="text-slate-400">排序</span>
+          <button
+            type="button"
+            onClick={() => update({ sort: undefined })}
+            className={`rounded-full border px-2 py-0.5 transition ${
+              sort === 'hot'
+                ? 'border-brand-300 bg-brand-50 font-medium text-brand-700'
+                : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+            }`}
+          >
+            常考优先
+          </button>
+          <button
+            type="button"
+            onClick={() => update({ sort: 'default' })}
+            className={`rounded-full border px-2 py-0.5 transition ${
+              sort === 'default'
+                ? 'border-brand-300 bg-brand-50 font-medium text-brand-700'
+                : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+            }`}
+          >
+            默认
+          </button>
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -223,7 +298,7 @@ function CodingFilterPane() {
       </div>
 
       <div className="px-3 py-3 text-[11px] leading-5 text-slate-400">
-        右侧列表按难度和状态筛选；点击题目进入左右分栏的编程工作台，代码、运行与 AI 点评都在同一页。
+        题单按 Hot100、剑指 Offer、CodeTop 高频划分；默认常考优先，也可以按公司筛选。
       </div>
     </div>
   )

@@ -153,18 +153,6 @@ public class ResumeTextExtractor {
         return false;
     }
 
-    private static boolean startsWith(byte[] bytes, byte[] prefix) {
-        if (bytes.length < prefix.length) {
-            return false;
-        }
-        for (int i = 0; i < prefix.length; i++) {
-            if (bytes[i] != prefix[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private static String extractPdf(Path file) {
         try (PDDocument document = Loader.loadPDF(file.toFile())) {
             PDFTextStripper stripper = new PDFTextStripper();

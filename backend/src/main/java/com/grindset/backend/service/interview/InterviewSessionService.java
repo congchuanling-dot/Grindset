@@ -38,7 +38,7 @@ import static com.grindset.backend.service.interview.InterviewConstants.QUESTION
 
 import static com.grindset.backend.common.constant.InterviewSessionStatus.ONGOING;
 import static com.grindset.backend.service.interview.InterviewViews.format;
-import static com.grindset.backend.service.interview.InterviewViews.intValue;
+import static com.grindset.backend.common.Numbers.intValue;
 
 /**
  * 面试会话生命周期:创建、列表、详情、删除,以及会话归属校验。

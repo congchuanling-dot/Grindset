@@ -1,7 +1,5 @@
 package com.grindset.backend.controller;
 
-import com.grindset.backend.common.BizException;
-import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.dto.TrainingAnswerRequest;
 import com.grindset.backend.dto.TrainingAnswerResult;
@@ -10,6 +8,7 @@ import com.grindset.backend.dto.TrainingMistakeView;
 import com.grindset.backend.dto.TrainingPlanCreateRequest;
 import com.grindset.backend.dto.TrainingPlanDetail;
 import com.grindset.backend.dto.TrainingPlanView;
+import com.grindset.backend.security.CurrentUser;
 import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.service.training.TrainingPlanService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,25 +45,25 @@ public class TrainingController {
 
     @GetMapping("/dashboard")
     public ApiResponse<TrainingDashboard> dashboard(@AuthenticationPrincipal LoginUser loginUser) {
-        return ApiResponse.ok(trainingPlanService.dashboard(userId(loginUser)));
+        return ApiResponse.ok(trainingPlanService.dashboard(CurrentUser.requireId(loginUser)));
     }
 
     @PostMapping("/sessions")
     public ApiResponse<TrainingPlanDetail> create(@AuthenticationPrincipal LoginUser loginUser,
                                                   @RequestBody(required = false) TrainingPlanCreateRequest request) {
-        return ApiResponse.ok(trainingPlanService.create(userId(loginUser), request));
+        return ApiResponse.ok(trainingPlanService.create(CurrentUser.requireId(loginUser), request));
     }
 
     @GetMapping("/sessions")
     public ApiResponse<List<TrainingPlanView>> list(@AuthenticationPrincipal LoginUser loginUser,
                                                     @RequestParam(required = false) Integer status) {
-        return ApiResponse.ok(trainingPlanService.list(userId(loginUser), status));
+        return ApiResponse.ok(trainingPlanService.list(CurrentUser.requireId(loginUser), status));
     }
 
     @GetMapping("/sessions/{id}")
     public ApiResponse<TrainingPlanDetail> detail(@AuthenticationPrincipal LoginUser loginUser,
                                                   @PathVariable long id) {
-        return ApiResponse.ok(trainingPlanService.detail(userId(loginUser), id));
+        return ApiResponse.ok(trainingPlanService.detail(CurrentUser.requireId(loginUser), id));
     }
 
     @PostMapping("/sessions/{id}/items/{itemId}/answer")
@@ -73,13 +72,13 @@ public class TrainingController {
                                                     @PathVariable long itemId,
                                                     @RequestBody TrainingAnswerRequest request) {
         String answer = request == null ? null : request.answer();
-        return ApiResponse.ok(trainingPlanService.answer(userId(loginUser), id, itemId, answer));
+        return ApiResponse.ok(trainingPlanService.answer(CurrentUser.requireId(loginUser), id, itemId, answer));
     }
 
     @PostMapping("/sessions/{id}/abandon")
     public ApiResponse<Void> abandon(@AuthenticationPrincipal LoginUser loginUser,
                                      @PathVariable long id) {
-        trainingPlanService.abandon(userId(loginUser), id);
+        trainingPlanService.abandon(CurrentUser.requireId(loginUser), id);
         return ApiResponse.ok(null);
     }
 
@@ -87,18 +86,11 @@ public class TrainingController {
     public ApiResponse<List<TrainingMistakeView>> mistakes(@AuthenticationPrincipal LoginUser loginUser,
                                                            @RequestParam(required = false) Integer status,
                                                            @RequestParam(defaultValue = "20") int limit) {
-        return ApiResponse.ok(trainingPlanService.mistakes(userId(loginUser), status, limit));
+        return ApiResponse.ok(trainingPlanService.mistakes(CurrentUser.requireId(loginUser), status, limit));
     }
 
     @PostMapping("/mistakes/retrain")
     public ApiResponse<TrainingPlanDetail> retrainMistakes(@AuthenticationPrincipal LoginUser loginUser) {
-        return ApiResponse.ok(trainingPlanService.retrainMistakes(userId(loginUser)));
-    }
-
-    private static long userId(LoginUser loginUser) {
-        if (loginUser == null) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
-        }
-        return loginUser.userId();
+        return ApiResponse.ok(trainingPlanService.retrainMistakes(CurrentUser.requireId(loginUser)));
     }
 }

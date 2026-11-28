@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.grindset.backend.service.interview.InterviewConstants.ROLE_USER;
 import static com.grindset.backend.common.constant.InterviewSessionStatus.FINISHED;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_FEEDBACK;
-import static com.grindset.backend.service.interview.InterviewViews.intValue;
+import static com.grindset.backend.common.Numbers.intValue;
 
 /**
  * 复盘报告:关闭会话、把未答完的题标记为放弃,再让模型汇总已完成题目。

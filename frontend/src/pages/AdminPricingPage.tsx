@@ -7,11 +7,13 @@ import {
   RefreshCw,
   Save,
   Tags,
+  UserRound,
   Wallet,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  adjustUserBalance,
   adminLogin,
   adminLogout,
   AdminAuthError,
@@ -23,6 +25,7 @@ import {
   updateModelPrices,
   type AdminChannelBalance,
   type AdminModelPrice,
+  type AdminUserBalance,
 } from '../api/adminPricing'
 import { errMessage } from '../utils/error'
 
@@ -56,6 +59,10 @@ function AdminPricingPage() {
   const [refreshingId, setRefreshingId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [balanceEmail, setBalanceEmail] = useState('')
+  const [balanceValue, setBalanceValue] = useState('')
+  const [adjusting, setAdjusting] = useState(false)
+  const [adjustedUser, setAdjustedUser] = useState<AdminUserBalance | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -66,6 +73,7 @@ function AdminPricingPage() {
     setModels([])
     setDrafts({})
     setChannels([])
+    setAdjustedUser(null)
     setError(message)
   }
 
@@ -217,6 +225,37 @@ function AdminPricingPage() {
       }
     } finally {
       setRefreshingId(null)
+    }
+  }
+
+  async function handleAdjustBalance(e: React.FormEvent) {
+    e.preventDefault()
+    const email = balanceEmail.trim()
+    const amount = Number(balanceValue)
+    if (!email) {
+      setError('邮箱不能为空')
+      return
+    }
+    if (!balanceValue.trim() || !Number.isFinite(amount) || amount < 0) {
+      setError('余额必须是非负数字')
+      return
+    }
+
+    setAdjusting(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const data = await adjustUserBalance(email, amount)
+      setAdjustedUser(data)
+      setNotice(`已将 ${data.email} 的余额调整为 ¥${data.balance.toFixed(2)}`)
+    } catch (e) {
+      if (e instanceof AdminAuthError) {
+        resetToLogin(e.message)
+      } else {
+        setError(errMessage(e, '修改余额失败'))
+      }
+    } finally {
+      setAdjusting(false)
     }
   }
 
@@ -410,6 +449,80 @@ function AdminPricingPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </section>
+
+        {/* 用户余额调整:按邮箱定位账号并直接设置余额 */}
+        <section className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <UserRound size={15} className="text-brand-600" />
+              用户余额调整
+            </h2>
+            <span className="text-[11px] text-slate-400">
+              按邮箱定位账号（邮箱唯一），余额会被直接覆盖
+            </span>
+          </div>
+
+          <form onSubmit={handleAdjustBalance} className="mt-3 flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[200px]">
+              <label htmlFor="balance-email" className="mb-1 block text-xs font-medium text-slate-700">
+                用户邮箱
+              </label>
+              <input
+                id="balance-email"
+                type="email"
+                value={balanceEmail}
+                onChange={(e) => setBalanceEmail(e.target.value)}
+                placeholder="user@example.com"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              />
+            </div>
+            <div className="w-40">
+              <label htmlFor="balance-amount" className="mb-1 block text-xs font-medium text-slate-700">
+                新余额（元）
+              </label>
+              <input
+                id="balance-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={balanceValue}
+                onChange={(e) => setBalanceValue(e.target.value)}
+                placeholder="0.00"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-right text-sm text-slate-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={adjusting}
+              className="flex items-center gap-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {adjusting && <Loader2 size={14} className="animate-spin" />}
+              保存余额
+            </button>
+          </form>
+
+          {adjustedUser && (
+            <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/60 p-3 text-xs text-slate-600">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span>
+                  账号：<span className="font-medium text-slate-800">{adjustedUser.email}</span>
+                </span>
+                {adjustedUser.nickname && (
+                  <span>
+                    昵称：<span className="font-medium text-slate-800">{adjustedUser.nickname}</span>
+                  </span>
+                )}
+                <span>
+                  原余额：¥{adjustedUser.previousBalance.toFixed(2)}
+                </span>
+                <span>
+                  现余额：<span className="font-semibold text-brand-700">¥{adjustedUser.balance.toFixed(2)}</span>
+                </span>
+                <span className="text-slate-400">{adjustedUser.updatedAt} 更新</span>
+              </div>
             </div>
           )}
         </section>

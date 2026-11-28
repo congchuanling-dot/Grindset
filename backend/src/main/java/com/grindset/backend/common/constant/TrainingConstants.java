@@ -8,13 +8,6 @@ public final class TrainingConstants {
     public static final String ROLE_PRACTICE = "PRACTICE";
     public static final String ROLE_RETEST = "RETEST";
 
-    public static final String ITEM_TEXT = "TEXT";
-    public static final String ITEM_CODING = "CODING";
-
-    public static final String MASTERY_WEAK = "WEAK";
-    public static final String MASTERY_LEARNING = "LEARNING";
-    public static final String MASTERY_MASTERED = "MASTERED";
-
     public static final int PLAN_PENDING = 0;
     public static final int PLAN_RUNNING = 1;
     public static final int PLAN_COMPLETED = 2;

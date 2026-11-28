@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.grindset.backend.common.Numbers.intValue;
 import static com.grindset.backend.common.constant.InterviewSessionStatus.FINISHED;
 import static com.grindset.backend.common.constant.TrainingConstants.ITEM_DONE;
 import static com.grindset.backend.common.constant.TrainingConstants.ITEM_TODO;
@@ -419,8 +420,10 @@ public class TrainingPlanService {
                     tx.mistakeId() == null ? null : String.valueOf(tx.mistakeId()),
                     tx.change() != null && tx.change().eliminated(),
                     evaluation.summary(), evaluation.detailedFeedback(),
-                    evaluation.improvements(), evaluation.referenceAnswer(),
-                    evaluation.questionType(), evaluation.scoringPoints());
+                    evaluation.improvements() == null ? List.of() : evaluation.improvements(),
+                    evaluation.referenceAnswer(),
+                    evaluation.questionType(),
+                    evaluation.scoringPoints() == null ? List.of() : evaluation.scoringPoints());
         } finally {
             lock.unlock();
         }
@@ -633,9 +636,6 @@ public class TrainingPlanService {
         }
     }
 
-    private static int intValue(Integer value) {
-        return value == null ? 0 : value;
-    }
 
     private record SessionContext(Long id, String position, String company, String resumeText) {
     }

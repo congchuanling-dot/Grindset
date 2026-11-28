@@ -10,6 +10,7 @@ import {
 import * as monaco from 'monaco-editor'
 import editorWorker from 'monaco-editor/editor/editor.worker?worker'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { errMessage } from '../../utils/error'
 import type { InterviewCodingView, InterviewRunResult } from '../../api/interview'
 import type { CodeLanguage } from '../../api/questionBank'
 import MarkdownContent from '../MarkdownContent'
@@ -69,7 +70,7 @@ function FreeCodingWorkbench({ round, onRun, onComplete, onDraftChange }: FreeCo
     try {
       setResult(await onRun(language, code))
     } catch (e) {
-      setError(e instanceof Error ? e.message : '运行失败')
+      setError(errMessage(e, '运行失败'))
     } finally {
       setRunning(false)
     }
@@ -82,7 +83,7 @@ function FreeCodingWorkbench({ round, onRun, onComplete, onDraftChange }: FreeCo
     try {
       await onComplete()
     } catch (e) {
-      setError(e instanceof Error ? e.message : '完成本题失败')
+      setError(errMessage(e, '完成本题失败'))
     } finally {
       setCompleting(false)
     }

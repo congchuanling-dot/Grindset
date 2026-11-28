@@ -34,6 +34,12 @@ public record QuestionBankView(
             int attemptCount,
             Integer bestScore,
             Integer lastScore,
-            String lastAttemptAt) {
+            String lastAttemptAt,
+            List<String> tags,
+            List<String> companies,
+            Integer leetcodeNo,
+            String leetcodeSlug,
+            Integer hotScore,
+            String lastAskedAt) {
     }
 }

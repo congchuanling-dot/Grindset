@@ -60,6 +60,12 @@ public class CodingService {
                 question.getStarterCode() == null ? Map.of() : question.getStarterCode(),
                 positive(question.getTimeLimitMs(), TIME_LIMIT_DEFAULT),
                 positive(question.getMemoryLimitMb(), MEMORY_LIMIT_DEFAULT),
+                question.getTags() == null ? List.of() : question.getTags(),
+                question.getCompanies() == null ? List.of() : question.getCompanies(),
+                question.getLeetcodeNo(),
+                question.getLeetcodeSlug(),
+                question.getHotScore() == null ? 0 : question.getHotScore(),
+                question.getLastAskedAt() == null ? null : question.getLastAskedAt().toString(),
                 questionBankService.progressStatus(userId, id));
     }
 

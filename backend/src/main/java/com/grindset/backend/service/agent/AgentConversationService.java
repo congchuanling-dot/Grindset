@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.grindset.backend.common.Numbers.intValue;
 import static com.grindset.backend.common.Texts.truncate;
 import static com.grindset.backend.common.constant.InputLimits.CHAT_MAX_MESSAGE_LENGTH;
 import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
@@ -665,9 +666,6 @@ public class AgentConversationService {
         return value != null && !value.isBlank();
     }
 
-    private static int intValue(Integer value) {
-        return value == null ? 0 : value;
-    }
 
     private static String format(LocalDateTime time) {
         return time == null ? "" : time.format(STANDARD);

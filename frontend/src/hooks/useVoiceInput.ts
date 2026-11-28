@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getSession } from '../auth/authStore'
+import { errMessage } from '../utils/error'
 
 export type VoiceState = 'idle' | 'connecting' | 'recording' | 'finishing'
 
@@ -155,7 +156,7 @@ export function useVoiceInput(options: VoiceInputOptions): VoiceInputController 
         && (error.name === 'NotAllowedError' || error.name === 'SecurityError')
       fail(denied
         ? '请允许浏览器使用麦克风（语音输入需要 HTTPS 或 localhost）'
-        : error instanceof Error ? error.message : '无法访问麦克风')
+        : errMessage(error, '无法访问麦克风'))
       return
     }
     if (!aliveRef.current || stateRef.current !== 'connecting') {

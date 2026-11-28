@@ -2,7 +2,6 @@ package com.grindset.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
-import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.AnswerRequest;
 import com.grindset.backend.dto.AnswerResult;
 import com.grindset.backend.dto.ApiResponse;
@@ -16,6 +15,7 @@ import com.grindset.backend.dto.InterviewPlanPreview;
 import com.grindset.backend.dto.InterviewPlanRequest;
 import com.grindset.backend.dto.InterviewSummary;
 import com.grindset.backend.llm.LlmException;
+import com.grindset.backend.security.CurrentUser;
 import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.service.interview.InterviewCodingService;
 import com.grindset.backend.service.interview.InterviewPlanService;
@@ -35,7 +35,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -88,25 +87,25 @@ public class InterviewController {
     @PostMapping("/plan")
     public ApiResponse<InterviewPlanPreview> plan(@AuthenticationPrincipal LoginUser loginUser,
                                                   @RequestBody InterviewPlanRequest request) {
-        return ApiResponse.ok(planService.preview(userId(loginUser), request));
+        return ApiResponse.ok(planService.preview(CurrentUser.requireId(loginUser), request));
     }
 
     @PostMapping
     public ApiResponse<InterviewDetail> create(@AuthenticationPrincipal LoginUser loginUser,
                                               @RequestBody CreateInterviewRequest request) {
-        return ApiResponse.ok(sessionService.create(userId(loginUser), request));
+        return ApiResponse.ok(sessionService.create(CurrentUser.requireId(loginUser), request));
     }
 
     @GetMapping
     public ApiResponse<List<InterviewSummary>> list(@AuthenticationPrincipal LoginUser loginUser,
                                                     @RequestParam(required = false) List<Long> resumeIds) {
-        return ApiResponse.ok(sessionService.list(userId(loginUser), resumeIds));
+        return ApiResponse.ok(sessionService.list(CurrentUser.requireId(loginUser), resumeIds));
     }
 
     @GetMapping("/{id}")
     public ApiResponse<InterviewDetail> detail(@AuthenticationPrincipal LoginUser loginUser,
                                                @PathVariable long id) {
-        return ApiResponse.ok(sessionService.detail(userId(loginUser), id));
+        return ApiResponse.ok(sessionService.detail(CurrentUser.requireId(loginUser), id));
     }
 
     /**
@@ -116,7 +115,7 @@ public class InterviewController {
     @PostMapping("/{id}/questions")
     public SseEmitter nextQuestion(@AuthenticationPrincipal LoginUser loginUser,
                                    @PathVariable long id) {
-        long ownerId = userId(loginUser);
+        long ownerId = CurrentUser.requireId(loginUser);
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
         // 出题可能跑几十秒,用虚拟线程挂住,不占 Tomcat 平台线程
         Thread.ofVirtual().name("interview-sse-", 0).start(() -> runQuestion(ownerId, id, emitter));
@@ -127,20 +126,20 @@ public class InterviewController {
     public ApiResponse<AnswerResult> answer(@AuthenticationPrincipal LoginUser loginUser,
                                             @PathVariable long id,
                                             @RequestBody AnswerRequest request) {
-        return ApiResponse.ok(turnService.answer(userId(loginUser), id, request));
+        return ApiResponse.ok(turnService.answer(CurrentUser.requireId(loginUser), id, request));
     }
 
     @PostMapping("/{id}/coding/start")
     public ApiResponse<InterviewCodingView> startCoding(@AuthenticationPrincipal LoginUser loginUser,
                                                         @PathVariable long id) {
-        return ApiResponse.ok(codingService.start(userId(loginUser), id));
+        return ApiResponse.ok(codingService.start(CurrentUser.requireId(loginUser), id));
     }
 
     @PostMapping("/{id}/coding/run")
     public ApiResponse<InterviewCodingView.RunView> runCoding(@AuthenticationPrincipal LoginUser loginUser,
                                                               @PathVariable long id,
                                                               @RequestBody CodeRunRequest request) {
-        return ApiResponse.ok(codingService.run(userId(loginUser), id, request));
+        return ApiResponse.ok(codingService.run(CurrentUser.requireId(loginUser), id, request));
     }
 
     /** 保存代码草稿;前端输入停止后防抖调用 */
@@ -148,14 +147,14 @@ public class InterviewController {
     public ApiResponse<Void> saveCodingDraft(@AuthenticationPrincipal LoginUser loginUser,
                                              @PathVariable long id,
                                              @RequestBody CodeRunRequest request) {
-        codingService.saveDraft(userId(loginUser), id, request);
+        codingService.saveDraft(CurrentUser.requireId(loginUser), id, request);
         return ApiResponse.ok(null);
     }
 
     @PostMapping("/{id}/coding/complete")
     public ApiResponse<InterviewCodingResultView> completeCoding(@AuthenticationPrincipal LoginUser loginUser,
                                                                  @PathVariable long id) {
-        return ApiResponse.ok(codingService.complete(userId(loginUser), id));
+        return ApiResponse.ok(codingService.complete(CurrentUser.requireId(loginUser), id));
     }
 
     /** 编程阶段与面试官交流:SSE 增量返回,前端边收边播报 */
@@ -163,7 +162,7 @@ public class InterviewController {
     public SseEmitter codingChat(@AuthenticationPrincipal LoginUser loginUser,
                                  @PathVariable long id,
                                  @RequestBody CodingChatRequest request) {
-        long ownerId = userId(loginUser);
+        long ownerId = CurrentUser.requireId(loginUser);
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
         Thread.ofVirtual().name("interview-coding-chat-", 0)
                 .start(() -> runCodingChat(ownerId, id, request, emitter));
@@ -173,81 +172,55 @@ public class InterviewController {
     @PostMapping("/{id}/finish")
     public ApiResponse<InterviewDetail.ReportView> finish(@AuthenticationPrincipal LoginUser loginUser,
                                                           @PathVariable long id) {
-        return ApiResponse.ok(reportService.finish(userId(loginUser), id));
+        return ApiResponse.ok(reportService.finish(CurrentUser.requireId(loginUser), id));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal LoginUser loginUser,
                                     @PathVariable long id) {
-        sessionService.delete(userId(loginUser), id);
+        sessionService.delete(CurrentUser.requireId(loginUser), id);
         return ApiResponse.ok(null);
     }
 
     private void runQuestion(long userId, long id, SseEmitter emitter) {
+        SseEvents events = new SseEvents(emitter, objectMapper);
         try {
             InterviewDetail.QuestionView question = turnService.nextQuestion(userId, id,
-                    text -> sendEvent(emitter, "delta", Map.of("text", text)));
-            sendEvent(emitter, "done", Map.of(
+                    text -> events.send("delta", Map.of("text", text)));
+            events.send("done", Map.of(
                     "questionId", question.id(),
                     "seq", String.valueOf(question.seq())));
-            emitter.complete();
-        } catch (ClientGoneException e) {
+            events.complete();
+        } catch (SseEvents.ClientGoneException e) {
             log.debug("客户端已断开出题流");
-            emitter.complete();
+            events.complete();
         } catch (BizException e) {
-            fail(emitter, e.getMessage());
+            events.fail(e.getMessage());
         } catch (LlmException e) {
-            fail(emitter, e.getMessage());
+            events.fail(e.getMessage());
         } catch (Exception e) {
             log.error("AI 出题失败", e);
-            fail(emitter, "服务器内部错误");
+            events.fail("服务器内部错误");
         }
     }
 
     private void runCodingChat(long userId, long id, CodingChatRequest request, SseEmitter emitter) {
+        SseEvents events = new SseEvents(emitter, objectMapper);
         try {
             codingService.streamChat(userId, id, request,
-                    text -> sendEvent(emitter, "delta", Map.of("text", text)));
-            sendEvent(emitter, "done", Map.of());
-            emitter.complete();
-        } catch (ClientGoneException e) {
+                    text -> events.send("delta", Map.of("text", text)));
+            events.send("done", Map.of());
+            events.complete();
+        } catch (SseEvents.ClientGoneException e) {
             log.debug("客户端已断开编程交流流");
-            emitter.complete();
+            events.complete();
         } catch (BizException e) {
-            fail(emitter, e.getMessage());
+            events.fail(e.getMessage());
         } catch (LlmException e) {
-            fail(emitter, e.getMessage());
+            events.fail(e.getMessage());
         } catch (Exception e) {
             log.error("面试编程交流失败", e);
-            fail(emitter, "服务器内部错误");
+            events.fail("服务器内部错误");
         }
-    }
-
-    private void fail(SseEmitter emitter, String message) {
-        try {
-            sendEvent(emitter, "error", Map.of("message", message));
-            emitter.complete();
-        } catch (ClientGoneException e) {
-            emitter.complete();
-        }
-    }
-
-    private void sendEvent(SseEmitter emitter, String event, Map<String, String> data) {
-        try {
-            emitter.send(SseEmitter.event().name(event).data(objectMapper.writeValueAsString(data)));
-        } catch (IOException | IllegalStateException e) {
-            throw new ClientGoneException();
-        }
-    }
-
-    private static long userId(LoginUser loginUser) {
-        if (loginUser == null) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
-        }
-        return loginUser.userId();
-    }
-
-    /** 客户端已断开,不是业务错误 */
-    private static class ClientGoneException extends RuntimeException {
     }
 }

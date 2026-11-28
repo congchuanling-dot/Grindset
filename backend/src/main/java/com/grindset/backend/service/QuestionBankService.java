@@ -23,8 +23,6 @@ import com.grindset.backend.entity.UserQuestionProgress;
 import com.grindset.backend.mapper.QuestionAttemptMapper;
 import com.grindset.backend.mapper.QuestionBankMapper;
 import com.grindset.backend.mapper.UserQuestionProgressMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -43,15 +41,17 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.grindset.backend.common.Numbers.intValue;
 import static com.grindset.backend.common.constant.DisplayLimits.MAX_PREVIEW_CHARS;
 import static com.grindset.backend.common.constant.InputLimits.MAX_ANSWER_LENGTH;
 import static com.grindset.backend.common.constant.MasteryRules.WRONG_SCORE_MAX;
 import static com.grindset.backend.common.constant.QuestionBankStatus.ONLINE;
 import static com.grindset.backend.common.constant.QuestionProgressStatus.DONE;
 import static com.grindset.backend.common.constant.QuestionProgressStatus.WRONG;
-import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
+import static com.grindset.backend.common.constant.TimeFormats.format;
 
 /**
  * 题库第一版:列表筛选、题目详情、AI 评分作答、做题进度与错题联动。
@@ -61,8 +61,6 @@ import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
  */
 @Service
 public class QuestionBankService {
-
-    private static final Logger log = LoggerFactory.getLogger(QuestionBankService.class);
 
     private static final int PAGE_SIZE_DEFAULT = 20;
     private static final int PAGE_SIZE_MAX = 100;
@@ -98,14 +96,24 @@ public class QuestionBankService {
 
     // ---------- 列表与统计 ----------
 
-    /** 题库列表;summary 按当前模式统计,items 按领域/题型/难度/状态/关键词筛选后分页 */
+    /**
+     * 题库列表;summary 按当前模式 + 题单/公司范围统计,items 再按领域/题型/难度/状态/关键词筛选后分页。
+     * sort=hot 时按 CodeTop 频度倒序，否则保持「未做优先」。
+     */
     public QuestionBankView list(long userId, String domain, String type, Integer difficulty, String status,
-                                 String keyword, String judgeMode, int page, int size) {
-        List<QuestionBank> all = allQuestions();
+                                 String keyword, String judgeMode, String tag, String company, String sort,
+                                 int page, int size) {
         JudgeMode modeFilter = normalizeJudgeMode(judgeMode);
-        List<QuestionBank> scoped = scopeByMode(all, modeFilter);
+        List<QuestionBank> scoped = scopeByMode(allQuestions(), modeFilter);
         Map<Long, UserQuestionProgress> progress = loadProgress(userId);
-        QuestionBankView.Summary summary = summarize(scoped, progress);
+
+        String tagFilter = Texts.blankToNull(tag);
+        String companyFilter = Texts.blankToNull(company);
+        List<QuestionBank> base = scoped.stream()
+                .filter(q -> tagFilter == null || hasTag(q, tagFilter))
+                .filter(q -> companyFilter == null || hasCompany(q, companyFilter))
+                .collect(Collectors.toCollection(ArrayList::new));
+        QuestionBankView.Summary summary = summarize(base, progress);
 
         String domainFilter = Texts.blankToNull(domain);
         QuestionType typeFilter = normalizeType(type);
@@ -113,7 +121,7 @@ public class QuestionBankService {
         String statusFilter = normalizeStatus(status);
         String keywordFilter = Texts.blankToNull(keyword);
 
-        List<QuestionBank> matched = scoped.stream()
+        List<QuestionBank> matched = base.stream()
                 .filter(q -> domainFilter == null || matchesDomain(q, domainFilter))
                 .filter(q -> typeFilter == null || typeFilter == q.getType())
                 .filter(q -> difficultyFilter == null || difficultyFilter.equals(q.getDifficulty()))
@@ -122,8 +130,16 @@ public class QuestionBankService {
                         || statusFilter.equals(statusLabel(progress.get(q.getId()))))
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        // 默认排序:未做优先,其次错题,最后已做;同组内保持领域/难度/题号的原顺序
-        matched.sort(Comparator.comparingInt(q -> statusRank(progress.get(q.getId()))));
+        if ("hot".equalsIgnoreCase(sort)) {
+            // 常考优先：频度倒序，其次未做/错题优先，最后难度
+            matched.sort(Comparator
+                    .comparingInt((QuestionBank q) -> q.getHotScore() == null ? 0 : q.getHotScore()).reversed()
+                    .thenComparingInt(q -> statusRank(progress.get(q.getId())))
+                    .thenComparingInt(q -> q.getDifficulty() == null ? 2 : q.getDifficulty()));
+        } else {
+            // 默认排序:未做优先,其次错题,最后已做;同组内保持领域/难度/题号的原顺序
+            matched.sort(Comparator.comparingInt(q -> statusRank(progress.get(q.getId()))));
+        }
 
         int pageSize = size <= 0 ? PAGE_SIZE_DEFAULT : Math.min(size, PAGE_SIZE_MAX);
         int pageNo = Math.max(page, 1);
@@ -137,10 +153,16 @@ public class QuestionBankService {
         return new QuestionBankView(summary, matched.size(), pageNo, pageSize, items);
     }
 
-    /** 做题统计:只返回 summary,前端刷新进度时用 */
-    public QuestionBankView.Summary stats(long userId, String judgeMode) {
+    /** 做题统计:只返回 summary,前端刷新进度时用;可按题单/公司收窄范围 */
+    public QuestionBankView.Summary stats(long userId, String judgeMode, String tag, String company) {
         JudgeMode modeFilter = normalizeJudgeMode(judgeMode);
-        return summarize(scopeByMode(allQuestions(), modeFilter), loadProgress(userId));
+        String tagFilter = Texts.blankToNull(tag);
+        String companyFilter = Texts.blankToNull(company);
+        List<QuestionBank> scoped = scopeByMode(allQuestions(), modeFilter).stream()
+                .filter(q -> tagFilter == null || hasTag(q, tagFilter))
+                .filter(q -> companyFilter == null || hasCompany(q, companyFilter))
+                .toList();
+        return summarize(scoped, loadProgress(userId));
     }
 
     /** 筛选项:领域与题型的动态列表,附带题目数量,避免前端硬编码 */
@@ -172,7 +194,10 @@ public class QuestionBankService {
                 .map(entry -> new QuestionBankFacets.Count(entry.getKey().name(), entry.getValue()))
                 .toList();
 
-        return new QuestionBankFacets(domains, types);
+        List<QuestionBankFacets.Count> tags = countListValues(all, QuestionBank::getTags);
+        List<QuestionBankFacets.Count> companies = countListValues(all, QuestionBank::getCompanies);
+
+        return new QuestionBankFacets(domains, types, tags, companies);
     }
 
     // ---------- 详情 ----------
@@ -209,6 +234,12 @@ public class QuestionBankService {
                 progress == null ? null : progress.getBestScore(),
                 progress == null ? null : progress.getLastScore(),
                 progress == null ? null : format(progress.getLastAttemptAt()),
+                names(question.getTags()),
+                names(question.getCompanies()),
+                question.getLeetcodeNo(),
+                question.getLeetcodeSlug(),
+                question.getHotScore() == null ? 0 : question.getHotScore(),
+                question.getLastAskedAt() == null ? null : question.getLastAskedAt().toString(),
                 attempts);
     }
 
@@ -626,7 +657,13 @@ public class QuestionBankService {
                 intValue(progress == null ? null : progress.getAttemptCount()),
                 progress == null ? null : progress.getBestScore(),
                 progress == null ? null : progress.getLastScore(),
-                progress == null ? null : format(progress.getLastAttemptAt()));
+                progress == null ? null : format(progress.getLastAttemptAt()),
+                names(question.getTags()),
+                names(question.getCompanies()),
+                question.getLeetcodeNo(),
+                question.getLeetcodeSlug(),
+                question.getHotScore() == null ? 0 : question.getHotScore(),
+                question.getLastAskedAt() == null ? null : question.getLastAskedAt().toString());
     }
 
     private QuestionBankDetail.AttemptView toAttemptView(QuestionAttempt attempt) {
@@ -639,6 +676,39 @@ public class QuestionBankService {
                 attempt.getComment(),
                 attempt.getSuggestion(),
                 format(attempt.getCreatedAt()));
+    }
+
+    private static boolean hasTag(QuestionBank question, String tag) {
+        List<String> values = question.getTags();
+        return values != null && values.stream().anyMatch(value -> tag.equalsIgnoreCase(value));
+    }
+
+    private static boolean hasCompany(QuestionBank question, String company) {
+        List<String> values = question.getCompanies();
+        return values != null && values.stream().anyMatch(value -> company.equalsIgnoreCase(value));
+    }
+
+    /** 统计 JSON 数组列里每个值的题目数量，按数量倒序 */
+    private static List<QuestionBankFacets.Count> countListValues(
+            List<QuestionBank> questions, Function<QuestionBank, List<String>> getter) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (QuestionBank question : questions) {
+            List<String> values = getter.apply(question);
+            if (values == null) {
+                continue;
+            }
+            for (String value : values) {
+                String text = Texts.blankToNull(value);
+                if (text != null) {
+                    counts.merge(text, 1, Integer::sum);
+                }
+            }
+        }
+        return counts.entrySet().stream()
+                .map(entry -> new QuestionBankFacets.Count(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparingInt(QuestionBankFacets.Count::count).reversed()
+                        .thenComparing(QuestionBankFacets.Count::value))
+                .toList();
     }
 
     /** 领域筛选:"其他"同时匹配空领域,避免 facets 里的"其他"点进去查不到题 */
@@ -787,13 +857,6 @@ public class QuestionBankService {
         return Math.max(min, Math.min(max, value));
     }
 
-    private static String format(LocalDateTime time) {
-        return time == null ? null : time.format(STANDARD);
-    }
-
-    private static int intValue(Integer value) {
-        return value == null ? 0 : value;
-    }
 
     private static String sha256(String text) {
         try {

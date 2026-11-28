@@ -1,5 +1,5 @@
 // AI 面试接口封装:普通请求走 JSON,出题与编程交流走 SSE 流。
-import { authFetch, readApiError, unwrapJson } from './http'
+import { authFetch, jsonInit, readApiError, request, unwrapJson } from './http'
 import type { CodeLanguage } from './questionBank'
 import { isAbortError, readField, readSse } from './sse'
 
@@ -208,22 +208,6 @@ export interface InterviewPlanPayload {
   focus: string[]
   codingEnabled: boolean
   codingTimeLimitSec: number
-}
-
-async function request(path: string, init?: RequestInit): Promise<Response> {
-  try {
-    return await authFetch(path, init)
-  } catch {
-    throw new Error('无法连接服务器，请确认后端已启动')
-  }
-}
-
-function jsonInit(method: string, body: unknown): RequestInit {
-  return {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }
 }
 
 export async function createInterview(payload: CreateInterviewPayload): Promise<InterviewDetail> {

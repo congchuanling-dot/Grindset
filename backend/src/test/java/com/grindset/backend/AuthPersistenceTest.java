@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 端到端验证:雪花生成 ID → 插入 users/user_identities → 查回来。
  * 真连本地 grindset 库运行。
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AuthPersistenceTest {
 
     @Autowired

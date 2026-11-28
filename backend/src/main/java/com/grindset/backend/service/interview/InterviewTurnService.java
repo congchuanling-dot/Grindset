@@ -21,8 +21,6 @@ import com.grindset.backend.mapper.InterviewQuestionMapper;
 import com.grindset.backend.mapper.InterviewSessionMapper;
 import com.grindset.backend.service.InterviewLlmService;
 import com.grindset.backend.service.training.WeakPointProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -41,7 +39,7 @@ import static com.grindset.backend.service.interview.InterviewConstants.TYPE_ANS
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_FEEDBACK;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_FOLLOW_UP;
 import static com.grindset.backend.service.interview.InterviewConstants.TYPE_QUESTION;
-import static com.grindset.backend.service.interview.InterviewViews.intValue;
+import static com.grindset.backend.common.Numbers.intValue;
 import static com.grindset.backend.service.interview.InterviewViews.toView;
 
 /**
@@ -49,8 +47,6 @@ import static com.grindset.backend.service.interview.InterviewViews.toView;
  */
 @Service
 public class InterviewTurnService {
-
-    private static final Logger log = LoggerFactory.getLogger(InterviewTurnService.class);
 
     private final InterviewSessionService sessionService;
     private final InterviewSessionLocks locks;

@@ -8,7 +8,9 @@ import java.util.List;
  */
 public record QuestionBankFacets(
         List<Count> domains,
-        List<Count> types) {
+        List<Count> types,
+        List<Count> tags,
+        List<Count> companies) {
 
     public record Count(String value, int count) {
     }

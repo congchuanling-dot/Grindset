@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { authFetch, readApiError } from '../api/http'
 import { readField, readSse, isAbortError } from '../api/sse'
+import { errMessage } from '../utils/error'
 
 export interface InterviewerVoiceOptions {
   /** 播报自然结束(被打断不算) */
@@ -195,7 +196,7 @@ export function useInterviewerVoice(options: InterviewerVoiceOptions = {}): Inte
         clearPlayback()
         setSpeaking(false)
         optionsRef.current.onError?.(
-          error instanceof Error ? error.message : '语音播放失败',
+          errMessage(error, '语音播放失败'),
         )
       }
     },

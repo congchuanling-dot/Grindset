@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.TrainingDimension;
-import com.grindset.backend.common.constant.TimeFormats;
 import com.grindset.backend.dto.GeneratedQuestion;
 import com.grindset.backend.dto.SimilarQuestionView;
 import com.grindset.backend.dto.TrainingAnswerResult;
@@ -24,12 +23,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.common.Numbers.intValue;
+import static com.grindset.backend.common.constant.TimeFormats.format;
 import static com.grindset.backend.common.constant.TrainingConstants.ITEM_DONE;
 import static com.grindset.backend.common.constant.TrainingConstants.PLAN_COMPLETED;
 import static com.grindset.backend.common.constant.TrainingConstants.ROLE_RETEST;
@@ -114,10 +114,10 @@ public class TrainingViewMapper {
                 item.getComment(), item.getSuggestion(),
                 evaluation == null ? null : evaluation.summary(),
                 hideAnswer || evaluation == null ? null : evaluation.detailedFeedback(),
-                hideAnswer || evaluation == null ? List.of() : evaluation.improvements(),
+                hideAnswer || evaluation == null ? List.of() : safe(evaluation.improvements()),
                 hideAnswer ? null : standardReference(evaluation, reference),
                 evaluation == null ? null : evaluation.questionType(),
-                hideAnswer || evaluation == null ? List.of() : evaluation.scoringPoints(),
+                hideAnswer || evaluation == null ? List.of() : safe(evaluation.scoringPoints()),
                 format(item.getFinishedAt()),
                 hideAnswer ? List.of() : parseSimilar(item.getSimilarJson()),
                 item.getMistakeId() == null ? null : String.valueOf(item.getMistakeId()));
@@ -145,10 +145,10 @@ public class TrainingViewMapper {
                 mastery != null && mastery.getEliminatedAt() != null,
                 evaluation == null ? item.getComment() : evaluation.summary(),
                 evaluation == null ? null : evaluation.detailedFeedback(),
-                evaluation == null ? List.of() : evaluation.improvements(),
+                evaluation == null ? List.of() : safe(evaluation.improvements()),
                 evaluation == null ? null : evaluation.referenceAnswer(),
                 evaluation == null ? null : evaluation.questionType(),
-                evaluation == null ? List.of() : evaluation.scoringPoints());
+                evaluation == null ? List.of() : safe(evaluation.scoringPoints()));
     }
 
     public TrainingPlanDetail.MasteryDelta toDelta(MasteryService.MasteryChange change) {
@@ -277,7 +277,7 @@ public class TrainingViewMapper {
         }
     }
 
-    private static List<String> safe(List<String> values) {
+    private static <T> List<T> safe(List<T> values) {
         return values == null ? List.of() : values;
     }
 
@@ -287,11 +287,5 @@ public class TrainingViewMapper {
         return reference == null || reference.isBlank() ? fallback : reference;
     }
 
-    private static int intValue(Integer value) {
-        return value == null ? 0 : value;
-    }
 
-    private static String format(LocalDateTime time) {
-        return time == null ? null : TimeFormats.STANDARD.format(time);
-    }
 }

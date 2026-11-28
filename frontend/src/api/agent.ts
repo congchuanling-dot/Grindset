@@ -1,6 +1,6 @@
 // Agent 对话与会话管理接口封装。
 // 对话走 SSE(事件比普通对话多),会话列表/详情/重命名/删除走普通 JSON。
-import { authFetch, readApiError, unwrapJson } from './http'
+import { authFetch, jsonInit, readApiError, request, unwrapJson } from './http'
 import { isAbortError, readField, readJson, readSse, readString } from './sse'
 
 /** 一次工具调用的前端展示状态 */
@@ -180,22 +180,6 @@ export async function streamAgentChat(
       return true
     }
   })
-}
-
-async function request(path: string, init?: RequestInit): Promise<Response> {
-  try {
-    return await authFetch(path, init)
-  } catch {
-    throw new Error('无法连接服务器，请确认后端已启动')
-  }
-}
-
-function jsonInit(method: string, body: unknown): RequestInit {
-  return {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

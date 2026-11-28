@@ -9,6 +9,7 @@ import com.grindset.backend.common.JudgeMode;
 import com.grindset.backend.common.QuestionSource;
 import com.grindset.backend.common.QuestionType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,26 @@ public class QuestionBank {
     private QuestionSource source;
 
     private String sourceUrl;
+
+    /** 力扣题号；剑指 Offer 题没有数字题号时为空 */
+    private Integer leetcodeNo;
+
+    /** 力扣题目 slug，用于拼原题链接 */
+    private String leetcodeSlug;
+
+    /** 题单标签：HOT100 / JIANZHI / CODETOP / HIGH_FREQ / BASE */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> tags;
+
+    /** CodeTop 公司分类 */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> companies;
+
+    /** CodeTop 总频度，越大越常考 */
+    private Integer hotScore;
+
+    /** CodeTop 最近考察日期 */
+    private LocalDate lastAskedAt;
 
     private String contentHash;
 
@@ -211,6 +232,54 @@ public class QuestionBank {
 
     public void setSourceUrl(String sourceUrl) {
         this.sourceUrl = sourceUrl;
+    }
+
+    public Integer getLeetcodeNo() {
+        return leetcodeNo;
+    }
+
+    public void setLeetcodeNo(Integer leetcodeNo) {
+        this.leetcodeNo = leetcodeNo;
+    }
+
+    public String getLeetcodeSlug() {
+        return leetcodeSlug;
+    }
+
+    public void setLeetcodeSlug(String leetcodeSlug) {
+        this.leetcodeSlug = leetcodeSlug;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    public List<String> getCompanies() {
+        return companies;
+    }
+
+    public void setCompanies(List<String> companies) {
+        this.companies = companies;
+    }
+
+    public Integer getHotScore() {
+        return hotScore;
+    }
+
+    public void setHotScore(Integer hotScore) {
+        this.hotScore = hotScore;
+    }
+
+    public LocalDate getLastAskedAt() {
+        return lastAskedAt;
+    }
+
+    public void setLastAskedAt(LocalDate lastAskedAt) {
+        this.lastAskedAt = lastAskedAt;
     }
 
     public String getContentHash() {

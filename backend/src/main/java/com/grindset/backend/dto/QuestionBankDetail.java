@@ -22,6 +22,12 @@ public record QuestionBankDetail(
         Integer bestScore,
         Integer lastScore,
         String lastAttemptAt,
+        List<String> tags,
+        List<String> companies,
+        Integer leetcodeNo,
+        String leetcodeSlug,
+        Integer hotScore,
+        String lastAskedAt,
         List<AttemptView> attempts) {
 
     public record AttemptView(

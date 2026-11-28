@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { InterviewReport } from '../../api/interview'
 import { createTrainingSession } from '../../api/training'
+import { errMessage } from '../../utils/error'
 
 interface ReportDialogProps {
   report: InterviewReport
@@ -56,7 +57,7 @@ function ReportDialog({ report, position, sessionId, onClose }: ReportDialogProp
       onClose()
       navigate(`/training/${plan.id}`)
     } catch (error) {
-      setTrainError(error instanceof Error ? error.message : '生成训练计划失败')
+      setTrainError(errMessage(error, '生成训练计划失败'))
     } finally {
       setCreating(false)
     }

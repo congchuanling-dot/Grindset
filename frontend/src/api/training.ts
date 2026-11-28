@@ -1,5 +1,5 @@
 // 弱项训练 v2 接口封装。
-import { authFetch, unwrapJson } from './http'
+import { jsonInit, request, unwrapJson } from './http'
 
 export type TrainingStage = 'BASELINE' | 'DAILY' | 'RETEST' | 'MISTAKE'
 
@@ -192,22 +192,6 @@ export interface TrainingAnswerResult {
   referenceAnswer: string | null
   questionType: string | null
   scoringPoints: ScoringPoint[]
-}
-
-async function request(path: string, init?: RequestInit): Promise<Response> {
-  try {
-    return await authFetch(path, init)
-  } catch {
-    throw new Error('无法连接服务器，请确认后端已启动')
-  }
-}
-
-function jsonInit(method: string, body: unknown): RequestInit {
-  return {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }
 }
 
 export async function getTrainingDashboard(): Promise<TrainingDashboard> {

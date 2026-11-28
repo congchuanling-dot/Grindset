@@ -31,6 +31,7 @@ import RoomLayout from '../components/interview-room/RoomLayout'
 import SelfVideo from '../components/interview-room/SelfVideo'
 import TranscriptPanel from '../components/interview-room/TranscriptPanel'
 import { QuestionStatus, SessionStatus } from '../constants/status'
+import { errMessage } from '../utils/error'
 import { useBargeIn } from '../hooks/useBargeIn'
 import { useInterviewerVoice } from '../hooks/useInterviewerVoice'
 import { useLocalMedia } from '../hooks/useLocalMedia'
@@ -229,7 +230,7 @@ function InterviewRoomPage() {
         onError: (message) => handleExpired(message),
       })
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '出题失败,请重试')
+      setActionError(errMessage(err, '出题失败,请重试'))
       setPhase('idle')
       return
     } finally {
@@ -277,7 +278,7 @@ function InterviewRoomPage() {
         await voice.speak(round.intro)
       }
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '进入手撕代码失败')
+      setActionError(errMessage(err, '进入手撕代码失败'))
       setPhase('idle')
     } finally {
       codingStartingRef.current = false
@@ -320,7 +321,7 @@ function InterviewRoomPage() {
         await askNext()
         return true
       } catch (err) {
-        setActionError(err instanceof Error ? err.message : '提交回答失败,请重试')
+        setActionError(errMessage(err, '提交回答失败,请重试'))
         setPhase('idle')
         return false
       } finally {
@@ -378,7 +379,7 @@ function InterviewRoomPage() {
       }
       return true
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '面试官回复失败,请重试')
+      setActionError(errMessage(err, '面试官回复失败,请重试'))
       return false
     } finally {
       setCodingChatting(false)
@@ -403,7 +404,7 @@ function InterviewRoomPage() {
         navigate('/records')
       }
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '结束面试失败,请稍后重试')
+      setActionError(errMessage(err, '结束面试失败,请稍后重试'))
     } finally {
       setFinishing(false)
     }
@@ -418,7 +419,7 @@ function InterviewRoomPage() {
       await refresh()
       if (report) setReportOpen(true)
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '生成复盘失败,请稍后重试')
+      setActionError(errMessage(err, '生成复盘失败,请稍后重试'))
     } finally {
       setFinishing(false)
     }
@@ -442,7 +443,7 @@ function InterviewRoomPage() {
       }
       await finishAndReport()
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '完成本题失败,请重试')
+      setActionError(errMessage(err, '完成本题失败,请重试'))
     }
   }, [sessionId, refresh, voice, finishAndReport])
 

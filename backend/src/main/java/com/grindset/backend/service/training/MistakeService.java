@@ -17,6 +17,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.grindset.backend.common.Numbers.intValue;
+import static com.grindset.backend.common.constant.TimeFormats.format;
+
 /**
  * 错题本：答错自动归集，答对高分自动解决，支持按知识点重练。
  */
@@ -165,12 +168,4 @@ public class MistakeService {
         }
     }
 
-    private static String format(LocalDateTime time) {
-        return time == null ? null
-                : com.grindset.backend.common.constant.TimeFormats.STANDARD.format(time);
-    }
-
-    private static int intValue(Integer value) {
-        return value == null ? 0 : value;
-    }
 }

@@ -8,6 +8,7 @@ import {
   type TrainingDashboard,
   type TrainingStage,
 } from '../../api/training'
+import { errMessage } from '../../utils/error'
 
 /** 弱项训练仪表盘：五维雷达、成长曲线、弱项地图、错题本。 */
 function TrainingDashboardPage() {
@@ -24,7 +25,7 @@ function TrainingDashboardPage() {
         if (!cancelled) setData(result)
       })
       .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : '加载训练仪表盘失败')
+        if (!cancelled) setError(errMessage(err, '加载训练仪表盘失败'))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -42,7 +43,7 @@ function TrainingDashboardPage() {
       const session = await createTrainingSession(stage)
       navigate(`/training/${session.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '创建训练失败')
+      setError(errMessage(err, '创建训练失败'))
     } finally {
       setStarting('')
     }
@@ -56,7 +57,7 @@ function TrainingDashboardPage() {
       const session = await retrainMistakes()
       navigate(`/training/${session.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '创建错题重练失败')
+      setError(errMessage(err, '创建错题重练失败'))
     } finally {
       setStarting('')
     }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { errMessage } from '../utils/error'
 
 function toMessage(error: unknown): string {
   if (error instanceof DOMException) {
@@ -6,7 +7,7 @@ function toMessage(error: unknown): string {
     if (error.name === 'NotFoundError') return '未检测到可用的摄像头或麦克风'
     if (error.name === 'NotReadableError') return '设备被其他程序占用,请关闭后重试'
   }
-  return error instanceof Error ? error.message : '无法获取音视频设备'
+  return errMessage(error, '无法获取音视频设备')
 }
 
 /**

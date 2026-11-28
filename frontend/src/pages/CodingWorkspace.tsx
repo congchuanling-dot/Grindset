@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
+  ExternalLink,
   FileText,
   Lightbulb,
   Loader2,
@@ -20,6 +21,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   getCodingDetail,
   getCodingReviews,
+  questionTagLabel,
   reviewCode,
   runCode,
   type CodeLanguage,
@@ -181,12 +183,34 @@ function CodingWorkspace({ questionId }: CodingWorkspaceProps) {
             <span className={`rounded-full px-2 py-0.5 text-[11px] ${difficultyClass(detail.difficulty)}`}>
               {difficultyLabel(detail.difficulty)}
             </span>
+            {(detail.tags ?? []).filter((entry) => entry !== 'CODETOP').slice(0, 3).map((entry) => (
+              <span key={entry} className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
+                {questionTagLabel(entry)}
+              </span>
+            ))}
             <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-700">
               自由运行
             </span>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
               {PROGRESS_LABELS[detail.status]}
             </span>
+            {(detail.companies ?? []).length > 0 && (
+              <span className="truncate rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">
+                考察公司 {(detail.companies ?? []).slice(0, 2).join(' / ')}
+                {(detail.companies ?? []).length > 2 ? ` +${(detail.companies ?? []).length - 2}` : ''}
+              </span>
+            )}
+            {detail.leetcodeSlug && (
+              <a
+                href={`https://leetcode.cn/problems/${detail.leetcodeSlug}/`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-0.5 rounded-full border border-slate-200 px-2 py-0.5 text-[11px] text-slate-500 transition hover:border-brand-300 hover:text-brand-700"
+              >
+                力扣原题
+                <ExternalLink size={10} />
+              </a>
+            )}
           </div>
         )}
       </header>

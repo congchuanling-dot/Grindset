@@ -20,6 +20,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.common.Numbers.intValue;
 import static com.grindset.backend.common.constant.MasteryRules.STALE_DAYS;
 
 /**
@@ -359,10 +360,6 @@ public class MasteryService implements WeakPointProvider {
             return "WEAK";
         }
         return mastery >= 75 ? "MASTERED" : "LEARNING";
-    }
-
-    private static int intValue(Integer value) {
-        return value == null ? 0 : value;
     }
 
     /** 一次观测的结果，供训练结果页展示 before/after */

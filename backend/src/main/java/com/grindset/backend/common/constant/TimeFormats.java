@@ -1,5 +1,6 @@
 package com.grindset.backend.common.constant;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -14,5 +15,10 @@ public final class TimeFormats {
     public static final DateTimeFormatter STANDARD = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private TimeFormats() {
+    }
+
+    /** 空值原样返回 null,其余按 {@link #STANDARD} 格式化 */
+    public static String format(LocalDateTime time) {
+        return time == null ? null : STANDARD.format(time);
     }
 }

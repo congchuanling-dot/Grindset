@@ -18,5 +18,11 @@ public record CodingDetail(
         Map<String, String> starterCode,
         int timeLimitMs,
         int memoryLimitMb,
+        List<String> tags,
+        List<String> companies,
+        Integer leetcodeNo,
+        String leetcodeSlug,
+        Integer hotScore,
+        String lastAskedAt,
         String status) {
 }

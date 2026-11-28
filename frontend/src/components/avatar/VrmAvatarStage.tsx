@@ -8,6 +8,7 @@ import {
   type VRMAnimation,
 } from '@pixiv/three-vrm-animation'
 import type { VRM, VRMHumanBoneName } from '@pixiv/three-vrm'
+import { errMessage } from '../../utils/error'
 
 /**
  * 坐姿待机动作(VRMA)。放在 public/models 下,缺失时自动回退到代码摆的坐姿。
@@ -259,7 +260,7 @@ const VrmAvatarStage = forwardRef<VrmAvatarHandle, VrmAvatarStageProps>(function
         setProgress(100)
       } catch (err) {
         if (disposed) return
-        setError(err instanceof Error ? err.message : '模型加载失败')
+        setError(errMessage(err, '模型加载失败'))
       }
     }
 

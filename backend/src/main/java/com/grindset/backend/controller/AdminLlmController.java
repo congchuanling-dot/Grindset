@@ -33,7 +33,7 @@ import java.util.Map;
 
 import static com.grindset.backend.common.constant.LlmEnabledStatus.ENABLED;
 import static com.grindset.backend.common.constant.LlmKeyStatus.NORMAL;
-import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
+import static com.grindset.backend.common.constant.TimeFormats.format;
 
 /**
  * 模型服务管理接口(需要 X-Admin-Token)。
@@ -237,10 +237,6 @@ public class AdminLlmController {
             throw new BizException(ErrorCode.NOT_FOUND, "渠道不存在");
         }
         return channel;
-    }
-
-    private static String format(LocalDateTime time) {
-        return time == null ? null : time.format(STANDARD);
     }
 
     public record ChannelView(long id, String providerId, String name, String baseUrl, int priority,

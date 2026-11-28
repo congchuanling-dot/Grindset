@@ -13,6 +13,7 @@ import MarkdownContent from '../../components/MarkdownContent'
 import VoiceInputButton from '../../components/VoiceInputButton'
 import { useInterviewerVoice } from '../../hooks/useInterviewerVoice'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { errMessage } from '../../utils/error'
 
 const STATUS_COMPLETED = 2
 
@@ -72,7 +73,7 @@ function TrainingSessionPage() {
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          setLoadError(error instanceof Error ? error.message : '加载训练失败')
+          setLoadError(errMessage(error, '加载训练失败'))
         }
       })
       .finally(() => {
@@ -115,7 +116,7 @@ function TrainingSessionPage() {
       const fresh = await getTrainingSession(session.id)
       setSession(fresh)
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : '提交失败，请重试')
+      setSubmitError(errMessage(error, '提交失败，请重试'))
     } finally {
       setSubmitting(false)
     }
@@ -388,11 +389,11 @@ function TrainingSessionPage() {
                     <MarkdownContent content={current.detailedFeedback} className="text-xs" />
                   </div>
                 )}
-                {current.scoringPoints.length > 0 && (
+                {(current.scoringPoints ?? []).length > 0 && (
                   <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5">
                     <p className="mb-1 text-[10px] font-semibold text-slate-500">评分点</p>
                     <ul className="space-y-1.5">
-                      {current.scoringPoints.map((point, index) => (
+                      {(current.scoringPoints ?? []).map((point, index) => (
                         <li key={`${point.point}-${index}`} className="text-[11px] leading-5 text-slate-600">
                           <span className="font-medium">{point.point}</span>
                           <span className="ml-1 text-slate-400">
@@ -408,11 +409,11 @@ function TrainingSessionPage() {
                     </ul>
                   </div>
                 )}
-                {current.improvements.length > 0 ? (
+                {(current.improvements ?? []).length > 0 ? (
                   <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5">
                     <p className="mb-1 text-[10px] font-semibold text-slate-500">改进项</p>
                     <ul className="space-y-1">
-                      {current.improvements.map((item, index) => (
+                      {(current.improvements ?? []).map((item, index) => (
                         <li key={`${item}-${index}`} className="text-[11px] leading-5 text-slate-600">
                           · {item}
                         </li>

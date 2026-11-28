@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { exchangeGithubCode, exchangeGoogleCode } from '../api/auth'
 import { setSession } from '../auth/authStore'
 import { useToast } from '../components/toast/ToastProvider'
+import { errMessage } from '../utils/error'
 
 /**
  * 第三方登录回调页。
@@ -44,7 +45,7 @@ function AuthCallbackPage() {
         navigate('/', { replace: true })
       })
       .catch((err: unknown) => {
-        toast.error(err instanceof Error ? err.message : '登录失败，请稍后重试')
+        toast.error(errMessage(err, '登录失败，请稍后重试'))
         navigate('/login', { replace: true })
       })
   }, [navigate, toast])

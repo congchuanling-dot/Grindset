@@ -145,6 +145,29 @@ public class WalletService {
         });
     }
 
+    /**
+     * 管理后台直接设置余额。按目标余额覆盖,差额记一条 ADJUST 流水,便于对账。
+     * 余额不变时不写流水,只更新更新时间。
+     */
+    public WalletDtos.Info adjustBalance(long userId, BigDecimal target) {
+        return transactionTemplate.execute(status -> {
+            UserWallet wallet = ensureWallet(userId);
+            BigDecimal before = nz(wallet.getBalance());
+            UserWallet patch = new UserWallet();
+            patch.setId(wallet.getId());
+            patch.setBalance(target);
+            walletMapper.updateById(patch);
+
+            BigDecimal delta = target.subtract(before);
+            if (delta.signum() != 0) {
+                insertLog(userId, delta, before, target, WalletChangeType.ADJUST.name(),
+                        null, null, "管理员调整余额");
+            }
+            return new WalletDtos.Info(target, wallet.getCurrency(),
+                    TimeFormats.STANDARD.format(LocalDateTime.now()));
+        });
+    }
+
     private UserWallet createWallet(long userId) {
         UserWallet wallet = new UserWallet();
         wallet.setId(idGenerator.nextId());

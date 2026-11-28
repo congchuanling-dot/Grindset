@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.common.TrainingDimension;
 import com.grindset.backend.dto.TrainingDashboard;
-import com.grindset.backend.dto.TrainingMistakeView;
 import com.grindset.backend.entity.InterviewWeakness;
 import com.grindset.backend.entity.TrainingMasterySnapshot;
 import com.grindset.backend.entity.TrainingPlan;
@@ -25,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.grindset.backend.common.Numbers.intValue;
+import static com.grindset.backend.common.constant.TimeFormats.format;
 import static com.grindset.backend.common.constant.TrainingConstants.PLAN_PENDING;
 import static com.grindset.backend.common.constant.TrainingConstants.PLAN_RUNNING;
 
@@ -181,14 +182,5 @@ public class TrainingAnalyticsService {
             log.warn("维度快照序列化失败", e);
             return "{}";
         }
-    }
-
-    private static int intValue(Integer value) {
-        return value == null ? 0 : value;
-    }
-
-    private static String format(LocalDateTime time) {
-        return time == null ? null
-                : com.grindset.backend.common.constant.TimeFormats.STANDARD.format(time);
     }
 }

@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.grindset.backend.common.BizException;
 import com.grindset.backend.common.CandidateType;
 import com.grindset.backend.common.ErrorCode;
-import com.grindset.backend.common.ResumeFileType;
 import com.grindset.backend.common.ResumeSectionType;
 import com.grindset.backend.common.SnowflakeIdGenerator;
 import com.grindset.backend.dto.ParsedResume;

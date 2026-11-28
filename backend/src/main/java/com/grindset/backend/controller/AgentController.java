@@ -2,10 +2,10 @@ package com.grindset.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grindset.backend.common.BizException;
-import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.AgentDtos;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.llm.LlmException;
+import com.grindset.backend.security.CurrentUser;
 import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.service.agent.AgentConversationService;
 import com.grindset.backend.service.agent.AgentService;
@@ -60,7 +60,7 @@ public class AgentController {
     public SseEmitter chat(@AuthenticationPrincipal LoginUser loginUser,
                            @RequestBody AgentDtos.ChatRequest request) {
         SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_5_MIN_MS);
-        long userId = userId(loginUser);
+        long userId = CurrentUser.requireId(loginUser);
         // SSE 会挂住整个请求周期,用虚拟线程,别占满 Tomcat 的工作线程
         Thread.ofVirtual().name("agent-sse-", 0).start(() -> runChat(userId, request, emitter));
         return emitter;
@@ -115,35 +115,28 @@ public class AgentController {
     @GetMapping("/conversations")
     public ApiResponse<List<AgentDtos.ConversationSummary>> list(
             @AuthenticationPrincipal LoginUser loginUser) {
-        return ApiResponse.ok(conversationService.list(userId(loginUser)));
+        return ApiResponse.ok(conversationService.list(CurrentUser.requireId(loginUser)));
     }
 
     @GetMapping("/conversations/{id}")
     public ApiResponse<AgentDtos.ConversationDetail> detail(
             @AuthenticationPrincipal LoginUser loginUser, @PathVariable long id) {
-        return ApiResponse.ok(conversationService.detail(userId(loginUser), id));
+        return ApiResponse.ok(conversationService.detail(CurrentUser.requireId(loginUser), id));
     }
 
     @PatchMapping("/conversations/{id}")
     public ApiResponse<Void> rename(@AuthenticationPrincipal LoginUser loginUser,
                                     @PathVariable long id,
                                     @RequestBody AgentDtos.RenameRequest request) {
-        conversationService.rename(userId(loginUser), id, request == null ? null : request.title());
+        conversationService.rename(CurrentUser.requireId(loginUser), id, request == null ? null : request.title());
         return ApiResponse.ok(null);
     }
 
     @DeleteMapping("/conversations/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal LoginUser loginUser,
                                     @PathVariable long id) {
-        conversationService.delete(userId(loginUser), id);
+        conversationService.delete(CurrentUser.requireId(loginUser), id);
         return ApiResponse.ok(null);
-    }
-
-    private static long userId(LoginUser loginUser) {
-        if (loginUser == null) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
-        }
-        return loginUser.userId();
     }
 
     /** 把 Service 的事件回调翻译成 SSE 帧 */

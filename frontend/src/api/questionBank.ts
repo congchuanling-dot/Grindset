@@ -1,10 +1,23 @@
 // 题库接口封装:列表筛选、题目详情、提交作答与作答历史。
-import { authFetch, unwrapJson } from './http'
+import { request, unwrapJson } from './http'
 
 export type QuestionStatus = 'TODO' | 'DONE' | 'WRONG'
 export type QuestionType = 'BASICS' | 'SCENARIO' | 'PROJECT' | 'CODE'
 export type JudgeMode = 'TEXT' | 'CODING'
 export type CodeLanguage = 'JAVA' | 'PYTHON'
+
+/** 题单标签展示名；CODETOP 是来源标记，不在列表里重复展示 */
+export const QUESTION_TAG_LABELS: Record<string, string> = {
+  HIGH_FREQ: '高频',
+  HOT100: '热题100',
+  JIANZHI: '剑指Offer',
+  CODETOP: 'CodeTop',
+  BASE: '基础',
+}
+
+export function questionTagLabel(tag: string): string {
+  return QUESTION_TAG_LABELS[tag] ?? tag
+}
 
 export interface QuestionBankSummary {
   total: number
@@ -28,6 +41,12 @@ export interface QuestionBankItem {
   bestScore: number | null
   lastScore: number | null
   lastAttemptAt: string | null
+  tags: string[]
+  companies: string[]
+  leetcodeNo: number | null
+  leetcodeSlug: string | null
+  hotScore: number
+  lastAskedAt: string | null
 }
 
 export interface QuestionBankList {
@@ -66,6 +85,12 @@ export interface QuestionBankDetail {
   bestScore: number | null
   lastScore: number | null
   lastAttemptAt: string | null
+  tags: string[]
+  companies: string[]
+  leetcodeNo: number | null
+  leetcodeSlug: string | null
+  hotScore: number
+  lastAskedAt: string | null
   attempts: QuestionAttemptView[]
 }
 
@@ -84,14 +109,6 @@ export interface QuestionAttemptResult {
   createdAt: string | null
 }
 
-async function request(path: string, init?: RequestInit): Promise<Response> {
-  try {
-    return await authFetch(path, init)
-  } catch {
-    throw new Error('无法连接服务器，请确认后端已启动')
-  }
-}
-
 /** 题库列表;summary 始终按用户全量统计,items 按筛选条件分页 */
 export async function getQuestions(params: {
   domain?: string
@@ -100,6 +117,9 @@ export async function getQuestions(params: {
   status?: QuestionStatus
   keyword?: string
   judgeMode?: JudgeMode
+  tag?: string
+  company?: string
+  sort?: 'hot' | 'default'
   page?: number
   size?: number
 } = {}): Promise<QuestionBankList> {
@@ -110,6 +130,9 @@ export async function getQuestions(params: {
   if (params.status) search.set('status', params.status)
   if (params.keyword) search.set('keyword', params.keyword)
   if (params.judgeMode) search.set('judgeMode', params.judgeMode)
+  if (params.tag) search.set('tag', params.tag)
+  if (params.company) search.set('company', params.company)
+  if (params.sort) search.set('sort', params.sort)
   if (params.page) search.set('page', String(params.page))
   if (params.size) search.set('size', String(params.size))
   const query = search.toString()
@@ -118,10 +141,16 @@ export async function getQuestions(params: {
   return unwrapJson<QuestionBankList>(res, '加载题库失败')
 }
 
-/** 只取做题统计;judgeMode 可把问答题和编程题分开统计 */
-export async function getQuestionStats(judgeMode?: JudgeMode): Promise<QuestionBankSummary> {
+/** 只取做题统计;judgeMode 分开问答/编程，tag/company 把统计收窄到当前题单 */
+export async function getQuestionStats(
+  judgeMode?: JudgeMode,
+  tag?: string,
+  company?: string,
+): Promise<QuestionBankSummary> {
   const search = new URLSearchParams()
   if (judgeMode) search.set('judgeMode', judgeMode)
+  if (tag) search.set('tag', tag)
+  if (company) search.set('company', company)
   const query = search.toString()
   const res = await request(`/api/questions/stats${query ? `?${query}` : ''}`)
   return unwrapJson<QuestionBankSummary>(res, '加载做题统计失败')
@@ -140,6 +169,8 @@ export interface QuestionFacet {
 export interface QuestionBankFacets {
   domains: QuestionFacet[]
   types: QuestionFacet[]
+  tags: QuestionFacet[]
+  companies: QuestionFacet[]
 }
 
 /** 领域与题型的动态筛选项,计数只统计已上架题目;按 judgeMode 分开 */
@@ -214,6 +245,12 @@ export interface CodingDetail {
   starterCode: Partial<Record<CodeLanguage, string>>
   timeLimitMs: number
   memoryLimitMb: number
+  tags: string[]
+  companies: string[]
+  leetcodeNo: number | null
+  leetcodeSlug: string | null
+  hotScore: number
+  lastAskedAt: string | null
   status: QuestionStatus
 }
 

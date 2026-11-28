@@ -19,9 +19,6 @@ public class IdentityService {
     /** 账号密码登录 */
     public static final String PROVIDER_LOCAL = "LOCAL";
 
-    /** GitHub 登录 */
-    public static final String PROVIDER_GITHUB = "GITHUB";
-
     private final UserIdentityMapper identityMapper;
     private final SnowflakeIdGenerator idGenerator;
 

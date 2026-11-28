@@ -1,11 +1,10 @@
 package com.grindset.backend.controller;
 
-import com.grindset.backend.common.BizException;
-import com.grindset.backend.common.ErrorCode;
 import com.grindset.backend.dto.ApiResponse;
 import com.grindset.backend.dto.ParsedResume;
 import com.grindset.backend.dto.ResumeDetail;
 import com.grindset.backend.dto.ResumeSummary;
+import com.grindset.backend.security.CurrentUser;
 import com.grindset.backend.security.LoginUser;
 import com.grindset.backend.service.ResumeOriginalStorage;
 import com.grindset.backend.service.ResumeService;
@@ -46,24 +45,24 @@ public class ResumeController {
     @PostMapping
     public ApiResponse<ResumeDetail> upload(@AuthenticationPrincipal LoginUser loginUser,
                                             @RequestParam(name = "file", required = false) MultipartFile file) {
-        return ApiResponse.ok(resumeService.upload(userId(loginUser), file));
+        return ApiResponse.ok(resumeService.upload(CurrentUser.requireId(loginUser), file));
     }
 
     @GetMapping
     public ApiResponse<List<ResumeSummary>> list(@AuthenticationPrincipal LoginUser loginUser) {
-        return ApiResponse.ok(resumeService.list(userId(loginUser)));
+        return ApiResponse.ok(resumeService.list(CurrentUser.requireId(loginUser)));
     }
 
     @GetMapping("/{id}")
     public ApiResponse<ResumeDetail> detail(@AuthenticationPrincipal LoginUser loginUser,
                                             @PathVariable long id) {
-        return ApiResponse.ok(resumeService.get(userId(loginUser), id));
+        return ApiResponse.ok(resumeService.get(CurrentUser.requireId(loginUser), id));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal LoginUser loginUser,
                                     @PathVariable long id) {
-        resumeService.delete(userId(loginUser), id);
+        resumeService.delete(CurrentUser.requireId(loginUser), id);
         return ApiResponse.ok(null);
     }
 
@@ -74,7 +73,7 @@ public class ResumeController {
     public ApiResponse<ResumeDetail> update(@AuthenticationPrincipal LoginUser loginUser,
                                             @PathVariable long id,
                                             @RequestBody ParsedResume request) {
-        return ApiResponse.ok(resumeService.updateContent(userId(loginUser), id, request));
+        return ApiResponse.ok(resumeService.updateContent(CurrentUser.requireId(loginUser), id, request));
     }
 
     /**
@@ -85,7 +84,7 @@ public class ResumeController {
     public void original(@AuthenticationPrincipal LoginUser loginUser,
                          @PathVariable long id,
                          HttpServletResponse response) throws IOException {
-        ResumeService.OriginalFile file = resumeService.openOriginal(userId(loginUser), id);
+        ResumeService.OriginalFile file = resumeService.openOriginal(CurrentUser.requireId(loginUser), id);
         response.setContentType(ResumeOriginalStorage.contentTypeOf(file.fileType()));
         if (file.size() > 0) {
             response.setContentLengthLong(file.size());
@@ -95,12 +94,5 @@ public class ResumeController {
         try (InputStream in = file.stream()) {
             in.transferTo(response.getOutputStream());
         }
-    }
-
-    private static long userId(LoginUser loginUser) {
-        if (loginUser == null) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, "未登录或登录已过期");
-        }
-        return loginUser.userId();
     }
 }

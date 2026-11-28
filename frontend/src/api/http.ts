@@ -93,3 +93,21 @@ export async function readApiError(res: Response, fallback: string): Promise<str
     return `${fallback}（HTTP ${res.status}）`
   }
 }
+
+/** 统一请求封装:连接失败转成可读文案;普通请求与 SSE 共用 */
+export async function request(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await authFetch(path, init)
+  } catch {
+    throw new Error('无法连接服务器，请确认后端已启动')
+  }
+}
+
+/** JSON 请求体初始化 */
+export function jsonInit(method: string, body: unknown): RequestInit {
+  return {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }
+}

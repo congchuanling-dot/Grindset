@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 
+import static com.grindset.backend.common.Numbers.intValue;
 import static com.grindset.backend.common.constant.TimeFormats.STANDARD;
 
 /**
@@ -35,10 +36,6 @@ final class InterviewViews {
             log.warn("复盘报告 JSON 解析失败", e);
             return null;
         }
-    }
-
-    static int intValue(Integer value) {
-        return value == null ? 0 : value;
     }
 
     /** 从 evaluation_json 里取本题的 JD 差距;旧数据或坏 JSON 返回 null */
