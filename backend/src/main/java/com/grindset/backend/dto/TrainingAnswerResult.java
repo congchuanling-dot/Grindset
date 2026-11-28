@@ -19,5 +19,11 @@ public record TrainingAnswerResult(
         int nextDifficulty,
         List<SimilarQuestionView> similarQuestions,
         String mistakeId,
-        boolean eliminated) {
+        boolean eliminated,
+        String summary,
+        String detailedFeedback,
+        List<String> improvements,
+        String referenceAnswer,
+        String questionType,
+        List<TrainingEvaluation.ScoringPoint> scoringPoints) {
 }

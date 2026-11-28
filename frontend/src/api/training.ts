@@ -80,6 +80,13 @@ export interface SimilarQuestion {
   difficulty: number | null
 }
 
+export interface ScoringPoint {
+  point: string
+  weight: number
+  required: boolean
+  acceptable: string | null
+}
+
 export interface TrainingItem {
   id: string
   seq: number
@@ -101,7 +108,12 @@ export interface TrainingItem {
   missedPoints: string[]
   comment: string | null
   suggestion: string | null
+  summary: string | null
+  detailedFeedback: string | null
+  improvements: string[]
   referenceAnswer: string | null
+  questionType: string | null
+  scoringPoints: ScoringPoint[]
   finishedAt: string | null
   similarQuestions: SimilarQuestion[]
   mistakeId: string | null
@@ -174,6 +186,12 @@ export interface TrainingAnswerResult {
   similarQuestions: SimilarQuestion[]
   mistakeId: string | null
   eliminated: boolean
+  summary: string | null
+  detailedFeedback: string | null
+  improvements: string[]
+  referenceAnswer: string | null
+  questionType: string | null
+  scoringPoints: ScoringPoint[]
 }
 
 async function request(path: string, init?: RequestInit): Promise<Response> {

@@ -23,6 +23,14 @@ const STAGE_LABELS: Record<string, string> = {
   MISTAKE: '错题重练',
 }
 
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  CONCEPT: '概念解释',
+  PRINCIPLE: '原理分析',
+  CODING: '编程代码',
+  DESIGN: '场景设计',
+  ESSAY: '综合论述',
+}
+
 function firstUndone(items: TrainingItem[]): TrainingItem | null {
   return items.find((item) => item.status === 0) ?? items[items.length - 1] ?? null
 }
@@ -131,9 +139,11 @@ function TrainingSessionPage() {
   }
 
   function speakFeedback() {
-    const source = lastResult?.comment || current?.comment
-    const suggestion = lastResult?.suggestion || current?.suggestion
-    const text = [source, suggestion].filter(Boolean).join('。')
+    const summary = lastResult?.summary || current?.summary
+      || lastResult?.comment || current?.comment
+    const improvement = lastResult?.improvements?.[0] || current?.improvements?.[0]
+      || lastResult?.suggestion || current?.suggestion
+    const text = [summary, improvement].filter(Boolean).join('。')
     if (text) void tts.speak(text)
   }
 
@@ -281,6 +291,11 @@ function TrainingSessionPage() {
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">
                 {current.source === 'AI' ? 'AI 变式' : '题库'}
               </span>
+              {current.questionType && (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">
+                  {QUESTION_TYPE_LABELS[current.questionType] ?? current.questionType}
+                </span>
+              )}
               <span className="ml-auto flex items-center gap-1 text-[10px] text-slate-400">
                 难度
                 {[1, 2, 3].map((level) => (
@@ -362,12 +377,49 @@ function TrainingSessionPage() {
                   <PointList title="命中要点" items={current.hitPoints} tone="emerald" />
                   <PointList title="遗漏要点" items={current.missedPoints} tone="rose" />
                 </div>
-                {current.comment && (
+                {(current.summary || current.comment) && (
                   <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[11px] leading-5 text-slate-600">
-                    {current.comment}
+                    {current.summary || current.comment}
                   </p>
                 )}
-                {current.suggestion && (
+                {current.detailedFeedback && (
+                  <div className="mt-3 rounded-xl border border-slate-100 bg-white px-3 py-2.5">
+                    <p className="mb-1 text-[10px] font-semibold text-slate-500">详细批改</p>
+                    <MarkdownContent content={current.detailedFeedback} className="text-xs" />
+                  </div>
+                )}
+                {current.scoringPoints.length > 0 && (
+                  <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5">
+                    <p className="mb-1 text-[10px] font-semibold text-slate-500">评分点</p>
+                    <ul className="space-y-1.5">
+                      {current.scoringPoints.map((point, index) => (
+                        <li key={`${point.point}-${index}`} className="text-[11px] leading-5 text-slate-600">
+                          <span className="font-medium">{point.point}</span>
+                          <span className="ml-1 text-slate-400">
+                            （{point.weight} 分{point.required ? '，必答' : ''}）
+                          </span>
+                          {point.acceptable && (
+                            <span className="block text-[10px] leading-4 text-slate-400">
+                              可接受表达：{point.acceptable}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {current.improvements.length > 0 ? (
+                  <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5">
+                    <p className="mb-1 text-[10px] font-semibold text-slate-500">改进项</p>
+                    <ul className="space-y-1">
+                      {current.improvements.map((item, index) => (
+                        <li key={`${item}-${index}`} className="text-[11px] leading-5 text-slate-600">
+                          · {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : current.suggestion && (
                   <p className="mt-1.5 text-[11px] leading-5 text-slate-500">
                     建议：{current.suggestion}
                   </p>

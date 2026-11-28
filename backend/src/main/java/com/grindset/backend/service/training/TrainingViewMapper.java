@@ -10,6 +10,7 @@ import com.grindset.backend.common.constant.TimeFormats;
 import com.grindset.backend.dto.GeneratedQuestion;
 import com.grindset.backend.dto.SimilarQuestionView;
 import com.grindset.backend.dto.TrainingAnswerResult;
+import com.grindset.backend.dto.TrainingEvaluation;
 import com.grindset.backend.dto.TrainingGoal;
 import com.grindset.backend.dto.TrainingPlanDetail;
 import com.grindset.backend.dto.TrainingPlanView;
@@ -101,6 +102,7 @@ public class TrainingViewMapper {
         String reference = bankAvailable && bank != null ? bank.getReferenceAnswer()
                 : generated != null ? generated.referenceAnswer() : null;
         TrainingDimension dimension = TrainingDimension.from(item.getDimension());
+        TrainingEvaluation evaluation = parseEvaluation(item.getFeedbackJson());
         return new TrainingPlanDetail.ItemView(
                 String.valueOf(item.getId()), intValue(item.getSeq()), item.getItemRole(),
                 item.getKpKey(), item.getKpName(), dimension.name(), dimension.label(),
@@ -110,7 +112,13 @@ public class TrainingViewMapper {
                 intValue(item.getStatus()), item.getScore(),
                 safe(item.getHitPoints()), safe(item.getMissedPoints()),
                 item.getComment(), item.getSuggestion(),
-                hideAnswer ? null : reference, format(item.getFinishedAt()),
+                evaluation == null ? null : evaluation.summary(),
+                hideAnswer || evaluation == null ? null : evaluation.detailedFeedback(),
+                hideAnswer || evaluation == null ? List.of() : evaluation.improvements(),
+                hideAnswer ? null : standardReference(evaluation, reference),
+                evaluation == null ? null : evaluation.questionType(),
+                hideAnswer || evaluation == null ? List.of() : evaluation.scoringPoints(),
+                format(item.getFinishedAt()),
                 hideAnswer ? List.of() : parseSimilar(item.getSimilarJson()),
                 item.getMistakeId() == null ? null : String.valueOf(item.getMistakeId()));
     }
@@ -125,6 +133,7 @@ public class TrainingViewMapper {
                 format(mastery.getNextReviewAt()), mastery.getEliminatedAt() != null);
         TrainingPlanDetail.DimensionDelta dimDelta = new TrainingPlanDetail.DimensionDelta(
                 dimension.name(), dimension.label(), current, current, 0);
+        TrainingEvaluation evaluation = parseEvaluation(item.getFeedbackJson());
         return new TrainingAnswerResult(String.valueOf(item.getId()), intValue(item.getScore()),
                 safe(item.getHitPoints()), safe(item.getMissedPoints()), item.getComment(),
                 item.getSuggestion(), true, delta, dimDelta,
@@ -133,7 +142,13 @@ public class TrainingViewMapper {
                 item.getDifficulty() == null ? 2 : item.getDifficulty(),
                 parseSimilar(item.getSimilarJson()),
                 item.getMistakeId() == null ? null : String.valueOf(item.getMistakeId()),
-                mastery != null && mastery.getEliminatedAt() != null);
+                mastery != null && mastery.getEliminatedAt() != null,
+                evaluation == null ? item.getComment() : evaluation.summary(),
+                evaluation == null ? null : evaluation.detailedFeedback(),
+                evaluation == null ? List.of() : evaluation.improvements(),
+                evaluation == null ? null : evaluation.referenceAnswer(),
+                evaluation == null ? null : evaluation.questionType(),
+                evaluation == null ? List.of() : evaluation.scoringPoints());
     }
 
     public TrainingPlanDetail.MasteryDelta toDelta(MasteryService.MasteryChange change) {
@@ -164,6 +179,18 @@ public class TrainingViewMapper {
             return objectMapper.readValue(json, GeneratedQuestion.class);
         } catch (JsonProcessingException e) {
             log.warn("训练题 JSON 解析失败", e);
+            return null;
+        }
+    }
+
+    private TrainingEvaluation parseEvaluation(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(json, TrainingEvaluation.class);
+        } catch (JsonProcessingException e) {
+            log.warn("训练批改 JSON 解析失败", e);
             return null;
         }
     }
@@ -252,6 +279,12 @@ public class TrainingViewMapper {
 
     private static List<String> safe(List<String> values) {
         return values == null ? List.of() : values;
+    }
+
+    /** 已批改的题优先展示阅卷生成的标准答案，未批改时回落题库/生成时的参考答案。 */
+    private static String standardReference(TrainingEvaluation evaluation, String fallback) {
+        String reference = evaluation == null ? null : evaluation.referenceAnswer();
+        return reference == null || reference.isBlank() ? fallback : reference;
     }
 
     private static int intValue(Integer value) {

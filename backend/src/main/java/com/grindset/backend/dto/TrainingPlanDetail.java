@@ -47,7 +47,12 @@ public record TrainingPlanDetail(
             List<String> missedPoints,
             String comment,
             String suggestion,
+            String summary,
+            String detailedFeedback,
+            List<String> improvements,
             String referenceAnswer,
+            String questionType,
+            List<TrainingEvaluation.ScoringPoint> scoringPoints,
             String finishedAt,
             List<SimilarQuestionView> similarQuestions,
             String mistakeId) {

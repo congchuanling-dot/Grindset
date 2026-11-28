@@ -332,6 +332,39 @@ public class QuestionBankService {
         }
     }
 
+    /**
+     * 训练场景：外部模型已完成详细批改，这里只负责写作答记录与做题进度，不再调用 LLM。
+     * 返回 question_attempts.id。
+     */
+    public String recordEvaluation(long userId, long questionId, String answer,
+                                   BankEvaluation evaluation) {
+        if (evaluation == null || evaluation.score() == null) {
+            throw new BizException(ErrorCode.BAD_GATEWAY, "训练评分结果为空");
+        }
+        QuestionBank question = requireOn(questionId);
+        LocalDateTime now = LocalDateTime.now();
+        String attemptId = transactionTemplate.execute(status -> {
+            QuestionAttempt attempt = new QuestionAttempt();
+            attempt.setId(idGenerator.nextId());
+            attempt.setUserId(userId);
+            attempt.setQuestionId(question.getId());
+            attempt.setAnswer(answer);
+            attempt.setScore(evaluation.score());
+            attempt.setHitPoints(evaluation.hitPoints());
+            attempt.setMissedPoints(evaluation.missedPoints());
+            attempt.setComment(evaluation.comment());
+            attempt.setSuggestion(evaluation.suggestion());
+            attempt.setCreatedAt(now);
+            attemptMapper.insert(attempt);
+            upsertProgress(userId, questionId, evaluation.score(), now);
+            return String.valueOf(attempt.getId());
+        });
+        if (attemptId == null) {
+            throw new BizException(ErrorCode.INTERNAL_ERROR, "训练作答记录保存失败");
+        }
+        return attemptId;
+    }
+
     // ---------- 编程题联动 ----------
 
     /** 取编程题;非编程题直接拒绝 */

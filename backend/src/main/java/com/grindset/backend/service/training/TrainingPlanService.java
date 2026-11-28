@@ -12,10 +12,10 @@ import com.grindset.backend.common.constant.InputLimits;
 import com.grindset.backend.config.TrainingProperties;
 import com.grindset.backend.dto.BankEvaluation;
 import com.grindset.backend.dto.GeneratedQuestion;
-import com.grindset.backend.dto.QuestionAttemptResult;
 import com.grindset.backend.dto.SimilarQuestionView;
 import com.grindset.backend.dto.TrainingAnswerResult;
 import com.grindset.backend.dto.TrainingDashboard;
+import com.grindset.backend.dto.TrainingEvaluation;
 import com.grindset.backend.dto.TrainingGoal;
 import com.grindset.backend.dto.TrainingMistakeView;
 import com.grindset.backend.dto.TrainingPlanCreateRequest;
@@ -309,34 +309,22 @@ public class TrainingPlanService {
                 throw new BizException(ErrorCode.BAD_GATEWAY, "训练题目内容缺失,请重新生成计划");
             }
 
-            int score;
-            List<String> hitPoints;
-            List<String> missedPoints;
-            String comment;
-            String suggestion;
-            Long attemptId = null;
-            if (bank != null) {
-                QuestionAttemptResult result = questionBankService.attempt(userId, bank.getId(), text);
-                score = result.score();
-                hitPoints = result.hitPoints();
-                missedPoints = result.missedPoints();
-                comment = result.comment();
-                suggestion = result.suggestion();
-                attemptId = parseNullableId(result.attemptId());
-            } else {
-                BankEvaluation evaluation = trainingLlmService.evaluate(generated, text, userId, itemId);
-                score = evaluation.score();
-                hitPoints = evaluation.hitPoints();
-                missedPoints = evaluation.missedPoints();
-                comment = evaluation.comment();
-                suggestion = evaluation.suggestion();
-            }
-
-            String questionSnapshot = bank != null
-                    ? toJson(new TrainingQuestionSnapshot(bank.getTitle(), bank.getContent(),
+            TrainingQuestionSnapshot snapshot = bank != null
+                    ? new TrainingQuestionSnapshot(bank.getTitle(), bank.getContent(),
                     bank.getKeyPoints() == null ? List.of() : bank.getKeyPoints(),
-                    bank.getReferenceAnswer(), bank.getDifficulty()))
-                    : currentItem.getGeneratedJson();
+                    bank.getReferenceAnswer(), bank.getDifficulty())
+                    : snapshotOf(generated);
+            TrainingEvaluation evaluation = trainingLlmService.evaluate(snapshot, text, userId, itemId);
+            int score = evaluation.score();
+            List<String> hitPoints = evaluation.hitPoints();
+            List<String> missedPoints = evaluation.missedPoints();
+            String comment = evaluation.summary();
+            String suggestion = evaluation.improvements().isEmpty()
+                    ? null : evaluation.improvements().get(0);
+            Long attemptId = bank == null ? null : parseNullableId(
+                    questionBankService.recordEvaluation(userId, bank.getId(), text,
+                            toBankEvaluation(evaluation)));
+            String questionSnapshot = toJson(snapshot);
             Map<TrainingDimension, Integer> dimensionsBefore = masteryService.dimensionMastery(userId);
 
             final int finalScore = score;
@@ -374,10 +362,7 @@ public class TrainingPlanService {
                 currentItem.setMissedPoints(finalMissed);
                 currentItem.setComment(finalComment);
                 currentItem.setSuggestion(finalSuggestion);
-                currentItem.setFeedbackJson(toJson(Map.of(
-                        "score", finalScore,
-                        "comment", finalComment == null ? "" : finalComment,
-                        "suggestion", finalSuggestion == null ? "" : finalSuggestion)));
+                currentItem.setFeedbackJson(toJson(evaluation));
                 currentItem.setFinishedAt(now);
                 itemMapper.updateById(currentItem);
 
@@ -432,7 +417,10 @@ public class TrainingPlanService {
                     tx.planCompleted(), tx.completedCount(), intValue(currentPlan.getItemCount()),
                     tx.nextDifficulty(), similar,
                     tx.mistakeId() == null ? null : String.valueOf(tx.mistakeId()),
-                    tx.change() != null && tx.change().eliminated());
+                    tx.change() != null && tx.change().eliminated(),
+                    evaluation.summary(), evaluation.detailedFeedback(),
+                    evaluation.improvements(), evaluation.referenceAnswer(),
+                    evaluation.questionType(), evaluation.scoringPoints());
         } finally {
             lock.unlock();
         }
@@ -601,6 +589,18 @@ public class TrainingPlanService {
         policy.put("slots", blueprint.slots());
         policy.put("dimensionsBefore", dimensionsBefore);
         return toJson(policy);
+    }
+
+    private static TrainingQuestionSnapshot snapshotOf(GeneratedQuestion question) {
+        return new TrainingQuestionSnapshot(question.title(), question.content(),
+                question.keyPoints(), question.referenceAnswer(), question.difficulty());
+    }
+
+    private static BankEvaluation toBankEvaluation(TrainingEvaluation evaluation) {
+        String suggestion = evaluation.improvements().isEmpty()
+                ? null : evaluation.improvements().get(0);
+        return new BankEvaluation(evaluation.score(), evaluation.hitPoints(),
+                evaluation.missedPoints(), evaluation.summary(), suggestion);
     }
 
     private String toJson(Object value) {
