@@ -6,6 +6,7 @@ import {
   LogOut,
   MessageSquare,
   Mic,
+  Target,
   Wallet,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/', label: 'AI 助手', icon: MessageSquare, end: true },
   { to: '/resume', label: '上传简历', icon: FileUp },
   { to: '/questions', label: '题库', icon: Library },
+  { to: '/training', label: '弱项训练', icon: Target },
   { to: '/interview', label: 'AI 面试', icon: Mic },
   { to: '/records', label: '面试记录', icon: History },
   { to: '/wallet', label: '我的钱包', icon: Wallet },

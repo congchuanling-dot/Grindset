@@ -61,6 +61,19 @@ export interface InterviewCodingReport {
   comment: string | null
 }
 
+export interface InterviewWeakness {
+  kpKey: string
+  kpName: string
+  domain: string | null
+  dimension: string
+  dimensionLabel: string
+  severity: number
+  evidence: string | null
+  advice: string | null
+  questionSeq: number | null
+  questionId: string | null
+}
+
 export interface InterviewReport {
   overallScore: number
   dimensionScores: Record<string, number>
@@ -71,6 +84,7 @@ export interface InterviewReport {
   jdCoverage?: JdCoverage[]
   jdGaps?: string[]
   coding?: InterviewCodingReport | null
+  weaknesses?: InterviewWeakness[]
 }
 
 export interface JdCoverage {

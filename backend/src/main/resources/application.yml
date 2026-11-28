@@ -135,6 +135,20 @@ app:
       provider: ${INTERVIEW_LLM_PROVIDER:}
       model: ${INTERVIEW_LLM_MODEL:}
 
+  # 弱项驱动复练闭环
+  training:
+    enabled: ${TRAINING_ENABLED:true}
+    plan-items: ${TRAINING_PLAN_ITEMS:5}
+    max-weaknesses: ${TRAINING_MAX_WEAKNESSES:3}
+    plan-expire-days: ${TRAINING_PLAN_EXPIRE_DAYS:7}
+    max-active-plans: ${TRAINING_MAX_ACTIVE_PLANS:3}
+    max-ai-items: ${TRAINING_MAX_AI_ITEMS:5}
+    daily-plan-limit: ${TRAINING_DAILY_PLAN_LIMIT:10}
+    mastery:
+      initial: ${TRAINING_MASTERY_INITIAL:50}
+      ema-alpha: ${TRAINING_MASTERY_EMA_ALPHA:0.3}
+      retest-alpha: ${TRAINING_MASTERY_RETEST_ALPHA:0.5}
+
   # 语音识别(豆包/火山引擎流式 ASR)。
   # api-key 只在后端使用;浏览器带自己的 access token 连 /api/asr/stream,
   # 由后端代为连接火山引擎。没有配置 api-key 时连接会返回明确错误。

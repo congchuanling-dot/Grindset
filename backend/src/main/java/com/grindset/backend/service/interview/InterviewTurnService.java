@@ -20,6 +20,7 @@ import com.grindset.backend.mapper.InterviewMessageMapper;
 import com.grindset.backend.mapper.InterviewQuestionMapper;
 import com.grindset.backend.mapper.InterviewSessionMapper;
 import com.grindset.backend.service.InterviewLlmService;
+import com.grindset.backend.service.training.WeakPointProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,7 @@ public class InterviewTurnService {
     private final InterviewLlmService llmService;
     private final InterviewContextBuilder contextBuilder;
     private final InterviewJdService jdService;
+    private final WeakPointProvider weakPointProvider;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
@@ -71,6 +73,7 @@ public class InterviewTurnService {
                                 InterviewLlmService llmService,
                                 InterviewContextBuilder contextBuilder,
                                 InterviewJdService jdService,
+                                WeakPointProvider weakPointProvider,
                                 SnowflakeIdGenerator idGenerator,
                                 TransactionTemplate transactionTemplate,
                                 ObjectMapper objectMapper) {
@@ -82,6 +85,7 @@ public class InterviewTurnService {
         this.llmService = llmService;
         this.contextBuilder = contextBuilder;
         this.jdService = jdService;
+        this.weakPointProvider = weakPointProvider;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
@@ -124,9 +128,11 @@ public class InterviewTurnService {
                     - (intValue(session.getCodingEnabled()) == 1 ? 1 : 0);
             String competency = hrRound ? null
                     : InterviewJdPlan.competencyFor(jdProfile, seq, verbalCount);
+            List<String> weakPoints = hrRound
+                    ? List.of() : weakPointProvider.topWeakNames(userId, 5);
 
             StringBuilder buffer = new StringBuilder();
-            llmService.streamQuestion(session, resumeText, seq, covered, jdProfile, competency,
+            llmService.streamQuestion(session, resumeText, seq, covered, weakPoints, jdProfile, competency,
                     text -> {
                         buffer.append(text);
                         onDelta.accept(text);

@@ -84,6 +84,8 @@ mysql -uroot -p123456 < sql/019_interview_free_run.sql
 mysql -uroot -p123456 < sql/020_interview_free_questions.sql
 mysql -uroot -p123456 < sql/021_coding_free_run.sql
 mysql -uroot -p123456 < sql/022_interview_jd.sql
+mysql -uroot -p123456 < sql/023_weakness_training.sql
+mysql -uroot -p123456 < sql/024_training_v2.sql
 ```
 
 大模型渠道/模型/密钥表不在 `sql/` 下，需要额外执行（**必须带 utf8mb4 参数**，否则中文展示名会乱码）：
@@ -385,6 +387,19 @@ npm run dev
 | GET | `/{id}/reviews` | 我的代码点评历史 |
 | GET | `/images?key=` | 公开。题库配图代理，从 OSS `questions/` 前缀流式读取 |
 
+### 弱项训练 `/api/training`
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/dashboard` | 五维雷达、总体 readiness、成长曲线、弱项地图、错题摘要 |
+| POST | `/sessions` | 请求体 `{stage:"BASELINE|DAILY|RETEST|MISTAKE", sourceId?}`，创建训练会话 |
+| GET | `/sessions` | 我的训练列表；可选 `status` |
+| GET | `/sessions/{id}` | 训练详情：阶段、题目、掌握度/维度变化 |
+| POST | `/sessions/{id}/items/{itemId}/answer` | 提交文字题 `{answer}`，返回评分、难度、同类题、错题 |
+| POST | `/sessions/{id}/abandon` | 放弃训练 |
+| GET | `/mistakes` | 错题本；可选 `status` |
+| POST | `/mistakes/retrain` | 创建错题重练会话 |
+
 ### 管理接口（需要 `X-Admin-Token`，不需要 JWT）
 
 | 方法 | 路径 | 说明 |
@@ -427,6 +442,8 @@ npm run dev
 | `009_coding_seed.sql` | — | 编程题种子数据 |
 | `021_coding_free_run.sql` | — | 删除用例/提交表与双模式列，代码点评复用 `question_attempts` |
 | `022_interview_jd.sql` | `interview_sessions` / `interview_questions` 扩展列 | 公司、岗位级别、JD 原文、岗位画像、题目考察能力项 |
+| `023_weakness_training.sql` | `interview_weakness`、`user_kp_mastery`、`user_kp_mastery_log`、`training_plan`、`training_plan_item` | 弱项诊断、知识点掌握度、训练计划与训练题 |
+| `024_training_v2.sql` | 维度/阶段列、`training_mistake`、`user_dimension_mastery`、`training_mastery_snapshot` | 五维能力、错题本、成长快照 |
 | `010_oauth_client_schema.sql` | `oauth_client_config` | 第三方登录客户端凭证（secret 加密存储） |
 | `011_agent_chat_schema.sql` | `agent_conversations`、`agent_messages` | 首页 Agent 会话与完整消息流（可重放、可恢复） |
 | `012_resume_original_schema.sql` | `resumes.original_object_key` | 简历原件在 OSS 中的对象 key |
@@ -517,5 +534,7 @@ npm run dev
 | `JWT鉴权-技术设计.md` | 鉴权细节补充 |
 | `首页Agent会话持久化-技术设计.md` | 会话/消息表、落库与重放、LLM 标题、并发锁、会话侧边栏 |
 | `用户钱包与昵称-技术设计.md` | 钱包/流水表、注册送 1 元、AI 扣费、余额闸门、昵称修改 |
+| `弱项驱动复练闭环-产品与技术方案.md` | 弱项诊断、掌握度、训练计划、复测、弱项回流面试 |
+| `弱项训练模块-v2-产品与技术方案.md` | 海外产品拆解、五维能力、自适应策略、错题本、成长曲线、v2 技术方案 |
 
 修改任何模块前，先读对应设计文档；实现与文档冲突时，以代码现状为准并同步更新文档。

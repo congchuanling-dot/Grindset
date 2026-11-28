@@ -727,6 +727,7 @@ function InterviewRoomPage() {
         <ReportDialog
           report={detail.report}
           position={detail.position}
+          sessionId={sessionId}
           onClose={() => setReportOpen(false)}
         />
       )}

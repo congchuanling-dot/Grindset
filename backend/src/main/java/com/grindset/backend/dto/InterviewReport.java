@@ -11,7 +11,8 @@ public record InterviewReport(
         List<String> highlights,
         List<String> advice,
         List<Coverage> jdCoverage,
-        List<String> jdGaps) {
+        List<String> jdGaps,
+        List<Weakness> weaknesses) {
 
     /** 单个 JD 能力项的覆盖情况,evidence 为候选人原话依据 */
     public record Coverage(
@@ -19,5 +20,15 @@ public record InterviewReport(
             Integer weight,
             Integer score,
             String evidence) {
+    }
+
+    /** 结构化弱项:name 必须能对齐到某道题的知识点,questionSeq 用于回溯证据 */
+    public record Weakness(
+            String name,
+            Integer questionSeq,
+            Integer severity,
+            String evidence,
+            String advice,
+            String suggestedMode) {
     }
 }

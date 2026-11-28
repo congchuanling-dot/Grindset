@@ -16,6 +16,8 @@ import QuestionOverview from './pages/questions/QuestionOverview'
 import ResumePage from './pages/ResumePage'
 import UsagePage from './pages/UsagePage'
 import WalletPage from './pages/WalletPage'
+import TrainingDashboardPage from './pages/training/TrainingDashboardPage'
+import TrainingSessionPage from './pages/training/TrainingSessionPage'
 
 function App() {
   return (
@@ -49,6 +51,11 @@ function App() {
         </Route>
         {/* 编程题工作台占满右侧,不显示题库左侧列表 */}
         <Route path="/questions/coding/:id" element={<CodingWorkspacePage />} />
+
+        {/* 弱项训练:能力仪表盘 + 沉浸式训练 */}
+        <Route path="/training" element={<TrainingDashboardPage />} />
+        <Route path="/training/:sessionId" element={<TrainingSessionPage />} />
+
         {/* AI 面试:入口配置 + 面试间(创建后直接进面试间) */}
         <Route path="/interview" element={<InterviewPage />} />
         {/* 面试记录:按简历筛选,进入详情查看复盘 */}

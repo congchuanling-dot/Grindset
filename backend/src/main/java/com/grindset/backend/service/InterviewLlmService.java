@@ -89,10 +89,17 @@ public class InterviewLlmService {
                jdCoverage 每个能力项一条,score 取 0~100,evidence 引用候选人原话或回答要点;
                jdGaps 给 1~3 条与 JD 要求的具体差距。未提供画像时两项输出空数组。
             8. 公司信息只用于调整评价侧重点,不得编造该公司真实面试流程或真题。
+            9. 额外输出 weaknesses:1~3 条结构化弱项,每条包含
+               name(知识点名称,必须优先复用对应题目的 knowledgePoints)、
+               questionSeq(对应题号)、severity(1~3,3 最严重)、
+               evidence(候选人原话或回答要点,不超过 60 字)、
+               advice(不超过 60 字)、suggestedMode(ORAL / TEXT / CODING)。
+               没有弱项时输出空数组。
             输出的 JSON 结构:
             {"overallScore":0,"dimensionScores":{"基础":0,"项目":0,"系统设计":0,"表达":0},
              "weakPoints":[],"highlights":[],"advice":[],
-             "jdCoverage":[{"name":"","weight":25,"score":0,"evidence":""}],"jdGaps":[]}
+             "jdCoverage":[{"name":"","weight":25,"score":0,"evidence":""}],"jdGaps":[],
+             "weaknesses":[{"name":"","questionSeq":0,"severity":3,"evidence":"","advice":"","suggestedMode":"ORAL"}]}
             """;
 
     private static final String REPORT_SYSTEM_WITH_CODING = """
@@ -113,10 +120,17 @@ public class InterviewLlmService {
                jdCoverage 每个能力项一条,score 取 0~100,evidence 引用候选人原话或回答要点;
                jdGaps 给 1~3 条与 JD 要求的具体差距。未提供画像时两项输出空数组。
             9. 公司信息只用于调整评价侧重点,不得编造该公司真实面试流程或真题。
+            10. 额外输出 weaknesses:1~3 条结构化弱项,每条包含
+                name(知识点名称,必须优先复用对应题目的 knowledgePoints)、
+                questionSeq(对应题号)、severity(1~3,3 最严重)、
+                evidence(候选人原话或回答要点,不超过 60 字)、
+                advice(不超过 60 字)、suggestedMode(ORAL / TEXT / CODING)。
+                没有弱项时输出空数组。
             输出的 JSON 结构:
             {"overallScore":0,"dimensionScores":{"基础":0,"项目":0,"系统设计":0,"表达":0,"编码":0},
              "weakPoints":[],"highlights":[],"advice":[],
-             "jdCoverage":[{"name":"","weight":25,"score":0,"evidence":""}],"jdGaps":[]}
+             "jdCoverage":[{"name":"","weight":25,"score":0,"evidence":""}],"jdGaps":[],
+             "weaknesses":[{"name":"","questionSeq":0,"severity":3,"evidence":"","advice":"","suggestedMode":"ORAL"}]}
             """;
 
     private static final String JD_PARSE_SYSTEM = """
@@ -254,13 +268,14 @@ public class InterviewLlmService {
      * 出题是用户等待感最强的环节,必须首字就出,不能等整段生成完再返回。
      */
     public void streamQuestion(InterviewSession session, String resumeText, int seq,
-                               List<String> coveredPoints, JdProfile profile, String competency,
+                               List<String> coveredPoints, List<String> weakPoints,
+                               JdProfile profile, String competency,
                                Consumer<String> onDelta) {
         ModelCatalogService.SelectedModel selection = selectModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessage.ROLE_SYSTEM, QUESTION_SYSTEM));
         messages.add(new ChatMessage(ChatMessage.ROLE_USER,
-                questionPrompt(session, resumeText, seq, coveredPoints, profile, competency)));
+                questionPrompt(session, resumeText, seq, coveredPoints, weakPoints, profile, competency)));
         router.stream(selection.targets(), selection.model(), messages, onDelta,
                 usageContext(session, AiBizType.INTERVIEW_QUESTION));
     }
@@ -435,9 +450,12 @@ public class InterviewLlmService {
 
     private static String questionPrompt(InterviewSession session, String resumeText,
                                          int seq, List<String> coveredPoints,
+                                         List<String> weakPoints,
                                          JdProfile profile, String competency) {
         String covered = coveredPoints == null || coveredPoints.isEmpty()
                 ? "无" : String.join("、", coveredPoints);
+        String weak = weakPoints == null || weakPoints.isEmpty()
+                ? "无" : String.join("、", weakPoints);
         return """
                 面试岗位:%s
                 目标公司:%s
@@ -447,6 +465,7 @@ public class InterviewLlmService {
                 侧重方向:%s
                 当前进度:第 %d / %d 题
                 已考察知识点:%s
+                参考薄弱知识点:%s
                 本题考察能力项:%s
                 该能力项 JD 期望:%s
 
@@ -463,7 +482,7 @@ public class InterviewLlmService {
                 session.getJobLevel() == null ? "未指定" : session.getJobLevel().label(),
                 blankToDash(session.getRound()),
                 styleLabel(session.getStyle()), focusText(session.getFocus()),
-                seq, session.getQuestionCount(), covered,
+                seq, session.getQuestionCount(), covered, weak,
                 blankToDash(competency),
                 blankToDash(expectationOf(profile, competency)),
                 jdContext(session, profile), resumeText);
@@ -800,9 +819,41 @@ public class InterviewLlmService {
             }
         }
 
+        List<InterviewReport.Weakness> weaknesses = new ArrayList<>();
+        if (report.weaknesses() != null) {
+            for (InterviewReport.Weakness item : report.weaknesses()) {
+                if (item == null || Texts.blankToNull(item.name()) == null) {
+                    continue;
+                }
+                int severity = item.severity() == null ? 2 : Math.max(1, Math.min(3, item.severity()));
+                weaknesses.add(new InterviewReport.Weakness(
+                        Texts.truncate(item.name().strip(), 64),
+                        item.questionSeq(),
+                        severity,
+                        Texts.truncate(Texts.blankToNull(item.evidence()), 120),
+                        Texts.truncate(Texts.blankToNull(item.advice()), 120),
+                        normalizeSuggestedMode(item.suggestedMode())));
+                if (weaknesses.size() >= 3) {
+                    break;
+                }
+            }
+        }
+
         return new InterviewReport(overall, dimensions,
                 limit(report.weakPoints(), 3), limit(report.highlights(), 3), limit(report.advice(), 3),
-                coverage, limit(report.jdGaps(), 3));
+                coverage, limit(report.jdGaps(), 3), weaknesses);
+    }
+
+    private static String normalizeSuggestedMode(String mode) {
+        String value = Texts.blankToNull(mode);
+        if (value == null) {
+            return "ORAL";
+        }
+        String upper = value.strip().toUpperCase(java.util.Locale.ROOT);
+        return switch (upper) {
+            case "TEXT", "CODING", "ORAL" -> upper;
+            default -> "ORAL";
+        };
     }
 
     /** 校验决策是否满足追问次数约束 */

@@ -69,7 +69,8 @@ public record InterviewDetail(
             Integer jdMatchScore,
             List<JdCoverageView> jdCoverage,
             List<String> jdGaps,
-            CodingView coding) {
+            CodingView coding,
+            List<WeaknessView> weaknesses) {
     }
 
     /** JD 各能力项的复盘结果;score 为空表示本场未考察到 */

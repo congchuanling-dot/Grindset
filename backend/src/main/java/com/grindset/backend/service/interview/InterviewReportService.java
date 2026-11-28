@@ -11,6 +11,7 @@ import com.grindset.backend.common.constant.QuestionStatus;
 import com.grindset.backend.dto.InterviewDetail;
 import com.grindset.backend.dto.InterviewReport;
 import com.grindset.backend.dto.JdProfile;
+import com.grindset.backend.dto.WeaknessView;
 import com.grindset.backend.entity.InterviewMessage;
 import com.grindset.backend.entity.InterviewQuestion;
 import com.grindset.backend.entity.InterviewSession;
@@ -18,6 +19,9 @@ import com.grindset.backend.mapper.InterviewMessageMapper;
 import com.grindset.backend.mapper.InterviewQuestionMapper;
 import com.grindset.backend.mapper.InterviewSessionMapper;
 import com.grindset.backend.service.InterviewLlmService;
+import com.grindset.backend.service.training.WeaknessDiagnosisService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -40,6 +44,8 @@ import static com.grindset.backend.service.interview.InterviewViews.intValue;
 @Service
 public class InterviewReportService {
 
+    private static final Logger log = LoggerFactory.getLogger(InterviewReportService.class);
+
     private final InterviewSessionService sessionService;
     private final InterviewSessionLocks locks;
     private final InterviewCodingService codingService;
@@ -49,6 +55,8 @@ public class InterviewReportService {
     private final InterviewLlmService llmService;
     private final InterviewContextBuilder contextBuilder;
     private final InterviewJdService jdService;
+    private final WeaknessDiagnosisService weaknessDiagnosisService;
+    private final InterviewWeaknessViewAugmenter weaknessViewAugmenter;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
 
@@ -61,6 +69,8 @@ public class InterviewReportService {
                                   InterviewLlmService llmService,
                                   InterviewContextBuilder contextBuilder,
                                   InterviewJdService jdService,
+                                  WeaknessDiagnosisService weaknessDiagnosisService,
+                                  InterviewWeaknessViewAugmenter weaknessViewAugmenter,
                                   TransactionTemplate transactionTemplate,
                                   ObjectMapper objectMapper) {
         this.sessionService = sessionService;
@@ -72,6 +82,8 @@ public class InterviewReportService {
         this.llmService = llmService;
         this.contextBuilder = contextBuilder;
         this.jdService = jdService;
+        this.weaknessDiagnosisService = weaknessDiagnosisService;
+        this.weaknessViewAugmenter = weaknessViewAugmenter;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
     }
@@ -89,7 +101,7 @@ public class InterviewReportService {
                 InterviewDetail.ReportView existing = InterviewViews.parseReport(objectMapper,
                         session.getReportJson());
                 if (existing != null) {
-                    return existing;
+                    return weaknessViewAugmenter.augment(userId, id, existing, finishedQuestions(id));
                 }
             }
 
@@ -124,7 +136,16 @@ public class InterviewReportService {
             JdProfile jdProfile = isHrRound(current) ? null : jdService.profileOf(current);
             InterviewReport report = llmService.report(current, resumeText, threadsText, hasCoding, jdProfile);
 
-            InterviewDetail.ReportView reportView = toReportView(report, questions, jdProfile);
+            List<WeaknessView> weaknesses;
+            try {
+                weaknesses = weaknessDiagnosisService.resolveAndPersist(
+                        userId, id, questions, report, lastAnswers(questions));
+            } catch (Exception e) {
+                log.warn("弱项落库失败,降级为内存诊断 sessionId={}", id, e);
+                weaknesses = weaknessDiagnosisService.diagnoseFromQuestions(questions, lastAnswers(questions));
+            }
+
+            InterviewDetail.ReportView reportView = toReportView(report, questions, jdProfile, weaknesses);
             current.setReportJson(toJson(reportView));
             current.setOverallScore(report.overallScore());
             sessionMapper.updateById(current);
@@ -227,7 +248,7 @@ public class InterviewReportService {
     }
 
     private InterviewDetail.ReportView toReportView(InterviewReport report, List<InterviewQuestion> questions,
-                                                    JdProfile profile) {
+                                                    JdProfile profile, List<WeaknessView> weaknesses) {
         InterviewDetail.CodingView coding = null;
         for (InterviewQuestion question : questions) {
             if (question.getQuestionType() != InterviewQuestionType.CODING) {
@@ -292,7 +313,21 @@ public class InterviewReportService {
 
         return new InterviewDetail.ReportView(report.overallScore(), report.dimensionScores(),
                 report.weakPoints(), report.highlights(), report.advice(),
-                jdMatchScore, coverageViews, jdGaps, coding);
+                jdMatchScore, coverageViews, jdGaps, coding,
+                weaknesses == null ? List.of() : weaknesses);
+    }
+
+    /** 每道题最后一条候选人回答，作为弱项证据的兜底 */
+    private Map<Long, String> lastAnswers(List<InterviewQuestion> questions) {
+        Map<Long, String> result = new HashMap<>();
+        for (InterviewQuestion question : questions) {
+            for (InterviewMessage message : threadOf(question.getId())) {
+                if (ROLE_USER.equals(message.getRole()) && message.getContent() != null) {
+                    result.put(question.getId(), message.getContent());
+                }
+            }
+        }
+        return result;
     }
 
     /** 每道题 1~5 分转成 0~100,按能力项求平均,作为模型没给覆盖分时的兜底 */

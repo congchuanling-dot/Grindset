@@ -1,4 +1,4 @@
-import { BookOpen, Code2, ListTree, X } from 'lucide-react'
+import { BookOpen, ChevronRight, Code2, ListTree, Target, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import CodingFilterPane from './CodingFilterPane'
@@ -20,6 +20,14 @@ function QuestionBankLayout() {
     <div className="flex h-full min-h-0 bg-slate-50">
       <aside className="hidden w-[340px] shrink-0 flex-col border-r border-slate-200/80 bg-white lg:flex">
         <ModeSwitch isCoding={isCoding} />
+        <Link
+          to="/training"
+          className="mx-3 mb-2 flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700 transition hover:bg-brand-100"
+        >
+          <Target size={13} />
+          今日弱项
+          <ChevronRight size={12} className="ml-auto" />
+        </Link>
         {pane}
       </aside>
 
@@ -55,6 +63,14 @@ function QuestionBankLayout() {
               </button>
             </div>
             <ModeSwitch isCoding={isCoding} />
+            <Link
+              to="/training"
+              className="mx-3 mb-2 flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700"
+            >
+              <Target size={13} />
+              今日弱项
+              <ChevronRight size={12} className="ml-auto" />
+            </Link>
             {pane}
           </aside>
         </div>

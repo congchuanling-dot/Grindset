@@ -19,6 +19,7 @@ import com.grindset.backend.entity.Resume;
 import com.grindset.backend.mapper.InterviewMessageMapper;
 import com.grindset.backend.mapper.InterviewQuestionMapper;
 import com.grindset.backend.mapper.InterviewSessionMapper;
+import com.grindset.backend.mapper.InterviewWeaknessMapper;
 import com.grindset.backend.mapper.ResumeMapper;
 import com.grindset.backend.dto.ResumeDetail;
 import com.grindset.backend.service.ResumeService;
@@ -49,9 +50,11 @@ public class InterviewSessionService {
     private final InterviewSessionMapper sessionMapper;
     private final InterviewQuestionMapper questionMapper;
     private final InterviewMessageMapper messageMapper;
+    private final InterviewWeaknessMapper weaknessMapper;
     private final ResumeMapper resumeMapper;
     private final ResumeService resumeService;
     private final InterviewJdService jdService;
+    private final InterviewWeaknessViewAugmenter weaknessViewAugmenter;
     private final SnowflakeIdGenerator idGenerator;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
@@ -59,18 +62,22 @@ public class InterviewSessionService {
     public InterviewSessionService(InterviewSessionMapper sessionMapper,
                                    InterviewQuestionMapper questionMapper,
                                    InterviewMessageMapper messageMapper,
+                                   InterviewWeaknessMapper weaknessMapper,
                                    ResumeMapper resumeMapper,
                                    ResumeService resumeService,
                                    InterviewJdService jdService,
+                                   InterviewWeaknessViewAugmenter weaknessViewAugmenter,
                                    SnowflakeIdGenerator idGenerator,
                                    TransactionTemplate transactionTemplate,
                                    ObjectMapper objectMapper) {
         this.sessionMapper = sessionMapper;
         this.questionMapper = questionMapper;
         this.messageMapper = messageMapper;
+        this.weaknessMapper = weaknessMapper;
         this.resumeMapper = resumeMapper;
         this.resumeService = resumeService;
         this.jdService = jdService;
+        this.weaknessViewAugmenter = weaknessViewAugmenter;
         this.idGenerator = idGenerator;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
@@ -220,6 +227,9 @@ public class InterviewSessionService {
                 messageMapper.delete(new QueryWrapper<InterviewMessage>().in("question_id", questionIds));
                 questionMapper.delete(new QueryWrapper<InterviewQuestion>().eq("session_id", id));
             }
+            weaknessMapper.delete(new QueryWrapper<com.grindset.backend.entity.InterviewWeakness>()
+                    .eq("user_id", userId)
+                    .eq("session_id", id));
             sessionMapper.deleteById(session.getId());
         });
     }
@@ -277,6 +287,7 @@ public class InterviewSessionService {
         InterviewDetail.ReportView report = null;
         if (session.getReportJson() != null && !session.getReportJson().isBlank()) {
             report = InterviewViews.parseReport(objectMapper, session.getReportJson());
+            report = weaknessViewAugmenter.augment(session.getUserId(), session.getId(), report, questions);
         }
 
         JdProfile jdProfile = jdService.profileOf(session);

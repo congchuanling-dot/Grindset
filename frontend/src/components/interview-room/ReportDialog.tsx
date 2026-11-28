@@ -1,9 +1,13 @@
-import { Sparkles, X } from 'lucide-react'
+import { Loader2, Sparkles, X } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { InterviewReport } from '../../api/interview'
+import { createTrainingSession } from '../../api/training'
 
 interface ReportDialogProps {
   report: InterviewReport
   position?: string
+  sessionId?: string
   onClose: () => void
 }
 
@@ -34,14 +38,33 @@ function ReportList({ title, items, tone }: { title: string; items: string[]; to
   )
 }
 
-/** 复盘报告弹窗:总分 + 维度分 + JD 匹配度 + 薄弱点/亮点/建议 */
-function ReportDialog({ report, position, onClose }: ReportDialogProps) {
+/** 复盘报告弹窗:总分 + 维度分 + JD 匹配度 + 弱项诊断 + 薄弱点/亮点/建议 */
+function ReportDialog({ report, position, sessionId, onClose }: ReportDialogProps) {
+  const navigate = useNavigate()
+  const [creating, setCreating] = useState(false)
+  const [trainError, setTrainError] = useState('')
   const coverage = report.jdCoverage ?? []
   const jdGaps = report.jdGaps ?? []
+  const weaknesses = report.weaknesses ?? []
+
+  async function handleStartTraining() {
+    if (!sessionId || creating) return
+    setCreating(true)
+    setTrainError('')
+    try {
+      const plan = await createTrainingSession('DAILY', sessionId)
+      onClose()
+      navigate(`/training/${plan.id}`)
+    } catch (error) {
+      setTrainError(error instanceof Error ? error.message : '生成训练计划失败')
+    } finally {
+      setCreating(false)
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-start justify-between">
           <div>
             <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
@@ -161,9 +184,68 @@ function ReportDialog({ report, position, onClose }: ReportDialogProps) {
           </div>
         )}
 
+        {weaknesses.length > 0 && (
+          <div className="mb-5">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-slate-700">弱项诊断</h3>
+              <span className="text-[10px] text-slate-400">{weaknesses.length} 个可补</span>
+            </div>
+            <div className="space-y-2">
+              {weaknesses.map((item) => (
+                <div
+                  key={item.kpKey}
+                  className="rounded-xl border border-rose-100 bg-rose-50/40 px-3 py-2.5"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-slate-800">{item.kpName}</span>
+                    <span className="ml-auto flex items-center gap-0.5">
+                      {[1, 2, 3].map((level) => (
+                        <span
+                          key={level}
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            level <= item.severity ? 'bg-rose-400' : 'bg-rose-100'
+                          }`}
+                        />
+                      ))}
+                    </span>
+                    {item.questionSeq != null && (
+                      <span className="text-[10px] text-slate-400">第 {item.questionSeq} 题</span>
+                    )}
+                  </div>
+                  {item.evidence && (
+                    <p className="mt-1 text-[11px] leading-5 text-slate-500">“{item.evidence}”</p>
+                  )}
+                  {item.advice && (
+                    <p className="mt-0.5 text-[11px] leading-5 text-slate-400">建议：{item.advice}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {sessionId && (
+              <button
+                type="button"
+                onClick={() => void handleStartTraining()}
+                disabled={creating}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-60"
+              >
+                {creating ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Sparkles size={14} />
+                )}
+                {creating ? '正在生成训练…' : '生成专项训练 · 约 8 分钟'}
+              </button>
+            )}
+            {trainError && <p className="mt-1.5 text-[11px] text-rose-500">{trainError}</p>}
+          </div>
+        )}
+
         <div className="space-y-4">
           <ReportList title="亮点" items={report.highlights} tone="brand" />
-          <ReportList title="薄弱点" items={report.weakPoints} tone="rose" />
+          {weaknesses.length === 0 && (
+            <ReportList title="薄弱点" items={report.weakPoints} tone="rose" />
+          )}
           <ReportList title="改进建议" items={report.advice} tone="slate" />
         </div>
       </div>
